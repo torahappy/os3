@@ -1,0 +1,21 @@
+<svg width="{{ page.width }}" height="{{ page.height }}" viewBox="{{ page.viewbox[0] }} {{ page.viewbox[1] }} {{ page.viewbox[2] }} {{ page.viewbox[3] }}" xmlns="http://www.w3.org/2000/svg">
+  <style>
+    @font-face {
+      font-family: "hogehoge";
+      src:
+        url("./NotoSerifJP-VariableFont_wght.ttf");
+    }
+    text {
+      font-family: "hogehoge", "Noto Serif JP", serif;
+    }
+    rect {
+      stroke: none;
+      stroke-width: 1;
+      fill: none;
+    }
+  </style>
+  {% for t in page.texts %}
+    <text transform="matrix({{ t.mult_x }} 0 0 {{ t.mult_y }} {{ -t.mult_x * t.x + t.x }} {{ t.target_height - t.y * t.mult_y + t.y }})" x="{{ t.x }}" y="{{ t.y }}" dominant-baseline="text-bottom" font-size="{{ t.font_size }}" >{{ t.text|e }}</text>
+    <rect x="{{ t.x }}" y="{{ t.y }}" width="{{ t.target_width }}" height="{{ t.target_height }}" ></rect>
+  {% endfor %}
+</svg>

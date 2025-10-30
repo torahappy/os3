@@ -1,0 +1,22 @@
+[package]
+name = "os3rust"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+resvg = "0.45.1"
+rustybuzz = "0.20.1"
+
+[dependencies.sdl2]
+version = "0.38"
+default-features = false
+features = ["ttf","image","gfx","mixer"]
+
+[[bin]]
+name = "guruguru"
+path = "src/bin/guruguru/main.rs"
+
+[[bin]]
+name = "documents"
+path = "src/bin/guruguru/main.rs"
+

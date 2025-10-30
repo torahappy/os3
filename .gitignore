@@ -1,0 +1,5 @@
+/data-source-local
+/external-apps
+target
+venv
+__pycache__
