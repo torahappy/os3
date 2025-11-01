@@ -10,6 +10,8 @@ if [ ! -d ../external-apps/tesseract ]; then
 
 pushd ./tesseract-5.5.1
 
+  git clean -dfx
+
   cmake -B build -DCMAKE_INSTALL_PREFIX="${SCRIPT_DIR}/../external-apps/tesseract"
   cmake --build build --config Release -j$NPR
 
@@ -20,6 +22,23 @@ pushd ./tesseract-5.5.1
   popd
 
 popd
+
+fi
+
+
+if [ ! -d ../external-apps/tesseract-wasm ]; then
+
+git clean -dfx
+
+
+  emconfigure cmake -B build -DCMAKE_INSTALL_PREFIX="${SCRIPT_DIR}/../external-apps/tesseract-wasm"
+  cmake --build build --config Release -j$NPR
+
+  pushd build
+
+    make install -j$NPR
+
+  popd
 
 fi
 
