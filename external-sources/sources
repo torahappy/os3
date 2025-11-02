@@ -1,2 +1,11 @@
-https://www.ijg.org/files/jpegsrc.v9f.tar.gz
-https://github.com/tesseract-ocr/tesseract/archive/refs/tags/5.5.1.tar.gz
+JPEG_VERSION=9f
+JPEG_URL=https://www.ijg.org/files/jpegsrc.v9f.tar.gz
+
+TESSERACT_VERSION=5.5.1
+TESSERACT_URL=https://github.com/tesseract-ocr/tesseract/archive/refs/tags/5.5.1.tar.gz
+
+LEPTONICA_VERSION=1.86.0
+LEPTONICA_URL=http://www.leptonica.org/source/leptonica-1.86.0.tar.gz
+
+PNG_VERSION=1.6.50
+PNG_URL="http://prdownloads.sourceforge.net/libpng/libpng-1.6.50.tar.xz?download"
