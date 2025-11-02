@@ -9,3 +9,6 @@ LEPTONICA_URL=http://www.leptonica.org/source/leptonica-1.86.0.tar.gz
 
 PNG_VERSION=1.6.50
 PNG_URL="http://prdownloads.sourceforge.net/libpng/libpng-1.6.50.tar.xz?download"
+
+ZLIBNG_VERSION=2.2.5
+ZLIBNG_URL=https://github.com/zlib-ng/zlib-ng/archive/refs/tags/2.2.5.tar.gz
