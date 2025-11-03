@@ -86,7 +86,6 @@ pushd leptonica-$LEPTONICA_VERSION
   pushd build
 
     make install -j$NPR
-    cp ./bin/tesseract.wasm "${SCRIPT_DIR}/../external-apps/tesseract-wasm/bin"
 
   popd
 
@@ -102,13 +101,14 @@ pushd tesseract-$TESSERACT_VERSION
   cp "${SCRIPT_DIR}/../external-apps/png-wasm/lib/pkgconfig/libpng.pc" "${SCRIPT_DIR}/../external-apps/zlibng-wasm/lib/pkgconfig/PNG.pc"
   cp "${SCRIPT_DIR}/../external-apps/jpeg-wasm/lib/pkgconfig/libjpeg.pc" "${SCRIPT_DIR}/../external-apps/zlibng-wasm/lib/pkgconfig/JPEG.pc"
 
-  CFLAGS='-sUSE_ICU=1' PKG_CONFIG_PATH="${SCRIPT_DIR}/pkgconfig:${SCRIPT_DIR}/../external-apps/leptonica-wasm/lib/pkgconfig:${SCRIPT_DIR}/../external-apps/zlibng-wasm/lib/pkgconfig:${SCRIPT_DIR}/../external-apps/png-wasm/lib/pkgconfig:${SCRIPT_DIR}/../external-apps/jpeg-wasm/lib/pkgconfig" emcmake cmake -B build -DCMAKE_INSTALL_PREFIX="${SCRIPT_DIR}/../external-apps/tesseract-wasm" -DBUILD_TRAINING_TOOLS=OFF -DCMAKE_CXX_FLAGS="-sUSE_ICU=1 -I\"${SCRIPT_DIR}/../external-apps/leptonica-wasm/include/leptonica\" -Wl,\"-L${SCRIPT_DIR}/../external-apps/jpeg-wasm/lib/\",-ljpeg,\"-L${SCRIPT_DIR}/../external-apps/png-wasm/lib/\",-lpng,\"-L${SCRIPT_DIR}/../external-apps/zlibng-wasm/lib/\",-lz" -DGRAPHICS_DISABLED=ON
+  CFLAGS='-sUSE_ICU=1' PKG_CONFIG_PATH="${SCRIPT_DIR}/pkgconfig:${SCRIPT_DIR}/../external-apps/leptonica-wasm/lib/pkgconfig:${SCRIPT_DIR}/../external-apps/zlibng-wasm/lib/pkgconfig:${SCRIPT_DIR}/../external-apps/png-wasm/lib/pkgconfig:${SCRIPT_DIR}/../external-apps/jpeg-wasm/lib/pkgconfig" emcmake cmake -B build -DCMAKE_INSTALL_PREFIX="${SCRIPT_DIR}/../external-apps/tesseract-wasm" -DBUILD_TRAINING_TOOLS=OFF -DCMAKE_CXX_FLAGS="-sUSE_ICU=1 -sALLOW_MEMORY_GROWTH=1 -I\"${SCRIPT_DIR}/../external-apps/leptonica-wasm/include/leptonica\" -Wl,\"-L${SCRIPT_DIR}/../external-apps/jpeg-wasm/lib/\",-ljpeg,\"-L${SCRIPT_DIR}/../external-apps/png-wasm/lib/\",-lpng,\"-L${SCRIPT_DIR}/../external-apps/zlibng-wasm/lib/\",-lz" -DGRAPHICS_DISABLED=ON
 
   cmake --build build --config Release -j$NPR
 
   pushd build
 
     make install -j$NPR
+    cp ./bin/tesseract.wasm "${SCRIPT_DIR}/../external-apps/tesseract-wasm/bin"
 
   popd
 

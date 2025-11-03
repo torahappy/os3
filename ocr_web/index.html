@@ -1,0 +1,26 @@
+<body>
+
+<script>
+  (() => {
+    window.Module = {
+      arguments: ['a.jpg', 'out', '-c', 'tessedit_create_tsv=1'],
+      preRun: () => {
+	console.log('init')
+	window.FS.createPreloadedFile('/', 'eng.traineddata', 'eng.traineddata', true, false)
+	window.FS.createPreloadedFile('/', 'a.jpg', 'a.jpg', true, false)
+	window.ENV.TESSDATA_PREFIX = '/'
+      },
+      postRun: () => {
+	document.getElementById('outputBox').innerHTML = UTF8Decoder.decode(FS.readFile('out.tsv'))
+
+      }
+    }
+    let scr = document.createElement('script');
+    scr.src = './tesseract.js';
+    document.body.appendChild(scr);
+  })();
+</script>
+
+<pre id='outputBox'></pre>
+
+</body>
