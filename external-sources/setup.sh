@@ -86,6 +86,7 @@ pushd leptonica-$LEPTONICA_VERSION
   pushd build
 
     make install -j$NPR
+    cp ./bin/tesseract.wasm "${SCRIPT_DIR}/../external-apps/tesseract-wasm/bin"
 
   popd
 
