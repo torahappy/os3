@@ -1,0 +1,5 @@
+Name: ici
+Description: ici port from emscripten
+Version: 68_2
+Libs: -sUSE_ICU
+Cflags: -sUSE_ICU

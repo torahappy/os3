@@ -101,7 +101,7 @@ pushd tesseract-$TESSERACT_VERSION
   cp "${SCRIPT_DIR}/../external-apps/png-wasm/lib/pkgconfig/libpng.pc" "${SCRIPT_DIR}/../external-apps/zlibng-wasm/lib/pkgconfig/PNG.pc"
   cp "${SCRIPT_DIR}/../external-apps/jpeg-wasm/lib/pkgconfig/libjpeg.pc" "${SCRIPT_DIR}/../external-apps/zlibng-wasm/lib/pkgconfig/JPEG.pc"
 
-  PKG_CONFIG_PATH="${SCRIPT_DIR}/../external-apps/leptonica-wasm/lib/pkgconfig:${SCRIPT_DIR}/../external-apps/zlibng-wasm/lib/pkgconfig:${SCRIPT_DIR}/../external-apps/png-wasm/lib/pkgconfig:${SCRIPT_DIR}/../external-apps/jpeg-wasm/lib/pkgconfig" emcmake cmake -B build -DCMAKE_INSTALL_PREFIX="${SCRIPT_DIR}/../external-apps/tesseract-wasm"
+  CFLAGS='-sUSE_ICU=1' PKG_CONFIG_PATH="${SCRIPT_DIR}/pkgconfig:${SCRIPT_DIR}/../external-apps/leptonica-wasm/lib/pkgconfig:${SCRIPT_DIR}/../external-apps/zlibng-wasm/lib/pkgconfig:${SCRIPT_DIR}/../external-apps/png-wasm/lib/pkgconfig:${SCRIPT_DIR}/../external-apps/jpeg-wasm/lib/pkgconfig" emcmake cmake -B build -DCMAKE_INSTALL_PREFIX="${SCRIPT_DIR}/../external-apps/tesseract-wasm"
 
   cmake --build build --config Release -j$NPR
 
