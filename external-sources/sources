@@ -13,5 +13,5 @@ PNG_URL="http://prdownloads.sourceforge.net/libpng/libpng-1.6.50.tar.xz?download
 ZLIBNG_VERSION=2.2.5
 ZLIBNG_URL=https://github.com/zlib-ng/zlib-ng/archive/refs/tags/2.2.5.tar.gz
 
-ICU_VERSION=78.1
-ICU_URL=https://github.com/unicode-org/icu/archive/refs/tags/release-78.1.tar.gz
+HARFBUZZ_VERSION=12.1.0
+HARFBUZZ_URL=https://github.com/harfbuzz/harfbuzz/releases/download/12.1.0/harfbuzz-12.1.0.tar.xz
