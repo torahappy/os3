@@ -1,26 +1,49 @@
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+</head>
 <body>
+  <div id="inputBox">
+    <label for="ocr_input"
+      >アップロードするファイルを選択してください(PNG or JPG)</label
+    >
+    <input
+      type="file"
+      id="ocr_input"
+      name="ocr_input"
+      accept=".jpg, .jpeg, .png"
+    />
+  </div>
 
-<script>
-  (() => {
-    window.Module = {
-      arguments: ['a.jpg', 'out', '-c', 'tessedit_create_tsv=1'],
-      preRun: () => {
-	console.log('init')
-	window.FS.createPreloadedFile('/', 'eng.traineddata', 'eng.traineddata', true, false)
-	window.FS.createPreloadedFile('/', 'a.jpg', 'a.jpg', true, false)
-	window.ENV.TESSDATA_PREFIX = '/'
-      },
-      postRun: () => {
-	document.getElementById('outputBox').innerHTML = UTF8Decoder.decode(FS.readFile('out.tsv'))
+  <pre id="outputBox"></pre>
 
+  <script>
+    document.getElementById("ocr_input").onchange = (e) => {
+      const fileInput = document.getElementById("ocr_input");
+      const file = fileInput.files[0];
+
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+	  document.getElementById('inputBox').remove();
+          const buf = reader.result;
+          const myWorkerTesseract = new Worker("./myworker_tesseract.js");
+          myWorkerTesseract.addEventListener("message", (e) => {
+            if (e.data.message === "done") {
+              outputBox.innerHTML += e.data.data;
+            } else {
+              outputBox.innerHTML += JSON.stringify(e.data) + "\n";
+            }
+          });
+          myWorkerTesseract.postMessage({
+            message: "img in",
+            data: buf,
+            filename: file.name,
+          });
+        };
+        reader.readAsArrayBuffer(file);
+      } else {
+        alert("Please select a file first!");
       }
-    }
-    let scr = document.createElement('script');
-    scr.src = './tesseract.js';
-    document.body.appendChild(scr);
-  })();
-</script>
-
-<pre id='outputBox'></pre>
-
+    };
+  </script>
 </body>
