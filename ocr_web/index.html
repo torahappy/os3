@@ -1,11 +1,138 @@
 <head>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    /* Reset CSS from https://www.joshwcomeau.com/css/custom-css-reset/ */
+    /* 1. Use a more-intuitive box-sizing model */
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+    }
+
+    /* 2. Remove default margin */
+    * {
+      margin: 0;
+    }
+
+    /* 3. Enable keyword animations */
+    @media (prefers-reduced-motion: no-preference) {
+      html {
+        interpolate-size: allow-keywords;
+      }
+    }
+
+    body {
+      /* 4. Add accessible line-height */
+      line-height: 1.5;
+      /* 5. Improve text rendering */
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* 6. Improve media defaults */
+    img,
+    picture,
+    video,
+    canvas,
+    svg {
+      display: block;
+      max-width: 100%;
+    }
+
+    /* 7. Inherit fonts for form controls */
+    input,
+    button,
+    textarea,
+    select {
+      font: inherit;
+    }
+
+    /* 8. Avoid text overflows */
+    p,
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6 {
+      overflow-wrap: break-word;
+    }
+
+    /* 9. Improve line wrapping */
+    p {
+      text-wrap: pretty;
+    }
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6 {
+      text-wrap: balance;
+    }
+
+    /*
+  10. Create a root stacking context
+*/
+
+    #root,
+    #__next {
+      isolation: isolate;
+    }
+    /* END reset CSS*/
+    @font-face {
+      font-family: "MYGOTHIC";
+      src: url("./ZenKakuGothicAntique-Medium.ttf");
+    }
+    @font-face {
+      font-family: "MYMONO";
+      src: url("./mononoki-Regular.ttf");
+    }
+    * {
+      font-family: "MYGOTHIC", serif;
+    }
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6 {
+      font-family: "MYGOTHIC", sans-serif;
+    }
+    h1 {
+      margin-left: 1em;
+    }
+    #outputBox {
+      word-wrap: break-word;
+      word-break: break-all;
+      white-space: pre-wrap;
+      width: 100%;
+      height: 20em;
+      overflow: scroll;
+      padding: 1em;
+      font-family: "MYMONO", monospace;
+    }
+    #ocr_input {
+      visibility: hidden;
+    }
+    #ocr_input_label {
+      display: block;
+      text-align: center;
+      background-color: #0c3254;
+      color: white;
+      border-radius: 1em;
+      margin: 1em;
+      padding: 1em;
+      cursor: pointer;
+    }
+  </style>
 </head>
 <body>
+  <h1>紙変換機WEB v0.1</h1>
   <div id="inputBox">
-    <label for="ocr_input"
-      >アップロードするファイルを選択してください(PNG or JPG)</label
-    >
+    <label aria-role="button" for="ocr_input" id="ocr_input_label">
+      このボタンをクリックして、<br />アップロードするファイルを選択してください<br />サーバには送信されず、ブラウザーのなかで計算処理されます<br />(PNG
+      or JPG)
+    </label>
     <input
       type="file"
       id="ocr_input"
@@ -17,6 +144,15 @@
   <pre id="outputBox"></pre>
 
   <script>
+    const layoutConfig = {
+      method: "harfbuzz",
+      font: "NotoSerifJP-VariableFont_wght.ttf",
+    };
+
+    function debugLog(data) {
+      outputBox.innerHTML += data;
+    }
+
     document.getElementById("ocr_input").onchange = (e) => {
       const fileInput = document.getElementById("ocr_input");
       const file = fileInput.files[0];
@@ -24,14 +160,16 @@
       if (file) {
         const reader = new FileReader();
         reader.onload = (e) => {
-	  document.getElementById('inputBox').remove();
+          document.getElementById("inputBox").remove();
           const buf = reader.result;
           const myWorkerTesseract = new Worker("./myworker_tesseract.js");
           myWorkerTesseract.addEventListener("message", (e) => {
             if (e.data.message === "done") {
-              outputBox.innerHTML += e.data.data;
+              debugLog(e.data.data);
+              myWorkerTesseract.terminate();
+              LayoutStage(e.data.data);
             } else {
-              outputBox.innerHTML += JSON.stringify(e.data) + "\n";
+              debugLog(JSON.stringify(e.data) + "\n");
             }
           });
           myWorkerTesseract.postMessage({
@@ -45,5 +183,16 @@
         alert("Please select a file first!");
       }
     };
+
+    function LayoutStage(ocr_result) {
+      if (layoutConfig.method === "harfbuzz") {
+        const myWorkerHarfbuzz = new Worker("./myworker_harfbuzz.js");
+        myWorkerHarfbuzz.postMessage({
+          message: "init",
+          ocr_result,
+          config: layoutConfig,
+        });
+      }
+    }
   </script>
 </body>
