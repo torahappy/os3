@@ -130,7 +130,8 @@
   <h1>紙変換機WEB v0.1</h1>
   <div id="inputBox">
     <label aria-role="button" for="ocr_input" id="ocr_input_label">
-      このボタンをクリックして、<br />アップロードするファイルを選択してください<br />サーバには送信されず、ブラウザーのなかで計算処理されます<br />(PNG or JPG)
+      このボタンをクリックして、<br />アップロードするファイルを選択してください<br />サーバには送信されず、ブラウザーのなかで計算処理されます<br />(PNG
+      or JPG)
     </label>
     <input
       type="file"
@@ -143,6 +144,74 @@
   <pre id="outputBox"></pre>
 
   <script>
+    /**
+     * Helper function to escape text for inclusion in XML/SVG.
+     * This replaces the Jinja2 '|e' filter.
+     * @param {string} str The string to escape.
+     * @returns {string} The escaped string.
+     */
+    function escapeXML(str) {
+      if (typeof str !== "string") return "";
+      return str.replace(/[<>&"']/g, function (match) {
+        switch (match) {
+          case "<":
+            return "&lt;";
+          case ">":
+            return "&gt;";
+          case "&":
+            return "&amp;";
+          case '"':
+            return "&quot;";
+          case "'":
+            return "&#39;"; // Use &#39; as &apos; is not universally supported
+          default:
+            return match;
+        }
+      });
+    }
+
+    /**
+     * Generates an SVG string from a page object.
+     * @param {Object} page - The page data object (with width, height, viewbox, texts).
+     * @returns {string} An SVG string.
+     */
+    function genSVG(page) {
+      const textElements = page.texts
+        .map((t) => {
+          // Calculate the transform matrix components
+          const inter_x = -t.mult_x * t.x + t.x;
+          const inter_y = t.target_height - t.y * t.mult_y + t.y;
+
+          return `
+    <text transform="matrix(${t.mult_x} 0 0 ${t.mult_y} ${inter_x} ${inter_y})" x="${t.x}" y="${t.y}" dominant-baseline="text-bottom" font-size="${t.font_size}" >${escapeXML(t.text)}</text>
+    <rect x="${t.x}" y="${t.y}" width="${t.target_width}" height="${t.target_height}" ></rect>
+  `;
+        })
+        .join("\n");
+
+      const svgString = `
+<svg width="${page.width}" height="${page.height}" viewBox="${page.viewbox.join(" ")}" xmlns="http://www.w3.org/2000/svg">
+  <style>
+    @font-face {
+      font-family: "hogehoge";
+      src:
+        url("./NotoSerifJP-VariableFont_wght.ttf");
+    }
+    text {
+      font-family: "hogehoge", "Noto Serif JP", serif;
+    }
+    rect {
+      stroke: red;
+      stroke-width: 1;
+      fill: none;
+    }
+  </style>
+  ${textElements}
+</svg>
+`;
+
+      return svgString.trim(); // Trim whitespace from start/end
+    }
     const layoutConfig = {
       method: "harfbuzz",
       font: "NotoSerifJP-VariableFont_wght.ttf",
@@ -191,14 +260,14 @@
           ocr_result,
           config: layoutConfig,
         });
-          myWorkerHarfbuzz.addEventListener("message", (e) => {
-            if (e.data.message === "done") {
-              debugLog(e.data.data);
-              myWorkerHarfbuzz.terminate();
-            } else {
-              debugLog(JSON.stringify(e.data) + "\n");
-            }
-          });
+        myWorkerHarfbuzz.addEventListener("message", (e) => {
+          if (e.data.message === "done") {
+            document.body.innerHTML+=genSVG(e.data.data);
+            myWorkerHarfbuzz.terminate();
+          } else {
+            debugLog(JSON.stringify(e.data) + "\n");
+          }
+        });
       }
     }
   </script>

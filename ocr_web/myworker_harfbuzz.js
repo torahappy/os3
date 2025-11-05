@@ -65,7 +65,7 @@ function getExtents(char) {
     width: Module.HEAP32[extentsPtr / 4],
     height: Module.HEAP32[extentsPtr / 4 + 1],
     x_bearing: Module.HEAP32[extentsPtr / 4 + 2],
-    y_bearing: Module.HEAP32[extentsPtr / 4 + 3],
+    y_bearing: -Module.HEAP32[extentsPtr / 4 + 3],
   };
 
   Module._free(extentsPtr);
@@ -218,11 +218,11 @@ function getPageInfo(imageInfo = { width: 1240, height: 1754, dpi: 150 }, layout
     const data = ocrResultsLines[i].split('\t')
     if (data.length === 12 && data[11] !== '') {
     ocrResults.push({
-      left: data[6],
-      top: data[7],
-      width: data[8],
-      height: data[9],
-      confidence: data[10],
+      left: parseFloat(data[6]),
+      top: parseFloat(data[7]),
+      width: parseFloat(data[8]),
+      height: parseFloat(data[9]),
+      confidence: parseFloat(data[10]),
       text: data[11]
     })
     }
@@ -311,7 +311,7 @@ Module = {
     MyData.font = Module._hb_font_create(MyData.face);
     Module._free(fontname_addr);
     self.postMessage({ message: "info", data: "font loaded" });
-    self.postMessage({ message: "info", data: getPageInfo() });
+    self.postMessage({ message: "done", data: getPageInfo() });
   },
 };
 
