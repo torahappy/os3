@@ -128,8 +128,7 @@ if [ ! -d ../external-apps/harfbuzz-wasm ]; then
 
 pushd harfbuzz-$HARFBUZZ_VERSION
   # git clean -dfx
-
-  EXFUNCS='["_hb_blob_create_from_file", "_hb_face_create", "_hb_font_create", "_hb_font_get_glyph", "_hb_font_get_glyph_extents", "_hb_font_get_glyph_advance_for_direction", "_hb_buffer_create", "_hb_buffer_set_content_type", "_hb_buffer_set_direction", "_hb_buffer_add_codepoints", "_hb_shape", "_hb_buffer_get_glyph_positions"]'
+  EXFUNCS='["_hb_blob_create_from_file", "_hb_face_create", "_hb_font_create", "_hb_font_get_glyph", "_hb_font_get_glyph_extents", "_hb_font_get_glyph_advance_for_direction", "_hb_buffer_create", "_hb_buffer_set_content_type", "_hb_buffer_destroy", "_hb_buffer_set_direction", "_hb_buffer_add_codepoints", "_hb_shape", "_hb_buffer_get_glyph_positions", "_malloc", "_free"]'
 
   emcmake cmake -B build -DBUILD_SHARED_LIBS=OFF -DCMAKE_INSTALL_PREFIX="${SCRIPT_DIR}/../external-apps/harfbuzz-wasm"
   cmake --build build --config Release -j$NPR
@@ -137,7 +136,7 @@ pushd harfbuzz-$HARFBUZZ_VERSION
   pushd build
     make install -j$NPR
     cd "${SCRIPT_DIR}/../external-apps/harfbuzz-wasm/lib"
-    em++ libharfbuzz.a -o harfbuzz -sEXPORTED_FUNCTIONS="$EXFUNCS"
+    em++ libharfbuzz.a -o harfbuzz -sEXPORTED_FUNCTIONS="$EXFUNCS" -sEXPORTED_RUNTIME_METHODS=stringToUTF8,UTF8ToString,AsciiToString,intArrayFromString,intArrayToString,writeArrayToMemory,setValue,getValue,HEAP8,HEAP16,HEAP32,HEAPU8,HEAPU16,HEAPU32
   popd
 
 popd

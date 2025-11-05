@@ -130,8 +130,7 @@
   <h1>紙変換機WEB v0.1</h1>
   <div id="inputBox">
     <label aria-role="button" for="ocr_input" id="ocr_input_label">
-      このボタンをクリックして、<br />アップロードするファイルを選択してください<br />サーバには送信されず、ブラウザーのなかで計算処理されます<br />(PNG
-      or JPG)
+      このボタンをクリックして、<br />アップロードするファイルを選択してください<br />サーバには送信されず、ブラウザーのなかで計算処理されます<br />(PNG or JPG)
     </label>
     <input
       type="file"
@@ -192,6 +191,14 @@
           ocr_result,
           config: layoutConfig,
         });
+          myWorkerHarfbuzz.addEventListener("message", (e) => {
+            if (e.data.message === "done") {
+              debugLog(e.data.data);
+              myWorkerHarfbuzz.terminate();
+            } else {
+              debugLog(JSON.stringify(e.data) + "\n");
+            }
+          });
       }
     }
   </script>

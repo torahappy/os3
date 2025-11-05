@@ -240,13 +240,6 @@ function assert(condition, text) {
 
 // We used to include malloc/free by default in the past. Show a helpful error in
 // builds with assertions.
-function _malloc() {
-  abort('malloc() called but not included in the build - add `_malloc` to EXPORTED_FUNCTIONS');
-}
-function _free() {
-  // Show a helpful error since we used to include free by default in the past.
-  abort('free() called but not included in the build - add `_free` to EXPORTED_FUNCTIONS');
-}
 
 /**
  * Indicates whether filename is delivered via file protocol (as opposed to http/https)
@@ -452,12 +445,12 @@ var runtimeInitialized = false;
 
 function updateMemoryViews() {
   var b = wasmMemory.buffer;
-  HEAP8 = new Int8Array(b);
-  HEAP16 = new Int16Array(b);
-  HEAPU8 = new Uint8Array(b);
-  HEAPU16 = new Uint16Array(b);
-  HEAP32 = new Int32Array(b);
-  HEAPU32 = new Uint32Array(b);
+  Module['HEAP8'] = HEAP8 = new Int8Array(b);
+  Module['HEAP16'] = HEAP16 = new Int16Array(b);
+  Module['HEAPU8'] = HEAPU8 = new Uint8Array(b);
+  Module['HEAPU16'] = HEAPU16 = new Uint16Array(b);
+  Module['HEAP32'] = HEAP32 = new Int32Array(b);
+  Module['HEAPU32'] = HEAPU32 = new Uint32Array(b);
   HEAPF32 = new Float32Array(b);
   HEAPF64 = new Float64Array(b);
   HEAP64 = new BigInt64Array(b);
@@ -4066,6 +4059,38 @@ async function createWasm() {
   }
   }
 
+
+
+  var AsciiToString = (ptr) => {
+      var str = '';
+      while (1) {
+        var ch = HEAPU8[ptr++];
+        if (!ch) return str;
+        str += String.fromCharCode(ch);
+      }
+    };
+
+
+  var intArrayToString = (array) => {
+      var ret = [];
+      for (var i = 0; i < array.length; i++) {
+        var chr = array[i];
+        if (chr > 0xFF) {
+          assert(false, `Character code ${chr} (${String.fromCharCode(chr)}) at offset ${i} not in 0x00-0xFF.`);
+          chr &= 0xFF;
+        }
+        ret.push(String.fromCharCode(chr));
+      }
+      return ret.join('');
+    };
+
+  var writeArrayToMemory = (array, buffer) => {
+      assert(array.length >= 0, 'writeArrayToMemory array must have a length (should be an array or typed array)')
+      HEAP8.set(array, buffer);
+    };
+
+
+
   FS.createPreloadedFile = FS_createPreloadedFile;
   FS.staticInit();;
 // End JS library code
@@ -4108,6 +4133,14 @@ if (Module['wasmBinary']) wasmBinary = Module['wasmBinary'];
 }
 
 // Begin runtime exports
+  Module['setValue'] = setValue;
+  Module['getValue'] = getValue;
+  Module['UTF8ToString'] = UTF8ToString;
+  Module['stringToUTF8'] = stringToUTF8;
+  Module['intArrayFromString'] = intArrayFromString;
+  Module['intArrayToString'] = intArrayToString;
+  Module['AsciiToString'] = AsciiToString;
+  Module['writeArrayToMemory'] = writeArrayToMemory;
   var missingLibrarySymbols = [
   'writeI53ToI64',
   'writeI53ToI64Clamped',
@@ -4170,8 +4203,6 @@ if (Module['wasmBinary']) wasmBinary = Module['wasmBinary'];
   'strLen',
   'reSign',
   'formatString',
-  'intArrayToString',
-  'AsciiToString',
   'stringToAscii',
   'UTF16ToString',
   'stringToUTF16',
@@ -4181,7 +4212,6 @@ if (Module['wasmBinary']) wasmBinary = Module['wasmBinary'];
   'lengthBytesUTF32',
   'stringToNewUTF8',
   'stringToUTF8OnStack',
-  'writeArrayToMemory',
   'registerKeyEventCallback',
   'maybeCStringToJsString',
   'findEventTarget',
@@ -4294,12 +4324,6 @@ missingLibrarySymbols.forEach(missingLibrarySymbol)
   'wasmExports',
   'HEAPF32',
   'HEAPF64',
-  'HEAP8',
-  'HEAPU8',
-  'HEAP16',
-  'HEAPU16',
-  'HEAP32',
-  'HEAPU32',
   'HEAP64',
   'HEAPU64',
   'writeStackCookie',
@@ -4333,17 +4357,12 @@ missingLibrarySymbols.forEach(missingLibrarySymbol)
   'addOnPostRun',
   'freeTableIndexes',
   'functionsInTableMap',
-  'setValue',
-  'getValue',
   'PATH',
   'PATH_FS',
   'UTF8Decoder',
   'UTF8ArrayToString',
-  'UTF8ToString',
   'stringToUTF8Array',
-  'stringToUTF8',
   'lengthBytesUTF8',
-  'intArrayFromString',
   'UTF16Decoder',
   'JSEvents',
   'specialHTMLTargets',
@@ -4538,6 +4557,7 @@ var _hb_blob_create_from_file = Module['_hb_blob_create_from_file'] = makeInvali
 var _hb_buffer_get_glyph_positions = Module['_hb_buffer_get_glyph_positions'] = makeInvalidEarlyAccess('_hb_buffer_get_glyph_positions');
 var _hb_font_get_glyph_extents = Module['_hb_font_get_glyph_extents'] = makeInvalidEarlyAccess('_hb_font_get_glyph_extents');
 var _hb_buffer_set_content_type = Module['_hb_buffer_set_content_type'] = makeInvalidEarlyAccess('_hb_buffer_set_content_type');
+var _hb_buffer_destroy = Module['_hb_buffer_destroy'] = makeInvalidEarlyAccess('_hb_buffer_destroy');
 var _hb_buffer_create = Module['_hb_buffer_create'] = makeInvalidEarlyAccess('_hb_buffer_create');
 var _hb_buffer_set_direction = Module['_hb_buffer_set_direction'] = makeInvalidEarlyAccess('_hb_buffer_set_direction');
 var _hb_buffer_add_codepoints = Module['_hb_buffer_add_codepoints'] = makeInvalidEarlyAccess('_hb_buffer_add_codepoints');
@@ -4549,6 +4569,8 @@ var _hb_shape = Module['_hb_shape'] = makeInvalidEarlyAccess('_hb_shape');
 var _fflush = makeInvalidEarlyAccess('_fflush');
 var _strerror = makeInvalidEarlyAccess('_strerror');
 var _emscripten_builtin_memalign = makeInvalidEarlyAccess('_emscripten_builtin_memalign');
+var _malloc = Module['_malloc'] = makeInvalidEarlyAccess('_malloc');
+var _free = Module['_free'] = makeInvalidEarlyAccess('_free');
 var _emscripten_stack_init = makeInvalidEarlyAccess('_emscripten_stack_init');
 var _emscripten_stack_get_free = makeInvalidEarlyAccess('_emscripten_stack_get_free');
 var _emscripten_stack_get_base = makeInvalidEarlyAccess('_emscripten_stack_get_base');
@@ -4562,6 +4584,7 @@ function assignWasmExports(wasmExports) {
   Module['_hb_buffer_get_glyph_positions'] = _hb_buffer_get_glyph_positions = createExportWrapper('hb_buffer_get_glyph_positions', 2);
   Module['_hb_font_get_glyph_extents'] = _hb_font_get_glyph_extents = createExportWrapper('hb_font_get_glyph_extents', 3);
   Module['_hb_buffer_set_content_type'] = _hb_buffer_set_content_type = createExportWrapper('hb_buffer_set_content_type', 2);
+  Module['_hb_buffer_destroy'] = _hb_buffer_destroy = createExportWrapper('hb_buffer_destroy', 1);
   Module['_hb_buffer_create'] = _hb_buffer_create = createExportWrapper('hb_buffer_create', 0);
   Module['_hb_buffer_set_direction'] = _hb_buffer_set_direction = createExportWrapper('hb_buffer_set_direction', 2);
   Module['_hb_buffer_add_codepoints'] = _hb_buffer_add_codepoints = createExportWrapper('hb_buffer_add_codepoints', 5);
@@ -4573,6 +4596,8 @@ function assignWasmExports(wasmExports) {
   _fflush = createExportWrapper('fflush', 1);
   _strerror = createExportWrapper('strerror', 1);
   _emscripten_builtin_memalign = createExportWrapper('emscripten_builtin_memalign', 2);
+  Module['_malloc'] = _malloc = createExportWrapper('malloc', 1);
+  Module['_free'] = _free = createExportWrapper('free', 1);
   _emscripten_stack_init = wasmExports['emscripten_stack_init'];
   _emscripten_stack_get_free = wasmExports['emscripten_stack_get_free'];
   _emscripten_stack_get_base = wasmExports['emscripten_stack_get_base'];

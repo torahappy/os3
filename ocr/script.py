@@ -132,13 +132,13 @@ def get_page_info(path, layout_plan: int = 1):
         image_height = f.height
         if 'dpi' in f.info:
             dpi = f.info['dpi'][0]
-            actual_width = (image_width / dpi, 'in')
+            actual_width = (float(image_width) / dpi, 'in')
         else:
             actual_width = (21, 'cm')
-    actual_height = (actual_width[0] * (image_height / image_width), actual_width[1])
+    actual_height = (actual_width[0] * (float(image_height) / image_width), actual_width[1])
 
     text_data = []
-    ocr_results = run_ocr(sys.argv[1])
+    ocr_results = run_ocr(path)
     
     for result in ocr_results:
         target_height = result.height
@@ -172,7 +172,7 @@ def get_page_info(path, layout_plan: int = 1):
     return Page(
         str(actual_width[0]) + actual_width[1],
         str(actual_height[0]) + actual_height[1],
-        (0, 0, image_width, image_height),
+        (0, 0, float(image_width), float(image_height)),
         text_data
     )
 
