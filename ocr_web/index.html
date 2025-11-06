@@ -99,7 +99,9 @@
       font-family: "MYGOTHIC", sans-serif;
     }
     h1 {
+      margin-top: 0.2em;
       margin-left: 1em;
+      margin-bottom: 2em;
     }
     #outputBox {
       word-wrap: break-word;
@@ -131,14 +133,13 @@
     }
     #calculatingIconWrap {
       width: 5.9em;
-      margin-left: 1em;
+      margin-left: 1.5em;
       font-size: 1.5em;
       display: none;
     }
     #calculatingIcon {
       overflow: hidden;
       white-space: nowrap;
-      margin: 0 auto;
       letter-spacing: 0.15em;
       animation: typing 6s steps(5, end) infinite;
     }
@@ -150,11 +151,18 @@
         width: 100%;
       }
     }
+    a {
+      color: #bf2894;
+      position: absolute;
+      display: block;
+      right: 1em;
+      top:4em
+    }
   </style>
 </head>
 <body>
   <h1>紙変換機WEB v0.1</h1>
-  <a href="license.html">ライセンス条項</a>
+  <a href="license.html">ライセンス文書</a>
   <div id="calculatingIconWrap">
     <div id="calculatingIcon">計算中.......</div>
   </div>
