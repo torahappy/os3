@@ -124,6 +124,10 @@
       padding: 1em;
       cursor: pointer;
     }
+    svg, img {
+      display: block;
+      width: 100%;
+    }
   </style>
 </head>
 <body>
@@ -144,6 +148,16 @@
   <pre id="outputBox"></pre>
 
   <script>
+    function bytesToBase64(bytes) {
+      const binString = Array.from(bytes, (byte) =>
+        String.fromCodePoint(byte),
+      ).join("");
+      return btoa(binString);
+    }
+
+    function stringToBase64(s) {
+      return bytesToBase64(new TextEncoder().encode(s));
+    }
     /**
      * Helper function to escape text for inclusion in XML/SVG.
      * This replaces the Jinja2 '|e' filter.
@@ -195,7 +209,7 @@
     @font-face {
       font-family: "hogehoge";
       src:
-        url("./NotoSerifJP-VariableFont_wght.ttf");
+        url("./${layoutConfig.font}");
     }
     text {
       font-family: "hogehoge", "Noto Serif JP", serif;
@@ -210,7 +224,7 @@
 </svg>
 `;
 
-      return svgString.trim(); // Trim whitespace from start/end
+      return stringToBase64(svgString.trim()); // Trim whitespace from start/end
     }
     const layoutConfig = {
       method: "harfbuzz",
@@ -262,7 +276,9 @@
         });
         myWorkerHarfbuzz.addEventListener("message", (e) => {
           if (e.data.message === "done") {
-            document.body.innerHTML+=genSVG(e.data.data);
+            const elem = document.createElement("img")
+	    elem.src="data:image/svg+xml;base64," + genSVG(e.data.data);
+	    document.body.appendChild(elem);
             myWorkerHarfbuzz.terminate();
           } else {
             debugLog(JSON.stringify(e.data) + "\n");
