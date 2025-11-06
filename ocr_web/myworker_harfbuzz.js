@@ -129,7 +129,7 @@ function getShape(chars, direction = HB_DIRECTION_LTR) {
     Module._hb_buffer_set_content_type(b, HB_BUFFER_CONTENT_TYPE_UNICODE);
     Module._hb_buffer_set_direction(b, direction);
 
-    for (let i = 0; i < 4; i++) {
+    for (let i = 0; i < codepoints.length; i++) {
       Module.HEAP32[codepointsPtr / 4 + i] = codepoints[i]
     }
 
@@ -284,13 +284,7 @@ Module = {
   preRun: () => {
     self.postMessage({ message: "info", data: "preRun" });
     try {
-      FS.createLazyFile(
-        "/",
-        MyData.config.font,
-        MyData.config.font,
-        true,
-        false,
-      );
+      FS.writeFile(MyData.config.font, MyData.font_data)
     } catch (e) {
       self.postMessage({ message: "err", data: String(e) });
     }
@@ -321,6 +315,7 @@ MyData = {
   blob: undefined,
   face: undefined,
   font: undefined,
+  font_data: undefined
 };
 
 self.postMessage({ message: "info", data: "worker start" });
@@ -328,6 +323,7 @@ self.addEventListener("message", (e) => {
   if (e.data.message === "init") {
     MyData.ocr_result = e.data.ocr_result;
     MyData.config = e.data.config;
+    MyData.font_data = e.data.font_data;
     importScripts("./harfbuzz.js");
   }
 });
