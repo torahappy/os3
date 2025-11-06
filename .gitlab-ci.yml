@@ -1,0 +1,10 @@
+pages:
+  script:
+    - mkdir .public
+    - cp -r ./ocr_web/ .public/ocr_web/
+    - mv .public public
+  artifacts:
+    paths:
+      - public
+  only:
+    - main
