@@ -162,15 +162,8 @@
       }
     }
 
-    function bytesToBase64(bytes) {
-      const binString = Array.from(bytes, (byte) =>
-        String.fromCodePoint(byte),
-      ).join("");
-      return btoa(binString);
-    }
-
     function stringToBase64(s) {
-      return bytesToBase64(new TextEncoder().encode(s));
+      return (new TextEncoder()).encode(s).toBase64()
     }
     /**
      * Helper function to escape text for inclusion in XML/SVG.
@@ -224,7 +217,7 @@
     @font-face {
       font-family: "hogehoge";
       src:
-	url("data:application/x-font-ttf; charset=utf-8; base64,${bytesToBase64(fontData)}");
+	url("data:application/x-font-ttf;base64,${fontData.toBase64()}") format("truetype");
     }
     text {
       font-family: "hogehoge", "Noto Serif JP", serif;
@@ -282,7 +275,7 @@
     };
 
     async function LayoutStage(ocr_result) {
-      const fontData = getBinary(layoutConfig.font);
+      const fontData = await getBinary(layoutConfig.font);
       if (layoutConfig.method === "harfbuzz") {
         const myWorkerHarfbuzz = new Worker("./myworker_harfbuzz.js");
         myWorkerHarfbuzz.postMessage({
