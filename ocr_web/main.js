@@ -85,7 +85,7 @@ function genSVG(page, fontData) {
 }
 const layoutConfig = {
   method: "harfbuzz",
-  font: "NotoSerifJP-VariableFont_wght.ttf",
+  font: "Prata-Regular.ttf",
 };
 
 function debugLog(data) {
