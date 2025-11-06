@@ -124,7 +124,8 @@
       padding: 1em;
       cursor: pointer;
     }
-    svg, img {
+    svg,
+    img {
       display: block;
       width: 100%;
     }
@@ -148,23 +149,22 @@
   <pre id="outputBox"></pre>
 
   <script>
-    const binaryData = {
-
-    }
+    const binaryData = {};
 
     async function getBinary(path) {
       if (binaryData[path] === undefined) {
         const f = await fetch(path);
-	const b = await f.arrayBuffer()
-	const a = new Uint8Array(b)
-	binaryData[path] = a
-	return a
+        const b = await f.arrayBuffer();
+        const a = new Uint8Array(b);
+        binaryData[path] = a;
+        return a;
       }
     }
 
     function stringToBase64(s) {
-      return (new TextEncoder()).encode(s).toBase64()
+      return new TextEncoder().encode(s).toBase64();
     }
+
     /**
      * Helper function to escape text for inclusion in XML/SVG.
      * This replaces the Jinja2 '|e' filter.
@@ -243,35 +243,41 @@
       outputBox.innerHTML += data;
     }
 
+    function getFileContents(file) {
+      return new Promise((res, rej) => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const buf = reader.result;
+          res(buf);
+        };
+        reader.onerror = (e) => {
+          rej(e);
+        };
+        reader.readAsArrayBuffer(file);
+      });
+    }
+
     document.getElementById("ocr_input").onchange = async (e) => {
       const fileInput = document.getElementById("ocr_input");
       const file = fileInput.files[0];
-
-      if (file) {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          document.getElementById("inputBox").remove();
-          const buf = reader.result;
-          const myWorkerTesseract = new Worker("./myworker_tesseract.js");
-          myWorkerTesseract.addEventListener("message", (e) => {
-            if (e.data.message === "done") {
-              debugLog(e.data.data);
-              myWorkerTesseract.terminate();
-              LayoutStage(e.data.data);
-            } else {
-              debugLog(JSON.stringify(e.data) + "\n");
-            }
-          });
-          myWorkerTesseract.postMessage({
-            message: "img in",
-            data: buf,
-            filename: file.name,
-          });
-        };
-        reader.readAsArrayBuffer(file);
-      } else {
-        alert("Please select a file first!");
-      }
+      if (!file) { return; }
+      const buf = await getFileContents(file);
+      document.getElementById("inputBox").remove();
+      const myWorkerTesseract = new Worker("./myworker_tesseract.js");
+      myWorkerTesseract.addEventListener("message", (e) => {
+        if (e.data.message === "done") {
+          debugLog(e.data.data);
+          myWorkerTesseract.terminate();
+          LayoutStage(e.data.data);
+        } else {
+          debugLog(JSON.stringify(e.data) + "\n");
+        }
+      });
+      myWorkerTesseract.postMessage({
+        message: "img in",
+        data: buf,
+        filename: file.name,
+      });
     };
 
     async function LayoutStage(ocr_result) {
@@ -285,9 +291,10 @@
         });
         myWorkerHarfbuzz.addEventListener("message", (e) => {
           if (e.data.message === "done") {
-            const elem = document.createElement("img")
-	    elem.src="data:image/svg+xml;base64," + genSVG(e.data.data, fontData);
-	    document.body.appendChild(elem);
+            const elem = document.createElement("img");
+            elem.src =
+              "data:image/svg+xml;base64," + genSVG(e.data.data, fontData);
+            document.body.appendChild(elem);
             myWorkerHarfbuzz.terminate();
           } else {
             debugLog(JSON.stringify(e.data) + "\n");
