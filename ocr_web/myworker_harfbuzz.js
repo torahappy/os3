@@ -197,7 +197,7 @@ function getShapeAndExtents(chars, direction = Module.HB_DIRECTION_LTR) {
  * @param {number} layoutPlan - Layout plan (1 or 2). Default is 1.
  * @returns {Object} the Page object.
  */
-function getPageInfo(imageInfo = { width: 1240, height: 1754, dpi: 150 }, layoutPlan = 1) {
+function getPageInfo(imageInfo, layoutPlan = 1) {
   const { width: imageWidth, height: imageHeight, dpi } = imageInfo;
 
   let actualWidth, actualHeight, unit;
@@ -305,7 +305,7 @@ Module = {
     MyData.font = Module._hb_font_create(MyData.face);
     Module._free(fontname_addr);
     self.postMessage({ message: "info", data: "font loaded" });
-    self.postMessage({ message: "done", data: getPageInfo() });
+    self.postMessage({ message: "done", data: getPageInfo(MyData.config.metrics, MyData.config.layout_plan) });
   },
 };
 
