@@ -238,7 +238,13 @@ function getPageInfo(imageInfo, layoutPlan = 1) {
     const se = getShapeAndExtents(result.text); // [ [extents, shape], ... ]
 
     // total text width (sum of advances)
-    const hbWidth = se.reduce((sum, [ext, shape]) => sum + shape.x_advance, 0);
+    const hbWidth = se.reduce((sum, [ext, shape]) => {
+      if (shape !== undefined) {
+        return sum + shape.x_advance
+      } else {
+	return sum
+      }
+    }, 0);
     // total text height (max of bearings)
     const hbHeight = Math.max(...se.map(([ext, shape]) => ext.y_bearing));
 

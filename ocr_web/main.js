@@ -78,7 +78,7 @@ function genSVG(page, fontData) {
       font-family: "hogehoge", "Noto Serif JP", serif;
     }
     rect {
-      stroke: red;
+      stroke: none;
       stroke-width: 1;
       fill: none;
     }
@@ -154,9 +154,8 @@ function getImageMetrics(buf) {
   if (dpi === undefined) {
     debugLog({
       message: "info",
-      data: "Image DPI calculation failed. Fallback to 72dpi.",
+      data: "Image DPI calculation failed.",
     });
-    dpi = 72;
   }
   return { width, height, dpi };
 }
