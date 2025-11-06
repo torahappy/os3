@@ -148,6 +148,20 @@
   <pre id="outputBox"></pre>
 
   <script>
+    const binaryData = {
+
+    }
+
+    async function getBinary(path) {
+      if (binaryData[path] === undefined) {
+        const f = await fetch(path);
+	const b = await f.arrayBuffer()
+	const a = new Uint8Array(b)
+	binaryData[path] = a
+	return a
+      }
+    }
+
     function bytesToBase64(bytes) {
       const binString = Array.from(bytes, (byte) =>
         String.fromCodePoint(byte),
@@ -187,9 +201,10 @@
     /**
      * Generates an SVG string from a page object.
      * @param {Object} page - The page data object (with width, height, viewbox, texts).
+     * @param {Uint8Array} fontData - The font data
      * @returns {string} An SVG string.
      */
-    function genSVG(page) {
+    function genSVG(page, fontData) {
       const textElements = page.texts
         .map((t) => {
           // Calculate the transform matrix components
@@ -209,7 +224,7 @@
     @font-face {
       font-family: "hogehoge";
       src:
-        url("./${layoutConfig.font}");
+	url("data:application/x-font-ttf; charset=utf-8; base64,${bytesToBase64(fontData)}");
     }
     text {
       font-family: "hogehoge", "Noto Serif JP", serif;
@@ -235,7 +250,7 @@
       outputBox.innerHTML += data;
     }
 
-    document.getElementById("ocr_input").onchange = (e) => {
+    document.getElementById("ocr_input").onchange = async (e) => {
       const fileInput = document.getElementById("ocr_input");
       const file = fileInput.files[0];
 
@@ -266,7 +281,8 @@
       }
     };
 
-    function LayoutStage(ocr_result) {
+    async function LayoutStage(ocr_result) {
+      const fontData = getBinary(layoutConfig.font);
       if (layoutConfig.method === "harfbuzz") {
         const myWorkerHarfbuzz = new Worker("./myworker_harfbuzz.js");
         myWorkerHarfbuzz.postMessage({
@@ -277,7 +293,7 @@
         myWorkerHarfbuzz.addEventListener("message", (e) => {
           if (e.data.message === "done") {
             const elem = document.createElement("img")
-	    elem.src="data:image/svg+xml;base64," + genSVG(e.data.data);
+	    elem.src="data:image/svg+xml;base64," + genSVG(e.data.data, fontData);
 	    document.body.appendChild(elem);
             myWorkerHarfbuzz.terminate();
           } else {
