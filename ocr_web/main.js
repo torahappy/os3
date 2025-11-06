@@ -1,7 +1,7 @@
 const binaryData = {};
 
-function forgetBinary(path){
-  delete binaryData[path]
+function forgetBinary(path) {
+  delete binaryData[path];
 }
 
 async function getBinary(path) {
@@ -91,9 +91,9 @@ function genSVG(page, fontData) {
 }
 const layoutConfig = {
   method: "harfbuzz",
-  font: "CoralPixels-Regular.ttf",
+  font: "NotoSerifJP-VariableFont_wght.ttf",
   layout_plan: 1,
-  metrics: undefined
+  metrics: undefined,
 };
 
 function debugLog(data) {
@@ -152,15 +152,18 @@ function getImageMetrics(buf) {
       meta["Pixels Per Unit X"].value / (meta["Pixel Units"].value * 39.37008);
   }
   if (dpi === undefined) {
-    debugLog({
-      message: "info",
-      data: "Image DPI calculation failed.",
-    });
+    debugLog(
+      JSON.stringify({
+        message: "info",
+        data: "Image DPI calculation failed.",
+      }) + "\n",
+    );
   }
   return { width, height, dpi };
 }
 
 document.getElementById("ocr_input").onchange = async (e) => {
+  document.getElementById("calculatingIconWrap").style.display = "block";
   const fileInput = document.getElementById("ocr_input");
   const file = fileInput.files[0];
   if (!file) {
@@ -207,6 +210,8 @@ async function LayoutStage(ocr_result) {
         elem.src = "data:image/svg+xml;base64," + genSVG(e.data.data, fontData);
         document.body.appendChild(elem);
         myWorkerHarfbuzz.terminate();
+        document.getElementById("outputBox").style.display = "none";
+        document.getElementById("calculatingIconWrap").style.display = "none";
       } else {
         debugLog(JSON.stringify(e.data) + "\n");
       }

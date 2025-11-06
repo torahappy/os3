@@ -129,13 +129,38 @@
       display: block;
       width: 100%;
     }
+    #calculatingIconWrap {
+      width: 5.9em;
+      margin-left: 1em;
+      font-size: 1.5em;
+      display: none;
+    }
+    #calculatingIcon {
+      overflow: hidden;
+      white-space: nowrap;
+      margin: 0 auto;
+      letter-spacing: 0.15em;
+      animation: typing 6s steps(5, end) infinite;
+    }
+    @keyframes typing {
+      from {
+        width: 0;
+      }
+      to {
+        width: 100%;
+      }
+    }
   </style>
 </head>
 <body>
   <h1>紙変換機WEB v0.1</h1>
+  <div id="calculatingIconWrap">
+    <div id="calculatingIcon">計算中.......</div>
+  </div>
   <div id="inputBox">
     <label aria-role="button" for="ocr_input" id="ocr_input_label">
-      このボタンをクリックして、<br />アップロードするファイルを選択してください<br />サーバには送信されず、ブラウザーのなかで計算処理されます<br />(PNG or JPG)
+      このボタンをクリックして、<br />アップロードするファイルを選択してください<br />サーバには送信されず、ブラウザーのなかで計算処理されます<br />(PNG
+      or JPG)
     </label>
     <input
       type="file"
