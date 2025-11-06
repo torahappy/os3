@@ -97,7 +97,7 @@ const layoutConfig = {
 };
 
 function debugLog(data) {
-  outputBox.innerHTML += data;
+  outputBox.innerText += data;
 }
 
 function getFileContents(file) {
