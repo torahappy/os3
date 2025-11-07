@@ -1,3 +1,4 @@
+<!doctype html>
 <head>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
@@ -88,7 +89,7 @@
       src: url("./mononoki-Regular.ttf");
     }
     * {
-      font-family: "MYGOTHIC", serif;
+      font-family: "MYGOTHIC", sans-serif;
     }
     h1 {text-align: center;}
     h1,
@@ -97,18 +98,32 @@
     h4,
     h5,
     h6 {
-      font-family: "MYGOTHIC", sans-serif;
-      margin: 1em;
+      margin: 16px;
     }
     p, pre {
-      margin: 3em;
-      font-family: "MYMONO", serif;
+      margin: 32px;
     }
-    pre {}
+    pre {
+      font-family: "MYMONO", monospace;
+    }
+    
+    @media screen and (max-width: 1000px) {
+      p, pre {margin: 16px;}
+      pre {
+	display: block;
+	white-space: pre-wrap;
+	width: calc(100vw - 2em);
+	word-break: break-all;
+      }
+    }
+    a {
+      color: #bf2894;
+    }
   </style>
 </head>
 <body>
   <h1>ライセンス文書</h1>
+  <p><a href='index.html'>トップへ戻る</a></p>
   <p>本ソフトウェアは、以下のソフトウェアを用いて制作されています。</p>
   <h2>Prata</h2>
 <pre>

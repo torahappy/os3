@@ -163,7 +163,8 @@ function getImageMetrics(buf) {
 }
 
 document.getElementById("ocr_input").onchange = async (e) => {
-  document.getElementById("calculatingIconWrap").style.display = "block";
+  Array.from(document.getElementsByClassName("to_hide_after_1")).map(x=>x.style.display = "none");
+  Array.from(document.getElementsByClassName("to_show_after_1")).map(x=>x.style.display = "block");
   const fileInput = document.getElementById("ocr_input");
   const file = fileInput.files[0];
   if (!file) {
@@ -175,7 +176,6 @@ document.getElementById("ocr_input").onchange = async (e) => {
     return;
   }
   layoutConfig.metrics = metrics;
-  document.getElementById("inputBox").remove();
   const myWorkerTesseract = new Worker("./myworker_tesseract.js");
   myWorkerTesseract.addEventListener("message", (e) => {
     if (e.data.message === "done") {
@@ -210,8 +210,8 @@ async function LayoutStage(ocr_result) {
         elem.src = "data:image/svg+xml;base64," + genSVG(e.data.data, fontData);
         document.body.appendChild(elem);
         myWorkerHarfbuzz.terminate();
-        document.getElementById("outputBox").style.display = "none";
-        document.getElementById("calculatingIconWrap").style.display = "none";
+        Array.from(document.getElementsByClassName("to_hide_after_2")).map(x=>x.style.display = "none");
+        Array.from(document.getElementsByClassName("to_show_after_2")).map(x=>x.style.display = "block");
       } else {
         debugLog(JSON.stringify(e.data) + "\n");
       }

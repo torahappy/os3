@@ -1,4 +1,6 @@
+<!doctype html>
 <head>
+  <title>ぼやけながらも　くっきりとしている　紙への　旅路</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
     /* Reset CSS from https://www.joshwcomeau.com/css/custom-css-reset/ */
@@ -84,6 +86,10 @@
       src: url("./ZenKakuGothicAntique-Medium.ttf");
     }
     @font-face {
+      font-family: "MYGOTHIC-USUI";
+      src: url("./ZenKakuGothicAntique-Regular.ttf");
+    }
+    @font-face {
       font-family: "MYMONO";
       src: url("./mononoki-Regular.ttf");
     }
@@ -96,12 +102,11 @@
     h4,
     h5,
     h6 {
-      font-family: "MYGOTHIC", sans-serif;
+      font-family: "MYGOTHIC-USUI", sans-serif;
     }
     h1 {
       margin-top: 0.2em;
       margin-left: 1em;
-      margin-bottom: 2em;
     }
     #outputBox {
       word-wrap: break-word;
@@ -151,22 +156,26 @@
         width: 100%;
       }
     }
-    a {
-      color: #bf2894;
-      position: absolute;
+    .infolinks {
+      text-align: right;
       display: block;
       right: 1em;
-      top:4em
+      top:4em;
+      margin:1.5em;
+    }
+    a {
+      color: #bf2894;
     }
   </style>
 </head>
 <body>
-  <h1>紙変換機WEB v0.1</h1>
-  <a href="license.html">ライセンス文書</a>
-  <div id="calculatingIconWrap">
+  <h1 class='to_hide_after_1'>ぼやけながらも　くっきりとしている　紙への　旅路</h1>
+  <p class='infolinks to_hide_after_1'><a href="license.html">ライセンス文書</a></p>
+  <p class='infolinks to_hide_after_1'><a href="about.html">これは　なに？</a></p>
+  <div id="calculatingIconWrap" class='to_show_after_1 to_hide_after_2'>
     <div id="calculatingIcon">計算中.......</div>
   </div>
-  <div id="inputBox">
+  <div id="inputBox" class='to_hide_after_1'>
     <label aria-role="button" for="ocr_input" id="ocr_input_label">
       このボタンをクリックして、<br />アップロードするファイルを選択してください<br />サーバには送信されず、ブラウザーのなかで計算処理されます<br />(PNG
       or JPG)
@@ -179,7 +188,7 @@
     />
   </div>
 
-  <pre id="outputBox"></pre>
+  <pre id="outputBox" class='to_hide_after_2'></pre>
 
   <script src="exif-reader.js"></script>
   <script src="main.js"></script>

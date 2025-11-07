@@ -1,0 +1,128 @@
+<!doctype html>
+<html>
+<head>
+  <title>これはなに？</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    /* Reset CSS from https://www.joshwcomeau.com/css/custom-css-reset/ */
+    /* 1. Use a more-intuitive box-sizing model */
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+    }
+
+    /* 2. Remove default margin */
+    * {
+      margin: 0;
+    }
+
+    /* 3. Enable keyword animations */
+    @media (prefers-reduced-motion: no-preference) {
+      html {
+        interpolate-size: allow-keywords;
+      }
+    }
+
+    body {
+      /* 4. Add accessible line-height */
+      line-height: 1.5;
+      /* 5. Improve text rendering */
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* 6. Improve media defaults */
+    img,
+    picture,
+    video,
+    canvas,
+    svg {
+      display: block;
+      max-width: 100%;
+    }
+
+    /* 7. Inherit fonts for form controls */
+    input,
+    button,
+    textarea,
+    select {
+      font: inherit;
+    }
+
+    /* 8. Avoid text overflows */
+    p,
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6 {
+      overflow-wrap: break-word;
+    }
+
+    /* 9. Improve line wrapping */
+    p {
+      text-wrap: pretty;
+    }
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6 {
+      text-wrap: balance;
+    }
+
+    /*
+  10. Create a root stacking context
+*/
+
+    #root,
+    #__next {
+      isolation: isolate;
+    }
+    /* END reset CSS*/
+    @font-face {
+      font-family: "MYGOTHIC";
+      src: url("./ZenKakuGothicAntique-Medium.ttf");
+    }
+    @font-face {
+      font-family: "MYMONO";
+      src: url("./mononoki-Regular.ttf");
+    }
+    * {
+      font-family: "MYGOTHIC", serif;
+    }
+    h1 {text-align: center;}
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6,p,pre {
+      font-family: "MYGOTHIC", sans-serif;
+      margin: 1em;
+    }
+    a {
+      color: #bf2894;
+    }
+    pre {
+      white-space: pre-wrap;
+      width: calc(100vw - 2em);
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <pre>
+　このプログラムは、入力された画像の文字情報のみをAIを用いて抽出し、AIの教示する四角形のデータに当てはまるように、フォントを引き伸ばして、最終的にはSVGデータとして表示するものです。
+
+　英文のデータを入力すれば、ほぼそのままスキャンしてくれますが、日本語のデータを入力すると、英文のデータとして無理矢理に認識されるので、なんとなくもとの文書に近いレイアウトを保持しているようでいて、それぞれの文字はまったく普通の文章としては読めないものになってしまいます。
+
+　その文字は踊っているようにも見えます。
+
+　かれらの囁きを聞いてみるのもいいかもしれません。
+  </pre>
+  <p><a href='index.html'>トップへ戻る</a></p>
+</body>
+</html>
