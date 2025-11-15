@@ -116,7 +116,7 @@ pushd tesseract-$TESSERACT_VERSION
   cp "${SCRIPT_DIR}/../external-apps/jpeg-wasm/lib/pkgconfig/libjpeg.pc" "${SCRIPT_DIR}/../external-apps/pc-wasm/JPEG.pc"
   cp "${SCRIPT_DIR}/../external-apps/leptonica-wasm/lib/pkgconfig/lept.pc" "${SCRIPT_DIR}/../external-apps/pc-wasm/lept.pc"
 
-  sed -i'.bak'-e s/libwebp// -e s/libwebpmux// "${SCRIPT_DIR}/../external-apps/pc-wasm/lept.pc"
+  sed -i'.bak' -e s/libwebp// -e s/libwebpmux// "${SCRIPT_DIR}/../external-apps/pc-wasm/lept.pc"
 
   PKG_CONFIG_PATH="${SCRIPT_DIR}/pc-wasm:${SCRIPT_DIR}/../external-apps/pc-wasm" emcmake cmake -B build -DCMAKE_INSTALL_PREFIX="${SCRIPT_DIR}/../external-apps/tesseract-wasm" -DBUILD_TRAINING_TOOLS=OFF -DCMAKE_CXX_FLAGS="-sUSE_ICU=1 -sALLOW_MEMORY_GROWTH=1 -I\"${SCRIPT_DIR}/../external-apps/leptonica-wasm/include/leptonica\" -Wl,\"-L${SCRIPT_DIR}/../external-apps/jpeg-wasm/lib/\",-ljpeg,\"-L${SCRIPT_DIR}/../external-apps/png-wasm/lib/\",-lpng,\"-L${SCRIPT_DIR}/../external-apps/zlibng-wasm/lib/\",-lz" -DGRAPHICS_DISABLED=ON
 
