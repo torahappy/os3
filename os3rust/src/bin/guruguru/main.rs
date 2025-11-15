@@ -1,11 +1,18 @@
 extern crate sdl2;
 
-use std::path::Path;
+use resvg::render;
+use resvg::tiny_skia;
+use resvg::tiny_skia::{IntSize, PixmapMut};
+use resvg::usvg::fontdb::Database;
+use resvg::usvg::{FontResolver, ImageHrefResolver, Options, Size, Transform, Tree};
 use sdl2::event::Event;
 use sdl2::keyboard::Keycode;
-use sdl2::pixels::Color;
+use sdl2::pixels::{Color, PixelFormat, PixelFormatEnum};
 use sdl2::rect::Rect;
 use sdl2::render::TextureQuery;
+use std::fs;
+use std::path::Path;
+use std::sync::Arc;
 
 static SCREEN_WIDTH: u32 = 800;
 static SCREEN_HEIGHT: u32 = 600;
@@ -43,17 +50,51 @@ fn get_centered_rect(rect_width: u32, rect_height: u32, cons_width: u32, cons_he
 
 #[cfg(all(target_arch = "wasm32", target_os = "emscripten"))]
 unsafe extern "C" {
-  unsafe fn emscripten_sleep(x: u32);
+    unsafe fn emscripten_sleep(x: u32);
 }
 
 #[cfg(all(target_arch = "wasm32", target_os = "emscripten"))]
-fn emscripten_sleep_zero () {
+fn emscripten_sleep_zero() {
     unsafe {
         emscripten_sleep(0);
     }
 }
 
 fn run(font_path: &Path) -> Result<(), String> {
+    let mut fdb = Database::new();
+    fdb.load_system_fonts();
+
+    let t = Tree::from_data(
+        fs::read("example.svg").unwrap().as_slice(),
+        &resvg::usvg::Options {
+            resources_dir: None,
+            dpi: 200.0,
+            font_family: "'Noto Serif JP', serif".to_string(),
+            font_size: 16.0,
+            languages: vec!["en".to_string()],
+            fontdb: Arc::new(fdb),
+            ..Default::default()
+        },
+    )
+    .unwrap();
+
+    let mut binding = vec![0; 1000 * 1000 * 4];
+        let mut p = PixmapMut::from_bytes(binding.as_mut_slice(), 1000, 1000).unwrap();
+
+        p.fill(tiny_skia::Color::from_rgba8(255, 255, 255, 255));
+        render(
+            &t,
+            Transform {
+                sx: 1.0,
+                kx: 0.0,
+                ky: 0.0,
+                sy: 1.0,
+                tx: 0.0,
+                ty: 0.0,
+            },
+            &mut p,
+        );
+
     let sdl_context = sdl2::init()?;
     let video_subsys = sdl_context.video()?;
     let ttf_context = sdl2::ttf::init().map_err(|e| e.to_string())?;
@@ -73,32 +114,38 @@ fn run(font_path: &Path) -> Result<(), String> {
     font.set_style(sdl2::ttf::FontStyle::NORMAL);
 
     // render a surface, and convert it to a texture bound to the canvas
-    let surface = font
-        .render("あいうえお")
-        .blended(Color::RGBA(255, 0, 0, 255))
-        .map_err(|e| e.to_string())?;
-    let texture = texture_creator
-        .create_texture_from_surface(&surface)
-        .map_err(|e| e.to_string())?;
+    //let surface = font
+    //    .render("あいうえお")
+    //    .blended(Color::RGBA(255, 0, 0, 255))
+    //    .map_err(|e| e.to_string())?;
+    //let texture = texture_creator
+    //    .create_texture_from_surface(&surface)
+    //    .map_err(|e| e.to_string())?;
+
+    let mut texture2 = texture_creator
+        .create_texture_streaming(PixelFormatEnum::ABGR8888, 1000, 1000)
+        .unwrap();
+    texture2.update(None, &binding.as_slice(), 1000*4).unwrap();
 
     canvas.set_draw_color(Color::RGBA(195, 217, 255, 255));
     canvas.clear();
 
-    let TextureQuery { width, height, .. } = texture.query();
-
-    // If the example text is too big for the screen, downscale it (and center irregardless)
-    let padding = 64;
-    let target = get_centered_rect(
-        width,
-        height,
-        SCREEN_WIDTH - padding,
-        SCREEN_HEIGHT - padding,
-    );
-
-    canvas.copy(&texture, None, Some(target))?;
-    canvas.present();
+    // let TextureQuery { width, height, .. } = texture.query();
 
     'mainloop: loop {
+    // If the example text is too big for the screen, downscale it (and center irregardless)
+    let padding = 64;
+    //let target = get_centered_rect(
+    //    width,
+    //    height,
+    //    SCREEN_WIDTH - padding,
+    //    SCREEN_HEIGHT - padding,
+    //);
+
+    //canvas.copy(&texture, None, Some(target))?;
+    //canvas.present();
+    canvas.copy(&texture2, None, None)?;
+    canvas.present();
         for event in sdl_context.event_pump()?.poll_iter() {
             match event {
                 Event::KeyDown {
