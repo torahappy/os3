@@ -41,6 +41,18 @@ fn get_centered_rect(rect_width: u32, rect_height: u32, cons_width: u32, cons_he
     rect!(cx, cy, w, h)
 }
 
+#[cfg(all(target_arch = "wasm32", target_os = "emscripten"))]
+unsafe extern "C" {
+  unsafe fn emscripten_sleep(x: u32);
+}
+
+#[cfg(all(target_arch = "wasm32", target_os = "emscripten"))]
+fn emscripten_sleep_zero () {
+    unsafe {
+        emscripten_sleep(0);
+    }
+}
+
 fn run(font_path: &Path) -> Result<(), String> {
     let sdl_context = sdl2::init()?;
     let video_subsys = sdl_context.video()?;
@@ -97,6 +109,8 @@ fn run(font_path: &Path) -> Result<(), String> {
                 _ => {}
             }
         }
+        #[cfg(all(target_arch = "wasm32", target_os = "emscripten"))]
+        emscripten_sleep_zero();
     }
 
     Ok(())
