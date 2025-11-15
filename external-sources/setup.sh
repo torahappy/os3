@@ -111,10 +111,11 @@ pushd tesseract-$TESSERACT_VERSION
 
   mkdir "${SCRIPT_DIR}/../external-apps/pc-wasm" || true
   
-  cp "${SCRIPT_DIR}/../external-apps/zlibng-wasm/lib/pkgconfig/zlib.pc" "${SCRIPT_DIR}/../external-apps/pc-wasm/ZLIB.pc"
-  cp "${SCRIPT_DIR}/../external-apps/png-wasm/lib/pkgconfig/libpng.pc" "${SCRIPT_DIR}/../external-apps/pc-wasm/PNG.pc"
-  cp "${SCRIPT_DIR}/../external-apps/jpeg-wasm/lib/pkgconfig/libjpeg.pc" "${SCRIPT_DIR}/../external-apps/pc-wasm/JPEG.pc"
-  cp "${SCRIPT_DIR}/../external-apps/leptonica-wasm/lib/pkgconfig/lept.pc" "${SCRIPT_DIR}/../external-apps/pc-wasm/lept.pc"
+  cp "${SCRIPT_DIR}/../external-apps/zlibng-wasm/lib/pkgconfig/zlib.pc" "${SCRIPT_DIR}/../external-apps/pc-wasm/ZLIB.pc" || true
+  cp "${SCRIPT_DIR}/../external-apps/zlibng-wasm/lib/pkgconfig/zlib.pc" "${SCRIPT_DIR}/../external-apps/pc-wasm/zlib.pc" || true
+  cp "${SCRIPT_DIR}/../external-apps/png-wasm/lib/pkgconfig/libpng.pc" "${SCRIPT_DIR}/../external-apps/pc-wasm/PNG.pc" || true
+  cp "${SCRIPT_DIR}/../external-apps/jpeg-wasm/lib/pkgconfig/libjpeg.pc" "${SCRIPT_DIR}/../external-apps/pc-wasm/JPEG.pc" || true
+  cp "${SCRIPT_DIR}/../external-apps/leptonica-wasm/lib/pkgconfig/lept.pc" "${SCRIPT_DIR}/../external-apps/pc-wasm/lept.pc" || true
 
   sed -i'.bak' -e s/libwebp// -e s/libwebpmux// "${SCRIPT_DIR}/../external-apps/pc-wasm/lept.pc"
 
