@@ -58,7 +58,7 @@ fn run(font_path: &Path) -> Result<(), String> {
 
     // Load a font
     let mut font = ttf_context.load_font(font_path, 60)?;
-    font.set_style(sdl2::ttf::FontStyle::BOLD);
+    font.set_style(sdl2::ttf::FontStyle::NORMAL);
 
     // render a surface, and convert it to a texture bound to the canvas
     let surface = font
@@ -103,7 +103,7 @@ fn run(font_path: &Path) -> Result<(), String> {
 }
 
 fn main() -> Result<(), String> {
-    let path: &Path = Path::new("example.ttf");
+    let path: &Path = Path::new("./ZenKakuGothicAntique-Regular.ttf");
     run(path)?;
     Ok(())
 }
