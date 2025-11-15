@@ -85,15 +85,20 @@
 </head>
 <body>
   <canvas id="canvas" oncontextmenu="event.preventDefault()"></canvas>
-      <script>
+  <script>
     var Module = {
-        canvas: document.getElementById('canvas'),
+      canvas: document.getElementById("canvas"),
       preRun: function () {
-	console.log('booting..')
-	FS.createPreloadedFile('/', 'ZenKakuGothicAntique-Regular.ttf', 'ZenKakuGothicAntique-Regular.ttf', true, false)
-      }
+        console.log("booting..");
+        FS.createPreloadedFile(
+          "/",
+          "ZenKakuGothicAntique-Regular.ttf",
+          "ZenKakuGothicAntique-Regular.ttf",
+          true,
+          false,
+        );
+      },
     };
-    </script>
-  <script src='./guruguru.js'>
   </script>
+  <script src="./guruguru.js"></script>
 </body>
