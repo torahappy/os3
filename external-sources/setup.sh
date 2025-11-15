@@ -1,6 +1,9 @@
 set -euo pipefail
 
-NPR=$(dc -e "$(nproc) 2 / p")
+case "$OSTYPE" in
+  darwin*)   NPR=$(dc -e "$(sysctl -n hw.physicalcpu) 2 / p"); ADDITIONAL_PKGCONFIG_PATH=(/opt/homebrew/Cellar/icu4c@78/*/lib/pkgconfig);;
+  linux*)    NPR=$(dc -e "$(nproc) 2 / p") ADDITIONAL_PKGCONFIG_PATH="";;
+esac
 
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
@@ -17,7 +20,8 @@ pushd ./tesseract-$TESSERACT_VERSION
 
   git clean -dfx
 
-  cmake -B build -DCMAKE_INSTALL_PREFIX="${SCRIPT_DIR}/../external-apps/tesseract"
+
+  PKG_CONFIG_PATH="$ADDITIONAL_PKGCONFIG_PATH" cmake -B build -DCMAKE_INSTALL_PREFIX="${SCRIPT_DIR}/../external-apps/tesseract"
   cmake --build build --config Release -j$NPR
 
   pushd build
@@ -104,12 +108,17 @@ if [ ! -d ../external-apps/tesseract-wasm ]; then
 pushd tesseract-$TESSERACT_VERSION
 
   git clean -dfx
-  
-  cp "${SCRIPT_DIR}/../external-apps/zlibng-wasm/lib/pkgconfig/zlib.pc" "${SCRIPT_DIR}/../external-apps/zlibng-wasm/lib/pkgconfig/ZLIB.pc"
-  cp "${SCRIPT_DIR}/../external-apps/png-wasm/lib/pkgconfig/libpng.pc" "${SCRIPT_DIR}/../external-apps/zlibng-wasm/lib/pkgconfig/PNG.pc"
-  cp "${SCRIPT_DIR}/../external-apps/jpeg-wasm/lib/pkgconfig/libjpeg.pc" "${SCRIPT_DIR}/../external-apps/zlibng-wasm/lib/pkgconfig/JPEG.pc"
 
-  PKG_CONFIG_PATH="${SCRIPT_DIR}/pkgconfig:${SCRIPT_DIR}/../external-apps/leptonica-wasm/lib/pkgconfig:${SCRIPT_DIR}/../external-apps/zlibng-wasm/lib/pkgconfig:${SCRIPT_DIR}/../external-apps/png-wasm/lib/pkgconfig:${SCRIPT_DIR}/../external-apps/jpeg-wasm/lib/pkgconfig" emcmake cmake -B build -DCMAKE_INSTALL_PREFIX="${SCRIPT_DIR}/../external-apps/tesseract-wasm" -DBUILD_TRAINING_TOOLS=OFF -DCMAKE_CXX_FLAGS="-sUSE_ICU=1 -sALLOW_MEMORY_GROWTH=1 -I\"${SCRIPT_DIR}/../external-apps/leptonica-wasm/include/leptonica\" -Wl,\"-L${SCRIPT_DIR}/../external-apps/jpeg-wasm/lib/\",-ljpeg,\"-L${SCRIPT_DIR}/../external-apps/png-wasm/lib/\",-lpng,\"-L${SCRIPT_DIR}/../external-apps/zlibng-wasm/lib/\",-lz" -DGRAPHICS_DISABLED=ON
+  mkdir "${SCRIPT_DIR}/../external-apps/pc-wasm" || true
+  
+  cp "${SCRIPT_DIR}/../external-apps/zlibng-wasm/lib/pkgconfig/zlib.pc" "${SCRIPT_DIR}/../external-apps/pc-wasm/ZLIB.pc"
+  cp "${SCRIPT_DIR}/../external-apps/png-wasm/lib/pkgconfig/libpng.pc" "${SCRIPT_DIR}/../external-apps/pc-wasm/PNG.pc"
+  cp "${SCRIPT_DIR}/../external-apps/jpeg-wasm/lib/pkgconfig/libjpeg.pc" "${SCRIPT_DIR}/../external-apps/pc-wasm/JPEG.pc"
+  cp "${SCRIPT_DIR}/../external-apps/leptonica-wasm/lib/pkgconfig/lept.pc" "${SCRIPT_DIR}/../external-apps/pc-wasm/lept.pc"
+
+  sed -i .bak -e s/libwebp// -e s/libwebpmux// "${SCRIPT_DIR}/../external-apps/pc-wasm/lept.pc"
+
+  PKG_CONFIG_PATH="${SCRIPT_DIR}/pc-wasm:${SCRIPT_DIR}/../external-apps/pc-wasm" emcmake cmake -B build -DCMAKE_INSTALL_PREFIX="${SCRIPT_DIR}/../external-apps/tesseract-wasm" -DBUILD_TRAINING_TOOLS=OFF -DCMAKE_CXX_FLAGS="-sUSE_ICU=1 -sALLOW_MEMORY_GROWTH=1 -I\"${SCRIPT_DIR}/../external-apps/leptonica-wasm/include/leptonica\" -Wl,\"-L${SCRIPT_DIR}/../external-apps/jpeg-wasm/lib/\",-ljpeg,\"-L${SCRIPT_DIR}/../external-apps/png-wasm/lib/\",-lpng,\"-L${SCRIPT_DIR}/../external-apps/zlibng-wasm/lib/\",-lz" -DGRAPHICS_DISABLED=ON
 
   cmake --build build --config Release -j$NPR
 
@@ -127,7 +136,8 @@ fi
 if [ ! -d ../external-apps/harfbuzz-wasm ]; then
 
 pushd harfbuzz-$HARFBUZZ_VERSION
-  # git clean -dfx
+  git clean -dfx
+
   EXFUNCS='["_hb_blob_create_from_file", "_hb_face_create", "_hb_font_create", "_hb_font_get_glyph", "_hb_font_get_glyph_extents", "_hb_font_get_glyph_advance_for_direction", "_hb_buffer_create", "_hb_buffer_set_content_type", "_hb_buffer_destroy", "_hb_buffer_set_direction", "_hb_buffer_add_codepoints", "_hb_shape", "_hb_buffer_get_glyph_positions", "_malloc", "_free"]'
 
   emcmake cmake -B build -DBUILD_SHARED_LIBS=OFF -DCMAKE_INSTALL_PREFIX="${SCRIPT_DIR}/../external-apps/harfbuzz-wasm"
