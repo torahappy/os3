@@ -16,7 +16,3 @@ features = ["ttf","image","gfx","mixer"]
 name = "guruguru"
 path = "src/bin/guruguru/main.rs"
 
-[[bin]]
-name = "documents"
-path = "src/bin/guruguru/main.rs"
-
