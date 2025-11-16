@@ -65,10 +65,15 @@ function genSVG(page, fontData) {
   `;
     })
     .join("\n");
-
-  const svgString = `
-<svg width="${page.width}" height="${page.height}" viewBox="${page.viewbox.join(" ")}" xmlns="http://www.w3.org/2000/svg">
-  <style>
+  let fontCss;
+  if (fontData === undefined || fontData === null) {
+    fontCss = `
+    text {
+      font-family: "Noto Serif JP", serif;
+    }
+`;
+  } else {
+    fontCss = `
     @font-face {
       font-family: "hogehoge";
       src:
@@ -77,8 +82,15 @@ function genSVG(page, fontData) {
     text {
       font-family: "hogehoge", "Noto Serif JP", serif;
     }
+`;
+  }
+
+  const svgString = `
+<svg width="${page.width}" height="${page.height}" viewBox="${page.viewbox.join(" ")}" xmlns="http://www.w3.org/2000/svg">
+  <style>
+    ${fontCss}
     rect {
-      stroke: none;
+      stroke: red;
       stroke-width: 1;
       fill: none;
     }
@@ -163,8 +175,12 @@ function getImageMetrics(buf) {
 }
 
 document.getElementById("ocr_input").onchange = async (e) => {
-  Array.from(document.getElementsByClassName("to_hide_after_1")).map(x=>x.style.display = "none");
-  Array.from(document.getElementsByClassName("to_show_after_1")).map(x=>x.style.display = "block");
+  Array.from(document.getElementsByClassName("to_hide_after_1")).map(
+    (x) => (x.style.display = "none"),
+  );
+  Array.from(document.getElementsByClassName("to_show_after_1")).map(
+    (x) => (x.style.display = "block"),
+  );
   const fileInput = document.getElementById("ocr_input");
   const file = fileInput.files[0];
   if (!file) {
@@ -207,11 +223,23 @@ async function LayoutStage(ocr_result) {
     myWorkerHarfbuzz.addEventListener("message", (e) => {
       if (e.data.message === "done") {
         const elem = document.createElement("img");
-        elem.src = "data:image/svg+xml;base64," + genSVG(e.data.data, fontData);
+	const data = genSVG(e.data.data, fontData);
+	// TODO: render with resvg?
+        elem.src = "data:image/svg+xml;base64," + data;
         document.body.appendChild(elem);
+	const a = document.createElement('a')
+	a.href = 'data:image/svg+xml;base64,' + data;
+	a.innerHTML = 'SVGデータダウンロード'
+	a.className = 'download'
+	a.download = (new Date()).toISOString().replace(/[:TZ\.]/g, '-') + 'download.svg'
+	document.body.appendChild(a);
         myWorkerHarfbuzz.terminate();
-        Array.from(document.getElementsByClassName("to_hide_after_2")).map(x=>x.style.display = "none");
-        Array.from(document.getElementsByClassName("to_show_after_2")).map(x=>x.style.display = "block");
+        Array.from(document.getElementsByClassName("to_hide_after_2")).map(
+          (x) => (x.style.display = "none"),
+        );
+        Array.from(document.getElementsByClassName("to_show_after_2")).map(
+          (x) => (x.style.display = "block"),
+        );
       } else {
         debugLog(JSON.stringify(e.data) + "\n");
       }
