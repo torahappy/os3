@@ -25,15 +25,14 @@ macro_rules! rect(
     )
 );
 
-
-fn get_window_size_in_pixels (win: &Window) -> (i32, i32) {
+fn get_window_size_in_pixels(win: &Window) -> (i32, i32) {
     let mut width: i32 = 0;
     let mut height: i32 = 0;
 
     unsafe {
         SDL_GetWindowSizeInPixels(win.raw(), &mut width, &mut height);
     }
-    return (width, height)
+    return (width, height);
 }
 
 // Scale fonts to a reasonable size when they're too big (though they might look less smooth)
@@ -104,10 +103,8 @@ fn run() -> Result<(), String> {
     println!("load svg");
     let svg_data = Asset::get("example.svg").unwrap().data;
 
-
     let sdl_context = sdl2::init()?;
     let video_subsys = sdl_context.video()?;
-    // let ttf_context = sdl2::ttf::init().map_err(|e| e.to_string())?;
 
     let window = video_subsys
         .window("ぐるぐるテスト", SCREEN_WIDTH, SCREEN_HEIGHT)
@@ -126,71 +123,59 @@ fn run() -> Result<(), String> {
 
     println!("Density: {}", density);
 
-    println!("make tree");
-    let t = Tree::from_data(
-        &svg_data,
-        &resvg::usvg::Options {
-            resources_dir: None,
-            dpi: 72.0 * density,
-            font_family: "Noto Serif JP".to_string(),
-            font_size: 16.0,
-            languages: vec!["en".to_string()],
-            fontdb: Arc::new(fdb),
-            text_rendering: resvg::usvg::TextRendering::GeometricPrecision,
-            shape_rendering: resvg::usvg::ShapeRendering::GeometricPrecision,
-            image_rendering: resvg::usvg::ImageRendering::OptimizeQuality,
-            ..Default::default()
-        },
-    )
-    .unwrap();
-
-    println!("draw tree");
-    let mut binding = vec![0; (raw_w as usize) * (raw_h as usize) * 4];
-    let mut p = PixmapMut::from_bytes(binding.as_mut_slice(), raw_w as u32, raw_h as u32).unwrap();
-
-    p.fill(tiny_skia::Color::from_rgba8(255, 255, 255, 255));
-    render(
-        &t,
-        Transform {
-            sx: 1.0,
-            kx: 0.0,
-            ky: 0.0,
-            sy: 1.0,
-            tx: 0.0,
-            ty: 0.0,
-        },
-        &mut p,
-    );
-
     let mut canvas = window.into_canvas().build().map_err(|e| e.to_string())?;
     let texture_creator = canvas.texture_creator();
-
-    let mut texture2 = texture_creator
-        .create_texture_streaming(PixelFormatEnum::ABGR8888, SCREEN_WIDTH, SCREEN_HEIGHT)
-        .unwrap();
-    texture2
-        .update(None, &binding.as_slice(), (raw_w as usize) * 4)
-        .unwrap();
 
     canvas.set_draw_color(Color::RGBA(255, 255, 255, 255));
     canvas.clear();
 
-    // let TextureQuery { width, height, .. } = texture.query();
-
     'mainloop: loop {
-        // If the example text is too big for the screen, downscale it (and center irregardless)
-        let padding = 64;
-        //let target = get_centered_rect(
-        //    width,
-        //    height,
-        //    SCREEN_WIDTH - padding,
-        //    SCREEN_HEIGHT - padding,
-        //);
+        println!("make tree");
+        let t = Tree::from_data(
+            &svg_data,
+            &resvg::usvg::Options {
+                resources_dir: None,
+                dpi: 72.0 * density,
+                font_family: "Noto Serif JP".to_string(),
+                font_size: 16.0,
+                languages: vec!["en".to_string()],
+                fontdb: Arc::new(fdb.clone()),
+                text_rendering: resvg::usvg::TextRendering::GeometricPrecision,
+                shape_rendering: resvg::usvg::ShapeRendering::GeometricPrecision,
+                image_rendering: resvg::usvg::ImageRendering::OptimizeQuality,
+                ..Default::default()
+            },
+        )
+        .unwrap();
 
-        //canvas.copy(&texture, None, Some(target))?;
-        //canvas.present();
+        println!("draw tree");
+        let mut binding = vec![0; (raw_w as usize) * (raw_h as usize) * 4];
+        let mut p =
+            PixmapMut::from_bytes(binding.as_mut_slice(), raw_w as u32, raw_h as u32).unwrap();
+
+        p.fill(tiny_skia::Color::from_rgba8(255, 255, 255, 255));
+        render(
+            &t,
+            Transform {
+                sx: 1.0,
+                kx: 0.0,
+                ky: 0.0,
+                sy: 1.0,
+                tx: 0.0,
+                ty: 0.0,
+            },
+            &mut p,
+        );
+        println!("make texture");
+        let mut texture2 = texture_creator
+            .create_texture_streaming(PixelFormatEnum::ABGR8888, SCREEN_WIDTH, SCREEN_HEIGHT)
+            .unwrap();
+        texture2
+            .update(None, &binding.as_slice(), (raw_w as usize) * 4)
+            .unwrap();
         canvas.copy(&texture2, None, None)?;
         canvas.present();
+
         for event in sdl_context.event_pump()?.poll_iter() {
             match event {
                 Event::KeyDown {
@@ -201,6 +186,7 @@ fn run() -> Result<(), String> {
                 _ => {}
             }
         }
+
         #[cfg(all(target_arch = "wasm32", target_os = "emscripten"))]
         emscripten_sleep_zero();
     }

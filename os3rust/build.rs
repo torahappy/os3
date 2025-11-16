@@ -13,7 +13,7 @@ fn main() {
         println!(r"cargo:rustc-link-arg=-sUSE_SDL_MIXER=2");
         println!(r"cargo:rustc-link-arg=-sALLOW_MEMORY_GROWTH=1");
         //println!(r"cargo:rustc-link-arg=-sINITIAL_MEMORY=104857600");
-        //println!(r"cargo:rustc-link-arg=-sASYNCIFY");
+        println!(r"cargo:rustc-link-arg=-sASYNCIFY");
     }
 
     return ();
