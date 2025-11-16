@@ -59,9 +59,9 @@ function genSVG(page, fontData) {
       const inter_x = -t.mult_x * t.x + t.x;
       const inter_y = t.target_height - t.y * t.mult_y + t.y;
 
+      // <rect x="${t.x}" y="${t.y}" width="${t.target_width}" height="${t.target_height}" ></rect>
       return `
     <text transform="matrix(${t.mult_x} 0 0 ${t.mult_y} ${inter_x} ${inter_y})" x="${t.x}" y="${t.y}" dominant-baseline="text-bottom" font-size="${t.font_size}" >${escapeXML(t.text)}</text>
-    <rect x="${t.x}" y="${t.y}" width="${t.target_width}" height="${t.target_height}" ></rect>
   `;
     })
     .join("\n");
