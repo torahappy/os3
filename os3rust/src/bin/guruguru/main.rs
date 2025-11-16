@@ -2,16 +2,13 @@ extern crate sdl2;
 
 use resvg::render;
 use resvg::tiny_skia;
-use resvg::tiny_skia::{IntSize, PixmapMut};
+use resvg::tiny_skia::{PixmapMut};
 use resvg::usvg::fontdb::Database;
-use resvg::usvg::{FontResolver, ImageHrefResolver, Options, Size, Transform, Tree};
+use resvg::usvg::{Transform, Tree};
 use sdl2::event::Event;
 use sdl2::keyboard::Keycode;
-use sdl2::pixels::{Color, PixelFormat, PixelFormatEnum};
+use sdl2::pixels::{Color, PixelFormatEnum};
 use sdl2::rect::Rect;
-use sdl2::render::TextureQuery;
-use std::fs;
-use std::path::Path;
 use rust_embed::Embed;
 use std::sync::Arc;
 
@@ -66,15 +63,20 @@ fn emscripten_sleep_zero() {
 }
 
 fn run() -> Result<(), String> {
-    // fdb.load_font_data(fs::read("ZenKakuGothicAntique-Regular.ttf").unwrap());
     println!("load font");
-    let mut fdb = Database::new();
-    fdb.load_font_data(fs::read("NotoSerifJP-VariableFont_wght.ttf").unwrap());
+    let fdb = {
+        let mut f = Database::new();
+        f.load_font_data(Asset::get("NotoSerifJP-VariableFont_wght.ttf").unwrap().data.to_vec());
+        f.load_font_data(Asset::get("ZenKakuGothicAntique-Regular.ttf").unwrap().data.to_vec());
+        f
+    };
+
     println!("load svg");
-    let svg_data = fs::read("example.svg").unwrap();
+    let svg_data = Asset::get("example.svg").unwrap().data;
+
     println!("make tree");
     let t = Tree::from_data(
-        &svg_data.as_slice(),
+        &svg_data,
         &resvg::usvg::Options {
             resources_dir: None,
             dpi: 300.0,
@@ -112,6 +114,7 @@ fn run() -> Result<(), String> {
     let window = video_subsys
         .window("SDL2_TTF Example", SCREEN_WIDTH, SCREEN_HEIGHT)
         .position_centered()
+        .resizable()
         .opengl()
         .build()
         .map_err(|e| e.to_string())?;
@@ -137,7 +140,7 @@ fn run() -> Result<(), String> {
         .unwrap();
     texture2.update(None, &binding.as_slice(), 1000*4).unwrap();
 
-    canvas.set_draw_color(Color::RGBA(195, 217, 255, 255));
+    canvas.set_draw_color(Color::RGBA(255, 255, 255, 255));
     canvas.clear();
 
     // let TextureQuery { width, height, .. } = texture.query();
