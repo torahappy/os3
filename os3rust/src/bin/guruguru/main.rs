@@ -12,7 +12,12 @@ use sdl2::rect::Rect;
 use sdl2::render::TextureQuery;
 use std::fs;
 use std::path::Path;
+use rust_embed::Embed;
 use std::sync::Arc;
+
+#[derive(Embed)]
+#[folder = "data/"]
+struct Asset;
 
 static SCREEN_WIDTH: u32 = 800;
 static SCREEN_HEIGHT: u32 = 600;
@@ -60,16 +65,20 @@ fn emscripten_sleep_zero() {
     }
 }
 
-fn run(font_path: &Path) -> Result<(), String> {
+fn run() -> Result<(), String> {
+    // fdb.load_font_data(fs::read("ZenKakuGothicAntique-Regular.ttf").unwrap());
+    println!("load font");
     let mut fdb = Database::new();
-    fdb.load_system_fonts();
-
+    fdb.load_font_data(fs::read("NotoSerifJP-VariableFont_wght.ttf").unwrap());
+    println!("load svg");
+    let svg_data = fs::read("example.svg").unwrap();
+    println!("make tree");
     let t = Tree::from_data(
-        fs::read("example.svg").unwrap().as_slice(),
+        &svg_data.as_slice(),
         &resvg::usvg::Options {
             resources_dir: None,
-            dpi: 200.0,
-            font_family: "'Noto Serif JP', serif".to_string(),
+            dpi: 300.0,
+            font_family: "Noto Serif JP".to_string(),
             font_size: 16.0,
             languages: vec!["en".to_string()],
             fontdb: Arc::new(fdb),
@@ -78,6 +87,7 @@ fn run(font_path: &Path) -> Result<(), String> {
     )
     .unwrap();
 
+    println!("draw tree");
     let mut binding = vec![0; 1000 * 1000 * 4];
         let mut p = PixmapMut::from_bytes(binding.as_mut_slice(), 1000, 1000).unwrap();
 
@@ -97,7 +107,7 @@ fn run(font_path: &Path) -> Result<(), String> {
 
     let sdl_context = sdl2::init()?;
     let video_subsys = sdl_context.video()?;
-    let ttf_context = sdl2::ttf::init().map_err(|e| e.to_string())?;
+    // let ttf_context = sdl2::ttf::init().map_err(|e| e.to_string())?;
 
     let window = video_subsys
         .window("SDL2_TTF Example", SCREEN_WIDTH, SCREEN_HEIGHT)
@@ -110,8 +120,8 @@ fn run(font_path: &Path) -> Result<(), String> {
     let texture_creator = canvas.texture_creator();
 
     // Load a font
-    let mut font = ttf_context.load_font(font_path, 60)?;
-    font.set_style(sdl2::ttf::FontStyle::NORMAL);
+    // let mut font = ttf_context.load_font(font_path, 60)?;
+    // font.set_style(sdl2::ttf::FontStyle::NORMAL);
 
     // render a surface, and convert it to a texture bound to the canvas
     //let surface = font
@@ -164,7 +174,6 @@ fn run(font_path: &Path) -> Result<(), String> {
 }
 
 fn main() -> Result<(), String> {
-    let path: &Path = Path::new("./ZenKakuGothicAntique-Regular.ttf");
-    run(path)?;
+    run()?;
     Ok(())
 }

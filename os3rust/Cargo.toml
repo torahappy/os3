@@ -5,12 +5,13 @@ edition = "2024"
 
 [dependencies]
 resvg = "0.45.1"
+rust-embed = "8.9.0"
 rustybuzz = "0.20.1"
 
 [dependencies.sdl2]
 version = "0.38"
 default-features = false
-features = ["ttf","image","gfx","mixer"]
+features = ["mixer"]
 
 [[bin]]
 name = "guruguru"
