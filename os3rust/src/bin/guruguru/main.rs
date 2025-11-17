@@ -115,13 +115,17 @@ fn run() -> Result<(), String> {
         .build()
         .map_err(|e| e.to_string())?;
 
-    let (raw_w, raw_h) = get_window_size_in_pixels(&window);
+    let density = {
+        let (raw_w, raw_h) = get_window_size_in_pixels(&window);
 
-    println!("Raw Window Size: {} {}", raw_w, raw_h);
+        println!("Raw Window Size: {} {}", raw_w, raw_h);
 
-    let density: f32 = (raw_w as f32) / (SCREEN_WIDTH as f32);
+        let density: f32 = (raw_w as f32) / (SCREEN_WIDTH as f32);
 
-    println!("Density: {}", density);
+        println!("Density: {}", density);
+
+        density
+    };
 
     let mut canvas = window.into_canvas().build().map_err(|e| e.to_string())?;
     let texture_creator = canvas.texture_creator();
@@ -129,31 +133,43 @@ fn run() -> Result<(), String> {
     canvas.set_draw_color(Color::RGBA(255, 255, 255, 255));
     canvas.clear();
 
-    'mainloop: loop {
-        println!("make tree");
-        let t = Tree::from_data(
-            &svg_data,
-            &resvg::usvg::Options {
-                resources_dir: None,
-                dpi: 72.0 * density,
-                font_family: "Noto Serif JP".to_string(),
-                font_size: 16.0,
-                languages: vec!["en".to_string()],
-                fontdb: Arc::new(fdb.clone()),
-                text_rendering: resvg::usvg::TextRendering::GeometricPrecision,
-                shape_rendering: resvg::usvg::ShapeRendering::GeometricPrecision,
-                image_rendering: resvg::usvg::ImageRendering::OptimizeQuality,
-                ..Default::default()
-            },
-        )
+    println!("make tree");
+
+    let mut t = Tree::from_data(
+        &svg_data,
+        &resvg::usvg::Options {
+            resources_dir: None,
+            dpi: 72.0 * density,
+            font_family: "Noto Serif JP".to_string(),
+            font_size: 16.0,
+            languages: vec!["en".to_string()],
+            fontdb: Arc::new(fdb.clone()),
+            text_rendering: resvg::usvg::TextRendering::GeometricPrecision,
+            shape_rendering: resvg::usvg::ShapeRendering::GeometricPrecision,
+            image_rendering: resvg::usvg::ImageRendering::OptimizeQuality,
+            ..Default::default()
+        },
+    )
+    .unwrap();
+
+    println!("make texture");
+    let mut texture2 = texture_creator
+        .create_texture_streaming(PixelFormatEnum::ABGR8888, SCREEN_WIDTH, SCREEN_HEIGHT)
         .unwrap();
 
+    let mut frame: u64 = 0;
+
+    'mainloop: loop {
+        frame += 1;
+        println!("{}", frame);
         println!("draw tree");
+        let raw_w = (density * (SCREEN_WIDTH as f32)) as u32;
+        let raw_h = (density * (SCREEN_HEIGHT as f32)) as u32;
         let mut binding = vec![0; (raw_w as usize) * (raw_h as usize) * 4];
-        let mut p =
-            PixmapMut::from_bytes(binding.as_mut_slice(), raw_w as u32, raw_h as u32).unwrap();
+        let mut p = PixmapMut::from_bytes(binding.as_mut_slice(), raw_w, raw_h).unwrap();
 
         p.fill(tiny_skia::Color::from_rgba8(255, 255, 255, 255));
+
         render(
             &t,
             Transform {
@@ -166,10 +182,8 @@ fn run() -> Result<(), String> {
             },
             &mut p,
         );
-        println!("make texture");
-        let mut texture2 = texture_creator
-            .create_texture_streaming(PixelFormatEnum::ABGR8888, SCREEN_WIDTH, SCREEN_HEIGHT)
-            .unwrap();
+
+        println!("update texture");
         texture2
             .update(None, &binding.as_slice(), (raw_w as usize) * 4)
             .unwrap();
