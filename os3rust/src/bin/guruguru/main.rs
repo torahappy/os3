@@ -1,30 +1,33 @@
 extern crate sdl2;
 
-use crate::frp;
+use os3rust::*;
+use quanta::Clock;
 use resvg::render;
 use resvg::tiny_skia;
 use resvg::tiny_skia::PixmapMut;
 use resvg::usvg::fontdb::Database;
+use askama::Template;
 use resvg::usvg::{Transform, Tree};
 use rust_embed::Embed;
 use sdl2::event::Event;
 use sdl2::keyboard::Keycode;
-use sdl2::pixels::{Color, PixelFormatEnum};
-use sdl2::rect::Rect;
+use sdl2::pixels::Color;
+use sdl2::pixels::PixelFormatEnum;
 use sdl2::sys::SDL_GetWindowSizeInPixels;
 use sdl2::video::Window;
 use std::sync::Arc;
 
+#[derive(Template)] // this will generate the code...
+#[template(path = "example.svg")] // using the template in this path, relative
+                                 // to the `templates` dir in the crate root
+struct HelloTemplate<'a> { // the name of the struct can be anything
+    my_x: &'a f32, // the field name should match the variable name
+                   // in your template
+}
+
 #[derive(Embed)]
 #[folder = "data/"]
 struct Asset;
-
-// handle the annoying Rect i32
-macro_rules! rect(
-    ($x:expr, $y:expr, $w:expr, $h:expr) => (
-        Rect::new($x as i32, $y as i32, $w as u32, $h as u32)
-    )
-);
 
 fn get_window_size_in_pixels(win: &Window) -> (i32, i32) {
     let mut width: i32 = 0;
@@ -34,37 +37,6 @@ fn get_window_size_in_pixels(win: &Window) -> (i32, i32) {
         SDL_GetWindowSizeInPixels(win.raw(), &mut width, &mut height);
     }
     return (width, height);
-}
-
-// Scale fonts to a reasonable size when they're too big (though they might look less smooth)
-fn get_centered_rect(
-    SCREEN_WIDTH: u32,
-    SCREEN_HEIGHT: u32,
-    rect_width: u32,
-    rect_height: u32,
-    cons_width: u32,
-    cons_height: u32,
-) -> Rect {
-    let wr = rect_width as f32 / cons_width as f32;
-    let hr = rect_height as f32 / cons_height as f32;
-
-    let (w, h) = if wr > 1f32 || hr > 1f32 {
-        if wr > hr {
-            println!("Scaling down! The text will look worse!");
-            let h = (rect_height as f32 / wr) as i32;
-            (cons_width as i32, h)
-        } else {
-            println!("Scaling down! The text will look worse!");
-            let w = (rect_width as f32 / hr) as i32;
-            (w, cons_height as i32)
-        }
-    } else {
-        (rect_width as i32, rect_height as i32)
-    };
-
-    let cx = (SCREEN_WIDTH as i32 - w) / 2;
-    let cy = (SCREEN_HEIGHT as i32 - h) / 2;
-    rect!(cx, cy, w, h)
 }
 
 #[cfg(all(target_arch = "wasm32", target_os = "emscripten"))]
@@ -101,9 +73,6 @@ fn run() -> Result<(), String> {
         f
     };
 
-    println!("load svg");
-    let svg_data = Asset::get("example.svg").unwrap().data;
-
     let sdl_context = sdl2::init()?;
     let video_subsys = sdl_context.video()?;
 
@@ -134,36 +103,38 @@ fn run() -> Result<(), String> {
     canvas.set_draw_color(Color::RGBA(255, 255, 255, 255));
     canvas.clear();
 
-    println!("make tree");
-
-    let mut t = Tree::from_data(
-        &svg_data,
-        &resvg::usvg::Options {
-            resources_dir: None,
-            dpi: 72.0 * density,
-            font_family: "Noto Serif JP".to_string(),
-            font_size: 16.0,
-            languages: vec!["en".to_string()],
-            fontdb: Arc::new(fdb.clone()),
-            text_rendering: resvg::usvg::TextRendering::GeometricPrecision,
-            shape_rendering: resvg::usvg::ShapeRendering::GeometricPrecision,
-            image_rendering: resvg::usvg::ImageRendering::OptimizeQuality,
-            ..Default::default()
-        },
-    )
-    .unwrap();
-
-    println!("make texture");
     let mut texture2 = texture_creator
         .create_texture_streaming(PixelFormatEnum::ABGR8888, SCREEN_WIDTH, SCREEN_HEIGHT)
         .unwrap();
 
     let mut frame: u64 = 0;
+    let mut elapsed: f64 = 0.0;
+    let timer = Clock::new();
+    let mut time_a = timer.now();
+    let mut time_b;
+
+    let opt = resvg::usvg::Options {
+        resources_dir: None,
+        dpi: 72.0 * density,
+        font_family: "Noto Serif JP".to_string(),
+        font_size: 16.0,
+        languages: vec!["en".to_string()],
+        fontdb: Arc::new(fdb.clone()),
+        text_rendering: resvg::usvg::TextRendering::OptimizeSpeed,
+        shape_rendering: resvg::usvg::ShapeRendering::OptimizeSpeed,
+        image_rendering: resvg::usvg::ImageRendering::OptimizeSpeed,
+        ..Default::default()
+    };
 
     'mainloop: loop {
+        time_b = timer.now();
+        let delta = time_b.duration_since(time_a).as_secs_f64();
+        time_a = timer.now();
+        let svg_data = (HelloTemplate { my_x: &((elapsed * 10.0) as f32) }).render().unwrap();
+        let t = Tree::from_str(&svg_data, &opt).unwrap();
+
         frame += 1;
-        println!("{}", frame);
-        println!("draw tree");
+        elapsed += delta;
         let raw_w = (density * (SCREEN_WIDTH as f32)) as u32;
         let raw_h = (density * (SCREEN_HEIGHT as f32)) as u32;
         let mut binding = vec![0; (raw_w as usize) * (raw_h as usize) * 4];
@@ -184,7 +155,6 @@ fn run() -> Result<(), String> {
             &mut p,
         );
 
-        println!("update texture");
         texture2
             .update(None, &binding.as_slice(), (raw_w as usize) * 4)
             .unwrap();

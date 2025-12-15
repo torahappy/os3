@@ -4,6 +4,8 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+askama = "0.14.0"
+quanta = "0.12.6"
 resvg = "0.45.1"
 rust-embed = "8.9.0"
 rustybuzz = "0.20.1"
