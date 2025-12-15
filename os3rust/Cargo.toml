@@ -16,11 +16,21 @@ default-features = false
 features = ["mixer"]
 
 [[bin]]
-name = "guruguru"
-path = "src/bin/guruguru/main.rs"
+name = "svgasobi"
+path = "src/bin/svgasobi/main.rs"
 
 [[bin]]
 name = "rireki"
 path = "src/bin/rireki/main.rs"
 
+[[bin]]
+name = "giji"
+path = "src/bin/guruguru/main.rs"
 
+[[bin]]
+name = "mojiate"
+path = "src/bin/guruguru/main.rs"
+
+[[bin]]
+name = "shimbun"
+path = "src/bin/guruguru/main.rs"
