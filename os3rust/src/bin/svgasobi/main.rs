@@ -1,3 +1,5 @@
+// svgで無双したいけどなあ...
+
 extern crate sdl2;
 
 use os3rust::*;
