@@ -1,5 +1,6 @@
 extern crate sdl2;
 
+use crate::frp;
 use resvg::render;
 use resvg::tiny_skia;
 use resvg::tiny_skia::PixmapMut;

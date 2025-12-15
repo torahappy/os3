@@ -17,3 +17,8 @@ features = ["mixer"]
 name = "guruguru"
 path = "src/bin/guruguru/main.rs"
 
+[[bin]]
+name = "rireki"
+path = "src/bin/rireki/main.rs"
+
+
