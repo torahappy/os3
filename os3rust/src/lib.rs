@@ -2,6 +2,7 @@
 /// SF takes some input, then combines them with its own inner variable and updates both the inner
 /// variable and the output. It also holds the initial inner variable and the initial output, to
 /// make itself well-defined.
+/// The lifetime `'a` specifies how long the rust functions in all the SFAtom live.
 #[derive(Clone)]
 pub struct SFAtom<'a, A: Clone> {
     /// (input, inner state) -> (output, next inner state)
@@ -12,6 +13,7 @@ pub struct SFAtom<'a, A: Clone> {
 
 /// A (supposedly) pure calculation function which aggregates multiple inputs to a single output.
 /// Essential for creating variables flow between SFAtom, SFComplex, and AggregateFunc;
+/// The lifetime `'a` specifies how long the rust functions in all the SFAtom live.
 #[derive(Clone)]
 pub struct AggregateFunc<'a, A: Clone> {
     pub the_func: &'a dyn Fn(Vec<&A>) -> A,
@@ -22,6 +24,7 @@ pub struct AggregateFunc<'a, A: Clone> {
 /// - Complex: Combines Atom, Complex and AggregateFunc into some kind of graph structure, which
 ///   dictates the calculation procedure.
 /// - Aggragate: A pure function to combine multiple data into one data.
+/// The lifetime `'a` specifies how long the rust functions in all the SFAtom live.
 #[derive(Clone)]
 pub enum SFComplete<'a, A: Clone> {
     Atom(&'a SFAtom<'a, A>),
@@ -31,6 +34,7 @@ pub enum SFComplete<'a, A: Clone> {
 
 /// When making SFComplex, there are 2 types of variables that can be fed into SFAtom, AggregateFunc or SFComplex; the
 /// outer input and the inner variables (= individual outputs). Obviously, there are only one input. Each inner variable is ony-by-one corresponding to the each SF or Aggragate Function within SFComplex.
+/// The lifetime `'a` specifies how long the rust functions in all the SFAtom live.
 #[derive(Clone)]
 pub enum VariableIndex {
     InnerVariableIndex(usize),
@@ -41,6 +45,7 @@ pub enum VariableIndex {
 /// `variables`; `input_configuration` configures which outputs should be fed into which SF or
 /// Aggragate Function. `output_index` configures which output is the final output that will be
 /// exposed to outer SF.
+/// The lifetime `'a` specifies how long the rust functions in all the SFAtom live.
 #[derive(Clone)]
 pub struct SFComplex<'a, A: Clone> {
     pub variables: Vec<SFComplete<'a, A>>,
@@ -50,6 +55,9 @@ pub struct SFComplex<'a, A: Clone> {
     pub output_index: usize,
 }
 
+/// The indices in `base_data` to store each inner state and (inertim or final) output.
+/// It is made of a tree structure, and each SFComplex will make another level of the tree.
+/// Otherwise, the tree will not be deepen anymore, and it just stores the output and the inner state.
 #[derive(Clone)]
 pub enum SFDataUnit {
     /// output, inner state
@@ -58,6 +66,8 @@ pub enum SFDataUnit {
     UnitData((usize, usize)),
 }
 
+/// Represents data indices of a SFComplex. The length of `variables` is the same as that of
+/// `variables` in SFComplex, and each element is corresponding one-by-one with the same index.
 #[derive(Clone)]
 pub struct RelationTable {
     pub variables: Vec<SFDataUnit>,
@@ -77,6 +87,7 @@ pub fn get_out_idx(x: &SFDataUnit) -> usize {
     }
 }
 
+/// A function to run SF in the "main loop"-like manner.
 pub fn run_sf<'a, A: Clone>(
     sf: &SFComplex<'a, A>,
     relation_table: &RelationTable,
