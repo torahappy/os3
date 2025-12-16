@@ -1,5 +1,5 @@
 /// The most primitive SF.
-/// SF takes some input, the combines them with its own inner variable and updates both the inner
+/// SF takes some input, then combines them with its own inner variable and updates both the inner
 /// variable and the output. It also holds the initial inner variable and the initial output, to
 /// make itself well-defined.
 #[derive(Clone)]
@@ -14,10 +14,14 @@ pub struct SFAtom<'a, A: Clone> {
 /// Essential for creating variables flow between SFAtom, SFComplex, and AggregateFunc;
 #[derive(Clone)]
 pub struct AggregateFunc<'a, A: Clone> {
-    pub the_func: &'a dyn Fn(&Vec<A>) -> A,
+    pub the_func: &'a dyn Fn(Vec<&A>) -> A,
 }
 
 /// The all types of SF and Aggragate Functions.
+/// - Atom: the minimal unit of SF. Can be created from a pointer to a rust function.
+/// - Complex: Combines Atom, Complex and AggregateFunc into some kind of graph structure, which
+///   dictates the calculation procedure.
+/// - Aggragate: A pure function to combine multiple data into one data.
 #[derive(Clone)]
 pub enum SFComplete<'a, A: Clone> {
     Atom(&'a SFAtom<'a, A>),
@@ -26,7 +30,7 @@ pub enum SFComplete<'a, A: Clone> {
 }
 
 /// When making SFComplex, there are 2 types of variables that can be fed into SFAtom, AggregateFunc or SFComplex; the
-/// outer input and the inner variables. Obviously, there are only one input. Each inner variable is ony-by-one corresponding to the each SF or Aggragate Function within SFComplex.
+/// outer input and the inner variables (= individual outputs). Obviously, there are only one input. Each inner variable is ony-by-one corresponding to the each SF or Aggragate Function within SFComplex.
 #[derive(Clone)]
 pub enum VariableIndex {
     InnerVariableIndex(usize),
@@ -85,7 +89,7 @@ pub fn run_sf<'a, A: Clone>(
             match relation_table.variables.get(*current_input_target).unwrap() {
                 SFDataUnit::ComplexData((output_, inner_state)) => {
                     match sf.variables.get(*current_input_target).unwrap() {
-                        SFComplete::Atom(sfatom) => panic!("something wrong"),
+                        SFComplete::Atom(_) => panic!("something wrong"),
                         SFComplete::Complex(sfcomplex) => {
                             let input_idx = current_inputs.get(0).unwrap();
                             match input_idx {
@@ -95,7 +99,7 @@ pub fn run_sf<'a, A: Clone>(
                                     let output_idx = get_out_idx(contents);
                                     let input_ = base_data.get(output_idx).unwrap().clone();
                                     let r =
-                                        run_sf(&sfcomplex, inner_state, input_.clone(), base_data);
+                                        run_sf(&sfcomplex, inner_state, input_, base_data);
                                     let output_mut = base_data.get_mut(*output_).unwrap();
                                     *output_mut = r;
                                 }
@@ -108,13 +112,11 @@ pub fn run_sf<'a, A: Clone>(
                                 }
                             }
                         }
-                        SFComplete::Aggragate(aggregate_func) => panic!("something wrong"),
+                        SFComplete::Aggragate(_) => panic!("something wrong"),
                     }
-                    //sf.variables.get(complex_idx)
-                    //let output_mut = base_data.get_mut(*output_).unwrap();
                 }
                 SFDataUnit::UnitData((output_, inner_state)) => {
-                    let inner_non_mut = base_data.get(*inner_state).unwrap().clone();
+                    let inner_non_mut = base_data.get(*inner_state).unwrap();
                     match sf.variables.get(*current_input_target).unwrap() {
                         SFComplete::Atom(sfatom) => {
                             let input_idx = current_inputs.get(0).unwrap();
@@ -123,8 +125,8 @@ pub fn run_sf<'a, A: Clone>(
                                     let contents =
                                         relation_table.variables.get(*other_var).unwrap();
                                     let output_idx = get_out_idx(contents);
-                                    let input_ = base_data.get(output_idx).unwrap().clone();
-                                    let result = (sfatom.the_func)(&input_, &inner_non_mut).clone();
+                                    let input_ = base_data.get(output_idx).unwrap();
+                                    let result = (sfatom.the_func)(input_, &inner_non_mut);
                                     match result {
                                         Some((output, next_inner)) => {
                                             let output_mut = base_data.get_mut(*output_).unwrap();
@@ -152,21 +154,20 @@ pub fn run_sf<'a, A: Clone>(
                                 }
                             }
                         }
-                        SFComplete::Complex(sfcomplex) => {
+                        SFComplete::Complex(_) => {
                             panic!("something wrong");
                         }
                         SFComplete::Aggragate(aggregate_func) => {
-                            let arr: Vec<A> = (*current_inputs)
+                            let arr: Vec<&A> = (*current_inputs)
                                 .iter()
                                 .map(|x| match x {
                                     VariableIndex::InnerVariableIndex(y) => base_data
                                         .get(get_out_idx(relation_table.variables.get(*y).unwrap()))
-                                        .unwrap()
-                                        .clone(),
-                                    VariableIndex::TheInput => input.clone(),
+                                        .unwrap(),
+                                    VariableIndex::TheInput => &input,
                                 })
-                                .collect::<Vec<A>>();
-                            let out = (aggregate_func.the_func)(&arr);
+                                .collect::<Vec<&A>>();
+                            let out = (aggregate_func.the_func)(arr);
                             let output_mut = base_data.get_mut(*output_).unwrap();
                             *output_mut = out;
                         }
