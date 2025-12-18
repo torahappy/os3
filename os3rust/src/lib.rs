@@ -91,34 +91,38 @@ pub fn get_out_idx(x: &SFDataUnit) -> usize {
 pub fn run_sf<'a, A: Clone>(
     sf: &SFComplex<'a, A>,
     relation_table: &RelationTable,
-    input: A,
+    root_input: A,
     base_data: &mut Vec<A>,
 ) -> A {
     sf.input_configuration
         .iter()
-        .for_each(|(current_inputs, current_input_target)| {
-            match relation_table.variables.get(*current_input_target).unwrap() {
-                SFDataUnit::ComplexData((output_, inner_state)) => {
-                    match sf.variables.get(*current_input_target).unwrap() {
+        .for_each(|(current_inputs, current_target)| {
+            match relation_table.variables.get(*current_target).unwrap() {
+                SFDataUnit::ComplexData((target_output_ref, target_inner_state)) => {
+                    match sf.variables.get(*current_target).unwrap() {
                         SFComplete::Atom(_) => panic!("something wrong"),
                         SFComplete::Complex(sfcomplex) => {
-                            let input_idx = current_inputs.get(0).unwrap();
-                            match input_idx {
+                            let current_input_idx = current_inputs.get(0).unwrap();
+                            match current_input_idx {
                                 VariableIndex::InnerVariableIndex(other_var) => {
                                     let contents =
                                         relation_table.variables.get(*other_var).unwrap();
                                     let output_idx = get_out_idx(contents);
                                     let input_ = base_data.get(output_idx).unwrap().clone();
                                     let r =
-                                        run_sf(&sfcomplex, inner_state, input_, base_data);
-                                    let output_mut = base_data.get_mut(*output_).unwrap();
+                                        run_sf(&sfcomplex, target_inner_state, input_, base_data);
+                                    let output_mut = base_data.get_mut(*target_output_ref).unwrap();
                                     *output_mut = r;
                                 }
                                 VariableIndex::TheInput => {
-                                    let r =
-                                        run_sf(&sfcomplex, inner_state, input.clone(), base_data);
+                                    let r = run_sf(
+                                        &sfcomplex,
+                                        target_inner_state,
+                                        root_input.clone(),
+                                        base_data,
+                                    );
 
-                                    let output_mut = base_data.get_mut(*output_).unwrap();
+                                    let output_mut = base_data.get_mut(*target_output_ref).unwrap();
                                     *output_mut = r;
                                 }
                             }
@@ -126,38 +130,41 @@ pub fn run_sf<'a, A: Clone>(
                         SFComplete::Aggragate(_) => panic!("something wrong"),
                     }
                 }
-                SFDataUnit::UnitData((output_, inner_state)) => {
-                    let inner_non_mut = base_data.get(*inner_state).unwrap();
-                    match sf.variables.get(*current_input_target).unwrap() {
+                SFDataUnit::UnitData((target_output_ref, target_inner_state)) => {
+                    match sf.variables.get(*current_target).unwrap() {
                         SFComplete::Atom(sfatom) => {
+                            let target_inner_current = base_data.get(*target_inner_state).unwrap();
                             let input_idx = current_inputs.get(0).unwrap();
                             match input_idx {
                                 VariableIndex::InnerVariableIndex(other_var) => {
                                     let contents =
                                         relation_table.variables.get(*other_var).unwrap();
-                                    let output_idx = get_out_idx(contents);
-                                    let input_ = base_data.get(output_idx).unwrap();
-                                    let result = (sfatom.the_func)(input_, &inner_non_mut);
+                                    let var_base_data_idx = get_out_idx(contents);
+                                    let input_data = base_data.get(var_base_data_idx).unwrap();
+                                    let result =
+                                        (sfatom.the_func)(input_data, &target_inner_current);
                                     match result {
                                         Some((output, next_inner)) => {
-                                            let output_mut = base_data.get_mut(*output_).unwrap();
+                                            let output_mut =
+                                                base_data.get_mut(*target_output_ref).unwrap();
                                             *output_mut = output;
 
                                             let inner_mut =
-                                                base_data.get_mut(*inner_state).unwrap();
+                                                base_data.get_mut(*target_inner_state).unwrap();
                                             *inner_mut = next_inner;
                                         }
                                         None => {}
                                     }
                                 }
                                 VariableIndex::TheInput => {
-                                    match (sfatom.the_func)(&input, &inner_non_mut) {
+                                    match (sfatom.the_func)(&root_input, &target_inner_current) {
                                         Some((output, next_inner)) => {
-                                            let output_mut = base_data.get_mut(*output_).unwrap();
+                                            let output_mut =
+                                                base_data.get_mut(*target_output_ref).unwrap();
                                             *output_mut = output;
 
                                             let inner_mut =
-                                                base_data.get_mut(*inner_state).unwrap();
+                                                base_data.get_mut(*target_inner_state).unwrap();
                                             *inner_mut = next_inner;
                                         }
                                         None => {}
@@ -175,11 +182,11 @@ pub fn run_sf<'a, A: Clone>(
                                     VariableIndex::InnerVariableIndex(y) => base_data
                                         .get(get_out_idx(relation_table.variables.get(*y).unwrap()))
                                         .unwrap(),
-                                    VariableIndex::TheInput => &input,
+                                    VariableIndex::TheInput => &root_input,
                                 })
                                 .collect::<Vec<&A>>();
                             let out = (aggregate_func.the_func)(arr);
-                            let output_mut = base_data.get_mut(*output_).unwrap();
+                            let output_mut = base_data.get_mut(*target_output_ref).unwrap();
                             *output_mut = out;
                         }
                     }
