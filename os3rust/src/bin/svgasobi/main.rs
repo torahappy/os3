@@ -2,13 +2,12 @@
 
 extern crate sdl2;
 
-use os3rust::*;
+use askama::Template;
 use quanta::Clock;
 use resvg::render;
 use resvg::tiny_skia;
 use resvg::tiny_skia::PixmapMut;
 use resvg::usvg::fontdb::Database;
-use askama::Template;
 use resvg::usvg::{Transform, Tree};
 use rust_embed::Embed;
 use sdl2::event::Event;
@@ -19,12 +18,12 @@ use sdl2::sys::SDL_GetWindowSizeInPixels;
 use sdl2::video::Window;
 use std::sync::Arc;
 
-#[derive(Template)] // this will generate the code...
-#[template(path = "example.svg")] // using the template in this path, relative
-                                 // to the `templates` dir in the crate root
-struct HelloTemplate<'a> { // the name of the struct can be anything
-    my_x: &'a f32, // the field name should match the variable name
-                   // in your template
+#[derive(Template)]
+#[template(path = "example.svg")]
+struct HelloTemplate<'a> {
+    my_x: &'a f32,
+    elapsed: &'a f64,
+    delta: &'a f64,
 }
 
 #[derive(Embed)]
@@ -132,7 +131,13 @@ fn run() -> Result<(), String> {
         time_b = timer.now();
         let delta = time_b.duration_since(time_a).as_secs_f64();
         time_a = timer.now();
-        let svg_data = (HelloTemplate { my_x: &((elapsed * 10.0) as f32) }).render().unwrap();
+        let svg_data = (HelloTemplate {
+            my_x: &((elapsed * 10.0) as f32),
+            elapsed: &elapsed,
+            delta: &delta,
+        })
+        .render()
+        .unwrap();
         let t = Tree::from_str(&svg_data, &opt).unwrap();
 
         frame += 1;
