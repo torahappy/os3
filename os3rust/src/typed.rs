@@ -83,13 +83,11 @@ pub fn combine_parallel<
     F: Clone,
     S: Fn(&A, &C) -> Option<(B, C)>,
     T: Fn(&D, &F) -> Option<(E, F)>,
-    U: Fn(&A, &C) -> Option<(B, C)>,
-    V: Fn(&D, &F) -> Option<(E, F)>,
     W: Fn(&A) -> B,
-    X: Fn(&D) -> E
+    X: Fn(&D) -> E,
 >(
-    base_sf_1: (&U, &W, C),
-    base_sf_2: (&V, &X, F),
+    base_sf_1: (&S, &W, C),
+    base_sf_2: (&T, &X, F),
 ) -> (
     impl Fn(&(A, D), &(C, F, Option<B>, Option<E>)) -> Option<((B, E), (C, F, Option<B>, Option<E>))>,
     impl Fn(&(A, D)) -> (B, E),
@@ -122,4 +120,8 @@ pub fn combine_parallel<
         move |(a, d)| (init_o_1(a), init_o_2(d)),
         (init_s_1, init_s_2, None, None),
     )
+}
+
+pub fn combine_fork() {
+
 }
