@@ -73,7 +73,7 @@ pub fn process_second<A, B, C, D: Clone, F: Fn(&A, &C) -> Option<(B, C)>, G: Fn(
     );
 }
 
-/// combine two SF
+/// combine two parallel-shaped SF
 pub fn combine_parallel<
     A,
     B: Clone,
@@ -122,6 +122,7 @@ pub fn combine_parallel<
     )
 }
 
+/// combine two forked SF
 pub fn combine_fork() {
 
 }

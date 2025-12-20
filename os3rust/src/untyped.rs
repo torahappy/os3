@@ -87,7 +87,7 @@ pub fn get_out_idx(x: &SFDataUnit) -> usize {
     }
 }
 
-/// A function to run SF in the "main loop"-like manner.
+/// A function to run SF in a "main loop"-like manner.
 pub fn run_sf<'a, A: Clone>(
     sf: &SFComplex<'a, A>,
     relation_table: &RelationTable,
