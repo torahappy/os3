@@ -228,6 +228,13 @@ pub fn arrow_syntax<'a, A: Clone>() {}
 //  START: Haskell-like Arrow/Category definition
 // ===============================================
 
+pub struct PrimitiveArrowFunctionsBox<A: Clone> {
+    pub id: Box<dyn Fn(Vec<&A>) -> A>,
+    pub fst: Box<dyn Fn(Vec<&A>) -> A>,
+    pub snd: Box<dyn Fn(Vec<&A>) -> A>,
+    pub combine: Box<dyn Fn(Vec<&A>) -> A>,
+}
+
 /// The data structure to hold all the rust functions that are necessary to implement arrow
 /// rules.
 pub struct PrimitiveArrowFunctions<'a, A: Clone> {
@@ -241,6 +248,41 @@ pub struct PrimitiveArrowFunctions<'a, A: Clone> {
     pub combine: AggregateFunc<'a, A>,
 }
 
+pub fn make_primitive_arrow_functions_box<
+    A: Clone,
+    F: Fn(&A) -> A + 'static,
+    S: Fn(&A) -> A + 'static,
+    C: Fn(&A, &A) -> A + 'static,
+>(
+    fst_base: F,
+    snd_base: S,
+    combine_base: C,
+) -> PrimitiveArrowFunctionsBox<A> {
+    let i = |x: Vec<&A>| (**x.get(0).unwrap()).clone();
+    let f = move |x: Vec<&A>| fst_base(x.get(0).unwrap());
+    let s = move |x: Vec<&A>| snd_base(x.get(0).unwrap());
+    let c = move |x: Vec<&A>| combine_base(x.get(0).unwrap(), x.get(1).unwrap());
+    return PrimitiveArrowFunctionsBox {
+        id: Box::new(i),
+        fst: Box::new(f),
+        snd: Box::new(s),
+        combine: Box::new(c),
+    };
+}
+
+pub fn make_primitive_arrow_functions<
+    A: Clone,
+>(paf_box: &PrimitiveArrowFunctionsBox<A>) -> PrimitiveArrowFunctions<A> {
+    return PrimitiveArrowFunctions {
+        id: AggregateFunc { the_func: &paf_box.id },
+        fst: AggregateFunc { the_func: &paf_box.fst },
+        snd: AggregateFunc { the_func: &paf_box.snd },
+        combine: AggregateFunc { the_func: &paf_box.combine },
+    };
+}
+
+/// from `first` in Control::Arrow, Haskell.
+/// pass through the second element as-is. process the first element with the given SF.
 pub fn first<'a, A: Clone>(
     sf_in: SFComplete<'a, A>,
     paf: &'a PrimitiveArrowFunctions<'a, A>,
@@ -268,6 +310,8 @@ pub fn first<'a, A: Clone>(
     };
 }
 
+/// from `second` in Control::Arrow, Haskell.
+/// pass through the first element as-is. process the second element with the given SF.
 pub fn second<'a, A: Clone>(
     sf_in: SFComplete<'a, A>,
     paf: &'a PrimitiveArrowFunctions<'a, A>,
@@ -295,6 +339,8 @@ pub fn second<'a, A: Clone>(
     };
 }
 
+/// from `***` in Control::Arrow, Haskell.
+/// combine two SF in a parallel-shaped manner
 pub fn combine_parallel<'a, A: Clone>(
     sf_in_1: SFComplete<'a, A>,
     sf_in_2: SFComplete<'a, A>,
@@ -325,6 +371,8 @@ pub fn combine_parallel<'a, A: Clone>(
     };
 }
 
+/// from `&&&` in Control::Arrow, Haskell.
+/// combine two SF in a fork-shaped manner
 pub fn combine_fork<'a, A: Clone>(
     sf_in_1: SFComplete<'a, A>,
     sf_in_2: SFComplete<'a, A>,
@@ -344,6 +392,22 @@ pub fn combine_fork<'a, A: Clone>(
             ),
         ],
         output_index: 0,
+    };
+}
+
+/// from `.` in Control::Arrow, Haskell.
+/// combine two SF in sequence
+pub fn combine_sequence<'a, A: Clone>(
+    sf_in_1: SFComplete<'a, A>,
+    sf_in_2: SFComplete<'a, A>,
+) -> SFComplex<'a, A> {
+    return SFComplex {
+        variables: vec![sf_in_1, sf_in_2],
+        input_configuration: vec![
+            (vec![VariableIndex::TheInput], 0),
+            (vec![VariableIndex::InnerVariableIndex(0)], 1),
+        ],
+        output_index: 1,
     };
 }
 

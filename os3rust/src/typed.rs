@@ -127,7 +127,7 @@ pub fn process_second<A, B, C, D: Clone, F: Fn(&A, &C) -> Option<(B, C)>, G: Fn(
 }
 
 /// from `***` in Control::Arrow, Haskell.
-/// combine two parallel-shaped SF
+/// combine two SF in a parallel-shaped manner
 pub fn combine_parallel<
     A,
     B: Clone,
@@ -177,9 +177,14 @@ pub fn combine_parallel<
 }
 
 /// from `&&&` in Control::Arrow, Haskell.
-/// combine two forked SF
+/// combine two SF in fork-shaped manner
 /// TODO
 pub fn combine_fork() {}
+
+/// from `.` in Control::Arrow, Haskell.
+/// combine two SF in sequence
+/// TODO
+pub fn combine_sequence() {}
 
 // ======================================================================
 //  END: all the basic functions to construct the Arrowized FRP system
