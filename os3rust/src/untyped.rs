@@ -228,6 +228,8 @@ pub fn arrow_syntax<'a, A: Clone>() {}
 //  START: Haskell-like Arrow/Category definition
 // ===============================================
 
+/// The data structure to hold all the rust functions that are necessary to implement arrow
+/// rules.
 pub struct PrimitiveArrowFunctionsBox<A: Clone> {
     pub id: Box<dyn Fn(Vec<&A>) -> A>,
     pub fst: Box<dyn Fn(Vec<&A>) -> A>,
@@ -235,8 +237,7 @@ pub struct PrimitiveArrowFunctionsBox<A: Clone> {
     pub combine: Box<dyn Fn(Vec<&A>) -> A>,
 }
 
-/// The data structure to hold all the rust functions that are necessary to implement arrow
-/// rules.
+/// The data structure to hold all the AggregateFunc that are necessary to implement arrow rules.
 pub struct PrimitiveArrowFunctions<'a, A: Clone> {
     /// 1 argument; a function that does x -> x
     pub id: AggregateFunc<'a, A>,
