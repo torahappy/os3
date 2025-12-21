@@ -1,7 +1,7 @@
 //! The implementation of Yampa's primitive functions and Haskell's `Control::Arrow` definitions in
 //! Rust.
 //!
-//! ## Translated Functions
+//! ## Basic Functions
 //!
 //! Arrow definitions:
 //! - `arr`: lift a primitive function without any inner variables
@@ -18,6 +18,8 @@
 //! Yampa primitive functions:
 //! - `sscanPrim`: create a new SF from a primitive function; with an inner variable, and with an option
 //!   whether or not to update the output and inner variable;
+//! - `sscan`: create a new SF from a primitive function, using the last input as the inner
+//!   variable.
 //!
 //! ## SF type specification:
 //!
@@ -176,6 +178,7 @@ pub fn combine_parallel<
 
 /// from `&&&` in Control::Arrow, Haskell.
 /// combine two forked SF
+/// TODO
 pub fn combine_fork() {}
 
 // ======================================================================

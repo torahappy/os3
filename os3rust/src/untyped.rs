@@ -1,3 +1,9 @@
+//! Graph-like definition of Arrowized FRP
+
+// ==========================
+//  START: basic definitions
+// ==========================
+
 /// The most primitive SF.
 /// SF takes some input, then combines them with its own inner variable and updates both the inner
 /// variable and the output. It also holds the initial inner variable and the initial output, to
@@ -29,7 +35,7 @@ pub struct AggregateFunc<'a, A: Clone> {
 pub enum SFComplete<'a, A: Clone> {
     Atom(&'a SFAtom<'a, A>),
     Complex(&'a SFComplex<'a, A>),
-    Aggragate(&'a AggregateFunc<'a, A>),
+    Aggregate(&'a AggregateFunc<'a, A>),
 }
 
 /// When making SFComplex, there are 2 types of variables that can be fed into SFAtom, AggregateFunc or SFComplex; the
@@ -73,6 +79,8 @@ pub struct RelationTable {
     pub variables: Vec<SFDataUnit>,
 }
 
+/// Construct the relation table corresponding to a SF.
+// TODO
 pub fn make_relation_table<'a, A: Clone>(
     sf: &SFComplex<'a, A>,
     base_data: &mut Vec<A>,
@@ -127,7 +135,7 @@ pub fn run_sf<'a, A: Clone>(
                                 }
                             }
                         }
-                        SFComplete::Aggragate(_) => panic!("something wrong"),
+                        SFComplete::Aggregate(_) => panic!("something wrong"),
                     }
                 }
                 SFDataUnit::UnitData((target_output_ref, target_inner_state)) => {
@@ -175,7 +183,7 @@ pub fn run_sf<'a, A: Clone>(
                         SFComplete::Complex(_) => {
                             panic!("something wrong");
                         }
-                        SFComplete::Aggragate(aggregate_func) => {
+                        SFComplete::Aggregate(aggregate_func) => {
                             let arr: Vec<&A> = (*current_inputs)
                                 .iter()
                                 .map(|x| match x {
@@ -199,3 +207,146 @@ pub fn run_sf<'a, A: Clone>(
     return base_data.get(final_i).unwrap().clone();
 }
 
+// ========================
+//  END: basic definitions
+// ========================
+
+// =====================
+//  START: arrow syntax
+// =====================
+
+/// Create a SF from an arrow syntax.
+/// TODO
+//pub fn arrow_syntax<'a, A: Clone>() -> SFComplex<'a, A> {}
+pub fn arrow_syntax<'a, A: Clone>() {}
+
+// ===================
+//  END: arrow syntax
+// ===================
+
+// ===============================================
+//  START: Haskell-like Arrow/Category definition
+// ===============================================
+
+/// The data structure to hold all the rust functions that are necessary to implement arrow
+/// rules.
+pub struct PrimitiveArrowFunctions<'a, A: Clone> {
+    /// 1 argument; a function that does x -> x
+    pub id: AggregateFunc<'a, A>,
+    /// 1 argument; a function that does (x, y) -> x
+    pub fst: AggregateFunc<'a, A>,
+    /// 1 argument; a function that does (x, y) -> y
+    pub snd: AggregateFunc<'a, A>,
+    /// 2 arguments; a function that does x, y -> (x, y)
+    pub combine: AggregateFunc<'a, A>,
+}
+
+pub fn first<'a, A: Clone>(
+    sf_in: SFComplete<'a, A>,
+    paf: &'a PrimitiveArrowFunctions<'a, A>,
+) -> SFComplex<'a, A> {
+    return SFComplex {
+        variables: vec![
+            SFComplete::Aggregate(&paf.fst),
+            SFComplete::Aggregate(&paf.snd),
+            SFComplete::Aggregate(&paf.combine),
+            sf_in,
+        ],
+        input_configuration: vec![
+            (vec![VariableIndex::TheInput], 0),
+            (vec![VariableIndex::TheInput], 1),
+            (vec![VariableIndex::InnerVariableIndex(0)], 3),
+            (
+                vec![
+                    VariableIndex::InnerVariableIndex(3),
+                    VariableIndex::InnerVariableIndex(1),
+                ],
+                2,
+            ),
+        ],
+        output_index: 2,
+    };
+}
+
+pub fn second<'a, A: Clone>(
+    sf_in: SFComplete<'a, A>,
+    paf: &'a PrimitiveArrowFunctions<'a, A>,
+) -> SFComplex<'a, A> {
+    return SFComplex {
+        variables: vec![
+            SFComplete::Aggregate(&paf.fst),
+            SFComplete::Aggregate(&paf.snd),
+            SFComplete::Aggregate(&paf.combine),
+            sf_in,
+        ],
+        input_configuration: vec![
+            (vec![VariableIndex::TheInput], 0),
+            (vec![VariableIndex::TheInput], 1),
+            (vec![VariableIndex::InnerVariableIndex(1)], 3),
+            (
+                vec![
+                    VariableIndex::InnerVariableIndex(0),
+                    VariableIndex::InnerVariableIndex(3),
+                ],
+                2,
+            ),
+        ],
+        output_index: 2,
+    };
+}
+
+pub fn combine_parallel<'a, A: Clone>(
+    sf_in_1: SFComplete<'a, A>,
+    sf_in_2: SFComplete<'a, A>,
+    paf: &'a PrimitiveArrowFunctions<'a, A>,
+) -> SFComplex<'a, A> {
+    return SFComplex {
+        variables: vec![
+            SFComplete::Aggregate(&paf.fst),
+            SFComplete::Aggregate(&paf.snd),
+            SFComplete::Aggregate(&paf.combine),
+            sf_in_1,
+            sf_in_2,
+        ],
+        input_configuration: vec![
+            (vec![VariableIndex::TheInput], 0),
+            (vec![VariableIndex::TheInput], 1),
+            (vec![VariableIndex::InnerVariableIndex(0)], 3),
+            (vec![VariableIndex::InnerVariableIndex(1)], 4),
+            (
+                vec![
+                    VariableIndex::InnerVariableIndex(0),
+                    VariableIndex::InnerVariableIndex(1),
+                ],
+                2,
+            ),
+        ],
+        output_index: 2,
+    };
+}
+
+pub fn combine_fork<'a, A: Clone>(
+    sf_in_1: SFComplete<'a, A>,
+    sf_in_2: SFComplete<'a, A>,
+    paf: &'a PrimitiveArrowFunctions<'a, A>,
+) -> SFComplex<'a, A> {
+    return SFComplex {
+        variables: vec![SFComplete::Aggregate(&paf.combine), sf_in_1, sf_in_2],
+        input_configuration: vec![
+            (vec![VariableIndex::TheInput], 1),
+            (vec![VariableIndex::TheInput], 2),
+            (
+                vec![
+                    VariableIndex::InnerVariableIndex(1),
+                    VariableIndex::InnerVariableIndex(2),
+                ],
+                0,
+            ),
+        ],
+        output_index: 0,
+    };
+}
+
+// =============================================
+//  END: Haskell-like Arrow/Category definition
+// =============================================
