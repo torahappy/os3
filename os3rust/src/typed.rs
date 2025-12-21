@@ -1,3 +1,50 @@
+//! The implementation of Yampa's primitive functions and Haskell's `Control::Arrow` definitions in
+//! Rust.
+//!
+//! ## Translated Functions
+//!
+//! Arrow definitions:
+//! - `arr`: lift a primitive function without any inner variables
+//! - `first`: pass through second element, process first element
+//! - `second`: pass through first element, process second element
+//! - `***`: combine two parallel SF
+//! - `&&&`: combine forked SF
+//!
+//! Category definitions:
+//! - `id`: (from Category) identity morphism; if you already have `arr`, we can define it trivially
+//!   with `id := arr (|x| {x})`
+//! - `.`: (from Category) morphism composition; should have associative law
+//!
+//! Yampa primitive functions:
+//! - `sscanPrim`: create a new SF from a primitive function; with an inner variable, and with an option
+//!   whether or not to update the output and inner variable;
+//!
+//! ## SF type specification:
+//!
+//! In this program, the type definition of SF is as follows:
+//!
+//! `(impl Fn(&A, &C) -> Option<(B, C)>, impl Fn(&A) -> B, C)`
+//!
+//! where `A` denotes the input type, `B` denotes the output type, and `C` denotes the inner state
+//! type. Obviously, this is the same as the return type of `scan_option`, which is the most primitive
+//! but sufficient way of describing a SF.
+//!
+//! The first tuple element specifies the calculation from the input and current inner state,
+//! to the output and next inner state. 
+//!
+//! The second tuple element specifies the calculation of initial output from the initial input.
+//! To support the lifting operation (i.e. `arr`), the initial output cannot be a constant data,
+//! instead, it have to be dynamically generated from the initial input. It does not involve any
+//! calculation about the inner state, thus it can be seen as the calculation at `frame 0`.
+//!
+//! The third tuple element specifies the type of whole inner variables under the calculation tree.
+//!
+
+// ======================================================================
+//  START: all the basic functions to construct the Arrowized FRP system
+// ======================================================================
+
+/// from `sscanPrim` in Yampa, Haskell.
 /// SF takes some input, then combines them with its own inner variable and updates both the inner
 /// variable and the output. It also holds the initial inner variable and the initial output, to
 /// make itself well-defined.
@@ -10,8 +57,9 @@ pub fn scan_option<A, B: Clone, C, F: Fn(&A, &C) -> Option<(B, C)>>(
     return (the_func, move |_| initial_output.clone(), initial_inner);
 }
 
+/// from `sscan` in Yampa, Haskell.
 /// make a new SF from a function that takes the input and the last output.
-pub fn scan<'a, A, B: Clone, C, F: Fn(&A, &B) -> B + 'a>(
+pub fn scan<'a, A, B: Clone, F: Fn(&A, &B) -> B + 'a>(
     base_func: &F,
     first_output: B,
 ) -> (impl Fn(&A, &B) -> Option<(B, B)>, impl Fn(&A) -> B, B) {
@@ -28,6 +76,7 @@ pub fn scan<'a, A, B: Clone, C, F: Fn(&A, &B) -> B + 'a>(
     );
 }
 
+/// from `arr` in Control::Arrow, Haskell.
 /// lift some usual functions to SF.
 pub fn lift_simple<'a, A, B, F: Fn(&A) -> B + 'a>(
     base_func: &F,
@@ -35,6 +84,7 @@ pub fn lift_simple<'a, A, B, F: Fn(&A) -> B + 'a>(
     return (|a, _| Some((base_func(a), ())), |x| base_func(x), ());
 }
 
+/// from `first` in Control::Arrow, Haskell.
 /// pass through the second element as-is. process the first element with the given SF.
 pub fn process_first<A, B, C, D: Clone, F: Fn(&A, &C) -> Option<(B, C)>, G: Fn(&A) -> B>(
     base_sf: (&F, &G, C),
@@ -54,6 +104,7 @@ pub fn process_first<A, B, C, D: Clone, F: Fn(&A, &C) -> Option<(B, C)>, G: Fn(&
     );
 }
 
+/// from `second` in Control::Arrow, Haskell.
 /// pass through the first element as-is. process the second element with the given SF.
 pub fn process_second<A, B, C, D: Clone, F: Fn(&A, &C) -> Option<(B, C)>, G: Fn(&A) -> B>(
     base_sf: (&F, &G, C),
@@ -73,6 +124,7 @@ pub fn process_second<A, B, C, D: Clone, F: Fn(&A, &C) -> Option<(B, C)>, G: Fn(
     );
 }
 
+/// from `***` in Control::Arrow, Haskell.
 /// combine two parallel-shaped SF
 pub fn combine_parallel<
     A,
@@ -122,7 +174,14 @@ pub fn combine_parallel<
     )
 }
 
+/// from `&&&` in Control::Arrow, Haskell.
 /// combine two forked SF
-pub fn combine_fork() {
+pub fn combine_fork() {}
 
-}
+// ======================================================================
+//  END: all the basic functions to construct the Arrowized FRP system
+// ======================================================================
+
+// ==========================
+//  START: utility functions
+// ==========================
