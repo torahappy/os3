@@ -97,11 +97,11 @@ pub fn process_first<A, B, C, D: Clone, F: Fn(&A, &C) -> Option<(B, C)>, G: Fn(&
 ) {
     let (base_func, init_out, init_state) = base_sf;
     return (
-        move |(a, d), c| match base_func(&a, &c) {
+        |(a, d), c| match base_func(&a, &c) {
             Some((b_new, c_new)) => Some(((b_new, d.clone()), c_new)),
             None => None,
         },
-        move |(a, d)| (init_out(a), d.clone()),
+        |(a, d)| (init_out(a), d.clone()),
         init_state,
     );
 }
@@ -117,11 +117,11 @@ pub fn process_second<A, B, C, D: Clone, F: Fn(&A, &C) -> Option<(B, C)>, G: Fn(
 ) {
     let (base_func, init_out, init_state) = base_sf;
     return (
-        move |(d, a), c| match base_func(&a, &c) {
+        |(d, a), c| match base_func(&a, &c) {
             Some((b_new, c_new)) => Some(((d.clone(), b_new), c_new)),
             None => None,
         },
-        move |(d, a)| (d.clone(), init_out(a)),
+        |(d, a)| (d.clone(), init_out(a)),
         init_state,
     );
 }
@@ -150,41 +150,128 @@ pub fn combine_parallel<
     let (f_1, init_o_1, init_s_1) = base_sf_1;
     let (f_2, init_o_2, init_s_2) = base_sf_2;
     (
-        move |(a, d), (c_pre, f_pre, last_1, last_2)| {
+        |(a, d), (c_pre, f_pre, last_1, last_2)| {
             let x = f_1(a, c_pre);
             let y = f_2(d, f_pre);
             if x.is_some() && y.is_some() {
                 let (b, c) = x.unwrap();
                 let (e, f) = y.unwrap();
                 Some(((b.clone(), e.clone()), (c, f, Some(b), Some(e))))
-            } else if x.is_none() && y.is_some() {
-                let (e, f) = y.unwrap();
-                let b = last_1.clone().unwrap();
-                let c = c_pre;
-                Some(((b.clone(), e.clone()), (c.clone(), f, Some(b), Some(e))))
             } else if x.is_some() && y.is_none() {
                 let (b, c) = x.unwrap();
+                if last_2.is_none() { return None }
                 let e = last_2.clone().unwrap();
                 let f = f_pre;
                 Some(((b.clone(), e.clone()), (c, f.clone(), Some(b), Some(e))))
+            } else if x.is_none() && y.is_some() {
+                let (e, f) = y.unwrap();
+                if last_1.is_none() { return None }
+                let b = last_1.clone().unwrap();
+                let c = c_pre;
+                Some(((b.clone(), e.clone()), (c.clone(), f, Some(b), Some(e))))
             } else {
                 None
             }
         },
-        move |(a, d)| (init_o_1(a), init_o_2(d)),
+        |(a, d)| (init_o_1(a), init_o_2(d)),
         (init_s_1, init_s_2, None, None),
     )
 }
 
 /// from `&&&` in Control::Arrow, Haskell.
 /// combine two SF in fork-shaped manner
-/// TODO
-pub fn combine_fork() {}
+pub fn combine_fork<
+    A,
+    B: Clone,
+    C: Clone,
+    D: Clone,
+    E: Clone,
+    S: Fn(&A, &C) -> Option<(B, C)>,
+    T: Fn(&A, &E) -> Option<(D, E)>,
+    W: Fn(&A) -> B,
+    X: Fn(&A) -> D,
+>(
+    base_sf_1: (&S, &W, C),
+    base_sf_2: (&T, &X, E),
+) ->
+(
+    impl Fn(&A, &(C, E, Option<B>, Option<D>)) -> Option<((B, D), (C, E, Option<B>, Option<D>))>,
+    impl Fn(&A) -> (B, D),
+    (C, E, Option<B>, Option<D>),
+) {
+    let (f_1, init_o_1, init_s_1) = base_sf_1;
+    let (f_2, init_o_2, init_s_2) = base_sf_2;
+    (|a, (c_pre, e_pre, last_1, last_2)| {
+        let x = f_1(a, c_pre);
+        let y = f_2(a, e_pre);
+        if x.is_some() && y.is_some() {
+            let (b, c) = x.unwrap();
+            let (d, e) = y.unwrap();
+            Some(((b.clone(), d.clone()), (c, e, Some(b), Some(d))))
+        } else if x.is_some() && y.is_none() {
+            let (b, c) = x.unwrap();
+            if last_2.is_none() { return None }
+            let d = (*last_2).clone().unwrap();
+            let e = e_pre;
+            Some(((b.clone(), d.clone()), (c, (*e).clone(), Some(b), Some(d))))
+        } else if x.is_none() && y.is_some() {
+            let (d, e) = y.unwrap();
+            if last_1.is_none() { return None }
+            let b = (*last_1).clone().unwrap();
+            let c = c_pre;
+            Some(((b.clone(), d.clone()), ((*c).clone(), e, Some(b), Some(d))))
+        } else {
+            None
+        }
+    }, |a| {
+        (init_o_1(a), init_o_2(a))
+    }, (init_s_1, init_s_2, None, None))
+}
 
 /// from `.` in Control::Arrow, Haskell.
 /// combine two SF in sequence
-/// TODO
-pub fn combine_sequence() {}
+pub fn combine_sequence<
+    A,
+    B,
+    C,
+    D,
+    E,
+    S: Fn(&A, &C) -> Option<(B, C)>,
+    T: Fn(&B, &E) -> Option<(D, E)>,
+    W: Fn(&A) -> B,
+    X: Fn(&B) -> D,
+>(
+    base_sf_1: (&S, &W, C),
+    base_sf_2: (&T, &X, E),
+) ->
+(
+    impl Fn(&A, &(C, E)) -> Option<(D, (C, E))>,
+    impl Fn(&A) -> D,
+    (C, E),
+)
+{
+    let (f_1, init_o_1, init_s_1) = base_sf_1;
+    let (f_2, init_o_2, init_s_2) = base_sf_2;
+    (
+        |a, (c_pre, e_pre)| {
+            match f_1(a, c_pre) {
+                Some((b, c)) => {
+                    match f_2(&b, e_pre) {
+                        Some((d, e)) => {
+                            Some((d, (c, e)))
+                        },
+                        None => None,
+                    }
+                },
+                None => None,
+            }
+        },
+        |a| {
+            init_o_2(&init_o_1(a))
+        },
+        (init_s_1, init_s_2)
+    )
+}
 
 // ======================================================================
 //  END: all the basic functions to construct the Arrowized FRP system
