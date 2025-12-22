@@ -80,12 +80,43 @@ pub struct RelationTable {
 }
 
 /// Construct the relation table corresponding to a SF.
-// TODO
 pub fn make_relation_table<'a, A: Clone>(
-    sf: &SFComplex<'a, A>,
+    sf: &SFComplete<'a, A>,
     base_data: &mut Vec<A>,
-) -> RelationTable {
-    RelationTable { variables: vec![] }
+    null: &A,
+) -> SFDataUnit {
+    // push output of self
+    let idx_start = base_data.len();
+
+    // push states
+    match sf {
+        SFComplete::Atom(sfatom) => {
+            // push initial output and state
+            base_data.push(sfatom.initial_output.clone());
+            base_data.push(sfatom.initial_inner.clone());
+            SFDataUnit::UnitData((idx_start, idx_start + 1))
+        }
+        SFComplete::Complex(sfcomplex) => {
+            // push initial output (dummy data; TODO: this is dirty)
+            base_data.push(null.clone());
+            SFDataUnit::ComplexData((
+                idx_start,
+                RelationTable {
+                    variables: sfcomplex
+                        .variables
+                        .iter()
+                        .enumerate()
+                        .map(|(x, i)| make_relation_table(sf, base_data, null))
+                        .collect::<Vec<SFDataUnit>>(),
+                },
+            ))
+        }
+        SFComplete::Aggregate(aggregate_func) => {
+            // push initial output (dummy data; TODO: this is dirty, and MAX usage is also dirty)
+            base_data.push(null.clone());
+            SFDataUnit::UnitData((idx_start, usize::MAX))
+        }
+    }
 }
 
 pub fn get_out_idx(x: &SFDataUnit) -> usize {
@@ -231,6 +262,7 @@ pub fn arrow_syntax<'a, A: Clone>() {}
 /// The data structure to hold all the rust functions that are necessary to implement arrow
 /// rules.
 pub struct PrimitiveArrowFunctionsBox<A: Clone> {
+    pub null: Box<A>,
     pub id: Box<dyn Fn(Vec<&A>) -> A>,
     pub fst: Box<dyn Fn(Vec<&A>) -> A>,
     pub snd: Box<dyn Fn(Vec<&A>) -> A>,
@@ -239,6 +271,7 @@ pub struct PrimitiveArrowFunctionsBox<A: Clone> {
 
 /// The data structure to hold all the AggregateFunc that are necessary to implement arrow rules.
 pub struct PrimitiveArrowFunctions<'a, A: Clone> {
+    pub null: &'a A,
     /// 1 argument; a function that does x -> x
     pub id: AggregateFunc<'a, A>,
     /// 1 argument; a function that does (x, y) -> x
@@ -258,6 +291,7 @@ pub fn make_primitive_arrow_functions_box<
     fst_base: F,
     snd_base: S,
     combine_base: C,
+    null: A,
 ) -> PrimitiveArrowFunctionsBox<A> {
     let i = |x: Vec<&A>| (**x.get(0).unwrap()).clone();
     let f = move |x: Vec<&A>| fst_base(x.get(0).unwrap());
@@ -268,17 +302,27 @@ pub fn make_primitive_arrow_functions_box<
         fst: Box::new(f),
         snd: Box::new(s),
         combine: Box::new(c),
+        null: Box::new(null),
     };
 }
 
-pub fn make_primitive_arrow_functions<
-    A: Clone,
->(paf_box: &PrimitiveArrowFunctionsBox<A>) -> PrimitiveArrowFunctions<A> {
+pub fn make_primitive_arrow_functions<A: Clone>(
+    paf_box: &PrimitiveArrowFunctionsBox<A>,
+) -> PrimitiveArrowFunctions<A> {
     return PrimitiveArrowFunctions {
-        id: AggregateFunc { the_func: &paf_box.id },
-        fst: AggregateFunc { the_func: &paf_box.fst },
-        snd: AggregateFunc { the_func: &paf_box.snd },
-        combine: AggregateFunc { the_func: &paf_box.combine },
+        id: AggregateFunc {
+            the_func: &paf_box.id,
+        },
+        fst: AggregateFunc {
+            the_func: &paf_box.fst,
+        },
+        snd: AggregateFunc {
+            the_func: &paf_box.snd,
+        },
+        combine: AggregateFunc {
+            the_func: &paf_box.combine,
+        },
+        null: &paf_box.null,
     };
 }
 
