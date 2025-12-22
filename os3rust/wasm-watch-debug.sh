@@ -1,3 +1,3 @@
 #!/bin/bash
 
-chokidar 'src/**/*' 'build.rs' --initial -c "cargo build --target=wasm32-unknown-emscripten --bin $1; cp ./target/wasm32-unknown-emscripten/debug/$1.js ./wasm/; cp ./target/wasm32-unknown-emscripten/debug/$1.wasm ./wasm;"
+chokidar 'src/**/*' 'build.rs' --initial -c "cargo build --target=wasm32-unknown-unknown --bin $1; mkdir ./wasm/$1; cp ./target/wasm32-unknown-unknown/debug/$1.wasm ./wasm/$1; $HOME/.cargo/bin/wasm-bindgen --target web --out-dir ./wasm/$1 ./wasm/$1/$1.wasm"

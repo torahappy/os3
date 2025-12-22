@@ -8,14 +8,14 @@ askama = "0.14.0"
 resvg = "0.45.1"
 rust-embed = "8.9.0"
 rustybuzz = "0.20.1"
+yew = { version = "0.22.0", features = ["csr"] }
 
 [target.'cfg(not(all(target_arch = "wasm32", target_os = "emscripten")))'.dependencies]
 quanta = "0.12.6"
 
-[dependencies.sdl2]
-version = "0.38"
-default-features = false
-features = ["mixer", "ttf", "image", "gfx"]
+[target.'cfg(not(all(target_arch = "wasm32", target_os = "unknown")))'.dependencies]
+sdl2 = { version = "0.38", default-features = false, features = ["mixer", "ttf", "image", "gfx"] }
+
 
 [profile.release]
 codegen-units = 1

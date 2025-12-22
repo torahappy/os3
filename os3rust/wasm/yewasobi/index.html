@@ -85,34 +85,9 @@
 </head>
 <body>
   <canvas id="canvas" oncontextmenu="event.preventDefault()"></canvas>
-  <script>
-    var Module = {
-      canvas: document.getElementById("canvas"),
-      preRun: function () {
-        console.log("booting..");
-        //FS.createPreloadedFile(
-        //  "/",
-        //  "example.svg",
-        //  "example.svg",
-        //  true,
-        //  false,
-        //);
-        //FS.createPreloadedFile(
-        //  "/",
-        //  "ZenKakuGothicAntique-Regular.ttf",
-        //  "ZenKakuGothicAntique-Regular.ttf",
-        //  true,
-        //  false,
-        //);
-        //FS.createPreloadedFile(
-        //  "/",
-        //  "NotoSerifJP-VariableFont_wght.ttf",
-        //  "NotoSerifJP-VariableFont_wght.ttf",
-        //  true,
-        //  false,
-        //);
-      },
-    };
+  <script type="module">
+    import YewAsobi from "./yewasobi.js"
+    window.YewAsobi = YewAsobi;
+    YewAsobi();
   </script>
-  <script src="./some-program.js"></script>
 </body>
