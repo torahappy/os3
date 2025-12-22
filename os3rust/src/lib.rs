@@ -12,6 +12,7 @@ pub fn untyped_example() {
         |x: &Vec<u64>| vec![x.get(0).unwrap().clone()],
         |x: &Vec<u64>| vec![x.get(1).unwrap().clone()],
         |x: &Vec<u64>, y: &Vec<u64>| vec![x.get(0).unwrap().clone(), y.get(0).unwrap().clone()],
+        Vec::new()
     );
 
     // create a reference for the above functions

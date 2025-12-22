@@ -105,8 +105,7 @@ pub fn make_relation_table<'a, A: Clone>(
                     variables: sfcomplex
                         .variables
                         .iter()
-                        .enumerate()
-                        .map(|(x, i)| make_relation_table(sf, base_data, null))
+                        .map(|x| make_relation_table(x, base_data, null))
                         .collect::<Vec<SFDataUnit>>(),
                 },
             ))

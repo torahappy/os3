@@ -1,3 +1,5 @@
+// ふむふむこういうのもあるのね
+
 use yew::prelude::*;
 
 #[component]
