@@ -16,7 +16,6 @@ quanta = "0.12.6"
 [target.'cfg(not(all(target_arch = "wasm32", target_os = "unknown")))'.dependencies]
 sdl2 = { version = "0.38", default-features = false, features = ["mixer", "ttf", "image", "gfx"] }
 
-
 [profile.release]
 codegen-units = 1
 lto = "thin"
