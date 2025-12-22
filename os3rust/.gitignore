@@ -1,2 +1,3 @@
-wasm/*/*.wasm
+wasm/*/*
+!wasm/*/*.html
 dist/
