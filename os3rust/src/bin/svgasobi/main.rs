@@ -3,7 +3,10 @@
 extern crate sdl2;
 
 use askama::Template;
+
+#[cfg(not(all(target_arch = "wasm32", target_os = "emscripten")))]
 use quanta::Clock;
+
 use resvg::render;
 use resvg::tiny_skia;
 use resvg::tiny_skia::PixmapMut;
@@ -110,9 +113,14 @@ fn run() -> Result<(), String> {
 
     let mut frame: u64 = 0;
     let mut elapsed: f64 = 0.0;
-    let timer = Clock::new();
-    let mut time_a = timer.now();
-    let mut time_b;
+
+    #[cfg(not(all(target_arch = "wasm32", target_os = "emscripten")))]
+    let (timer, mut time_a, mut time_b) = {
+        let timer = Clock::new();
+        let time_a = timer.now();
+        let time_b = timer.now();
+        (timer, time_a, time_b)
+    };
 
     let opt = resvg::usvg::Options {
         resources_dir: None,
@@ -128,9 +136,17 @@ fn run() -> Result<(), String> {
     };
 
     'mainloop: loop {
-        time_b = timer.now();
-        let delta = time_b.duration_since(time_a).as_secs_f64();
-        time_a = timer.now();
+        #[cfg(not(all(target_arch = "wasm32", target_os = "emscripten")))]
+        let delta = {
+            time_b = timer.now();
+            let delta = time_b.duration_since(time_a).as_secs_f64();
+            time_a = timer.now();
+            delta
+        };
+
+        #[cfg(all(target_arch = "wasm32", target_os = "emscripten"))]
+        let delta: f64 = 1.0 / 60.0;
+
         let svg_data = (HelloTemplate {
             my_x: &((elapsed * 10.0) as f32),
             elapsed: &elapsed,
