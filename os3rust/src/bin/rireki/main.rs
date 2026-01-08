@@ -19,11 +19,11 @@ use ffmpeg::software::scaling::{context::Context, flag::Flags};
 // This is the struct that will be passed to your shader
 #[derive(Asset, TypePath, AsBindGroup, Debug, Clone)]
 struct CustomMaterial {
-    #[uniform(0)]
-    color: LinearRgba,
-    #[texture(1)]
-    #[sampler(2)]
+    #[texture(0)]
+    #[sampler(1)]
     color_texture: Option<Handle<Image>>,
+    #[uniform(2)]
+    time: f32,
 }
 
 const SHADER_ASSET_PATH: &str = "shaders/custom_material_2d.wgsl";
@@ -33,7 +33,7 @@ impl Material2d for CustomMaterial {
     }
 
     fn alpha_mode(&self) -> AlphaMode2d {
-        AlphaMode2d::Mask(0.5)
+        AlphaMode2d::Blend
     }
 }
 
@@ -52,25 +52,25 @@ fn main() {
 
 fn init_ui(
     mut commands: Commands,
-    images: ResMut<Assets<Image>>,
+    mut images: ResMut<Assets<Image>>,
+    time: Res<Time>,
     mut video_resource: NonSendMut<VideoResource>,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<CustomMaterial>>,
-    asset_server: Res<AssetServer>,
 ) {
     let (video_player, video_player_non_send) =
-        VideoPlayer::new("../assets/1.webm", images).unwrap();
+        VideoPlayer::new("../assets/1.webm", &mut images, 24.0).unwrap();
 
     commands.spawn(Camera2d::default());
     let e = commands
         .spawn((
             Mesh2d(meshes.add(Rectangle::default())),
             MeshMaterial2d(materials.add(CustomMaterial {
-                color: LinearRgba::BLUE,
                 color_texture: Some(video_player.image_handle.clone()),
+                time: 0.0,
             })),
-            Transform::default().with_scale(Vec3::splat(128.)),
-            video_player
+            Transform::default().with_scale(Vec3::splat(1000.)),
+            video_player,
         ))
         .id();
     video_resource
@@ -98,12 +98,16 @@ struct VideoPlayerNonSendData {
 struct VideoPlayer {
     image_handle: Handle<Image>,
     video_stream_index: usize,
+    fps: f64,
+    elapsed: f64,
+    last_sync: f64,
 }
 
 impl VideoPlayer {
     fn new<'a, P>(
         path: P,
-        mut images: ResMut<Assets<Image>>,
+        images: &mut ResMut<Assets<Image>>,
+        fps: f64,
     ) -> Result<(VideoPlayer, VideoPlayerNonSendData), ffmpeg::Error>
     where
         P: AsRef<Path>,
@@ -142,7 +146,7 @@ impl VideoPlayer {
             TextureDimension::D2,
             &[255, 255, 255, 255],
             TextureFormat::Rgba8UnormSrgb,
-            RenderAssetUsages::MAIN_WORLD,
+            RenderAssetUsages::all(),
         );
         image.texture_descriptor.usage = TextureUsages::COPY_DST | TextureUsages::TEXTURE_BINDING;
 
@@ -152,6 +156,9 @@ impl VideoPlayer {
             VideoPlayer {
                 image_handle,
                 video_stream_index,
+                fps,
+                last_sync: 0.0,
+                elapsed: 0.0,
             },
             VideoPlayerNonSendData {
                 decoder,
@@ -166,36 +173,52 @@ fn play_video(
     mut video_player_query: Query<(&mut VideoPlayer, Entity)>,
     mut video_resource: NonSendMut<VideoResource>,
     mut images: ResMut<Assets<Image>>,
+    mut materials: ResMut<Assets<CustomMaterial>>,
+    m2d: Query<&MeshMaterial2d<CustomMaterial>>,
+    time: Res<Time>,
 ) {
-    for (video_player, entity) in video_player_query.iter_mut() {
-        let video_player_non_send = video_resource.video_players.get_mut(&entity).unwrap();
-        // read packets from stream until complete frame received
-        while let Some((stream, packet)) = video_player_non_send.input_context.packets().next() {
-            // check if packets is for the selected video stream
-            if stream.index() == video_player.video_stream_index {
-                // pass packet to decoder
-                video_player_non_send.decoder.send_packet(&packet).unwrap();
-                let mut decoded = Video::empty();
-                // check if complete frame was received
-                if let Ok(()) = video_player_non_send.decoder.receive_frame(&mut decoded) {
-                    let mut rgb_frame = Video::empty();
-                    // run frame through scaler for color space conversion
-                    video_player_non_send
-                        .scaler_context
-                        .run(&decoded, &mut rgb_frame)
-                        .unwrap();
-                    // update data of image texture
-                    let image = images.get_mut(&video_player.image_handle).unwrap();
-                    image.data = Some(rgb_frame.data(0).to_vec());
-                    return;
+    for (mut video_player, entity) in video_player_query.iter_mut() {
+        video_player.elapsed += time.delta_secs_f64();
+        if video_player.elapsed - video_player.last_sync > 1.0 / video_player.fps {
+            let remaining = video_player.elapsed - video_player.last_sync - 1.0 / video_player.fps;
+            video_player.last_sync = video_player.elapsed - remaining;
+
+            let video_player_non_send = video_resource.video_players.get_mut(&entity).unwrap();
+            // read packets from stream until complete frame received
+            while let Some((stream, packet)) = video_player_non_send.input_context.packets().next()
+            {
+                // check if packets is for the selected video stream
+                if stream.index() == video_player.video_stream_index {
+                    // pass packet to decoder
+                    video_player_non_send.decoder.send_packet(&packet).unwrap();
+                    let mut decoded = Video::empty();
+                    // check if complete frame was received
+                    if let Ok(()) = video_player_non_send.decoder.receive_frame(&mut decoded) {
+                        let mut rgb_frame = Video::empty();
+                        // run frame through scaler for color space conversion
+                        video_player_non_send
+                            .scaler_context
+                            .run(&decoded, &mut rgb_frame)
+                            .unwrap();
+                        // update data of image texture
+                        let image = images.get_mut(&video_player.image_handle).unwrap();
+
+                        let frame = rgb_frame.data(0).to_vec();
+                        image.data = Some(frame);
+                        materials
+                            .get_mut(m2d.get(entity).unwrap().0.id())
+                            .unwrap()
+                            .time += time.delta_secs();
+                        return;
+                    }
                 }
             }
-        }
-        // no frame received
-        // signal end of playback to decoder
-        match video_player_non_send.decoder.send_eof() {
-            Err(ffmpeg::Error::Eof) => {}
-            other => other.unwrap(),
+            // no frame received
+            // signal end of playback to decoder
+            match video_player_non_send.decoder.send_eof() {
+                Err(ffmpeg::Error::Eof) => {}
+                other => other.unwrap(),
+            }
         }
     }
 }
