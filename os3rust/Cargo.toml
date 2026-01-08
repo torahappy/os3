@@ -13,6 +13,7 @@ rust-embed = "8.9.0"
 rustybuzz = "0.20.1"
 yew = { version = "0.22.0", features = ["csr"] }
 log = { version = "*", features = ["max_level_debug", "release_max_level_warn"] }
+ffmpeg-next = "8.0.0"
 
 [target.'cfg(not(all(target_arch = "wasm32", target_os = "emscripten")))'.dependencies]
 quanta = "0.12.6"
