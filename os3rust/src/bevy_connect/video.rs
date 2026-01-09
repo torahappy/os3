@@ -14,6 +14,7 @@ use ffmpeg::frame::Video;
 use ffmpeg::media::Type;
 use ffmpeg::software::scaling::{context::Context, flag::Flags};
 
+
 pub fn initialize_ffmpeg() {
     ffmpeg::init().unwrap();
 }
@@ -110,11 +111,15 @@ impl VideoPlayer {
 }
 
 pub fn cleanup_video(
-    mut video_player_query: Query<(&mut VideoPlayer, Entity)>,
+    mut com: Commands,
+    video_player_query: Query<(&mut VideoPlayer, Entity)>,
     mut video_resource: NonSendMut<VideoResource>,
 ) {
     let to_clean = video_player_query.iter().filter(|(vp, e)| vp.video_end).map(|(vp, e)|e).collect::<Vec<_>>();
-
+    to_clean.iter().for_each(|x|{
+        com.entity(*x).despawn();
+        video_resource.video_players.remove(x);
+    });
 }
 
 pub fn play_video(
