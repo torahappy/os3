@@ -1,14 +1,11 @@
-use crate::untyped::{
-    make_primitive_arrow_functions, make_primitive_arrow_functions_box, PrimitiveArrowFunctions,
-    PrimitiveArrowFunctionsBox,
-};
 
 pub mod typed;
 pub mod untyped;
+pub mod bevy_connect;
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use crate::{typed, untyped::{self, PrimitiveArrowFunctions, PrimitiveArrowFunctionsBox, make_primitive_arrow_functions, make_primitive_arrow_functions_box}};
 
     #[test]
     pub fn untyped_example() {
