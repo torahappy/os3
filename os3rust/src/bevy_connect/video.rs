@@ -9,13 +9,12 @@ use std::collections::HashMap;
 
 use ffmpeg_next::{self as ffmpeg};
 
-use ffmpeg::format::{input, Pixel};
+use ffmpeg::format::{Pixel, input};
 use ffmpeg::frame::Video;
 use ffmpeg::media::Type;
 use ffmpeg::software::scaling::{context::Context, flag::Flags};
 
 use crate::bevy_connect::transform::{AdvTransform, AdvTransformItem, AdvTransformOption};
-
 
 pub fn initialize_ffmpeg() {
     ffmpeg::init().unwrap();
@@ -47,7 +46,7 @@ impl VideoPlayer {
     pub fn new<'a, P>(
         path: P,
         images: &mut ResMut<Assets<Image>>,
-        fps: f64
+        fps: f64,
     ) -> Result<(VideoPlayer, VideoPlayerNonSendData), ffmpeg::Error>
     where
         P: AsRef<Path>,
@@ -117,8 +116,12 @@ pub fn cleanup_video(
     video_player_query: Query<(&mut VideoPlayer, Entity)>,
     mut video_resource: NonSendMut<VideoResource>,
 ) {
-    let to_clean = video_player_query.iter().filter(|(vp, e)| vp.video_end).map(|(vp, e)|e).collect::<Vec<_>>();
-    to_clean.iter().for_each(|x|{
+    let to_clean = video_player_query
+        .iter()
+        .filter(|(vp, e)| vp.video_end)
+        .map(|(vp, e)| e)
+        .collect::<Vec<_>>();
+    to_clean.iter().for_each(|x| {
         com.entity(*x).despawn();
         video_resource.video_players.remove(x);
     });
@@ -146,7 +149,8 @@ pub fn play_video(
 
             let video_player_non_send = video_resource.video_players.get_mut(&entity).unwrap();
             // read packets from stream until complete frame received
-            while frames_skipped != 0 && let Some((stream, packet)) = video_player_non_send.input_context.packets().next()
+            while frames_skipped != 0
+                && let Some((stream, packet)) = video_player_non_send.input_context.packets().next()
             {
                 // check if packets is for the selected video stream
                 if stream.index() == video_player.video_stream_index {
@@ -212,7 +216,7 @@ impl Material2d for CustomMaterial {
 pub struct VideoSequenceConfig {
     pub path: String,
     pub fps: f64,
-    pub init_adv_transform: AdvTransform
+    pub init_adv_transform: AdvTransform,
 }
 
 #[derive(Component, Default)]
@@ -231,19 +235,14 @@ pub fn system_video_sequence(
     mut materials: ResMut<Assets<CustomMaterial>>,
     mut video_resource: NonSendMut<VideoResource>,
 ) {
-    qv.iter().for_each(|(vs, c, e)| match c {
-        Some(x) => {
-            if x.len() == 0 || x.len() > 1 {
-                panic!("this should not happen i guess ;(")
-            } else {
-                x.iter().for_each(|c_ind| {
-                    if qvp.get(c_ind).unwrap().video_end {
-                        info!("Start next video: {} {} {}", e, c_ind, vs.current);
-                    }
-                });
+    qv.iter().for_each(|(vs, c, e)| {
+        let should_start: bool = match c {
+            Some(_) => {
+                false
             }
-        }
-        None => {
+            None => true,
+        };
+        if should_start {
             let config = vs.config.get(vs.current);
             if let Some(config_in) = config {
                 let (video_player, video_player_non_send) =
@@ -258,19 +257,7 @@ pub fn system_video_sequence(
                             })),
                             Transform::default().with_scale(Vec3::splat(1000.)),
                             video_player,
-                            AdvTransform {
-                                contents: vec![
-                                    AdvTransformItem {
-                                        fullscreen_ratio: Some(2.0),
-                                        fullscreen_option: Some(AdvTransformOption::Contain),
-                                        ..default()
-                                    },
-                                    AdvTransformItem {
-                                        scale_mult: Some((1.0, 1.0)),
-                                        ..default()
-                                    },
-                                ],
-                            },
+                            config_in.init_adv_transform.clone(),
                         ))
                         .id();
                     video_resource

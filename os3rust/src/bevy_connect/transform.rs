@@ -20,7 +20,7 @@ pub struct AdvTransformItem {
     pub rotate: Option<f32>,
 }
 
-#[derive(Component, Default)]
+#[derive(Component, Default, Clone)]
 pub struct AdvTransform {
     pub contents: Vec<AdvTransformItem>,
 }
