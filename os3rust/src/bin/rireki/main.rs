@@ -6,7 +6,7 @@ use os3rust::bevy_connect::{
     transform::{AdvTransform, AdvTransformItem, AdvTransformOption, system_adv_transform},
     video::{
         CustomMaterial, VideoPlayer, VideoResource, VideoSequence, VideoSequenceConfig,
-        system_cleanup_video, initialize_ffmpeg, play_video, system_video_sequence,
+        initialize_ffmpeg, play_video, system_cleanup_video, system_video_sequence,
     },
     window::{WindowMetricsResource, system_window_resize},
 };
@@ -33,23 +33,59 @@ fn init_ui(mut commands: Commands) {
     commands.spawn(Camera2d::default());
 
     commands.spawn(VideoSequence {
-        config: vec![VideoSequenceConfig {
-            path: "../assets/1.webm".to_string(),
-            fps: 48.0,
-            init_adv_transform: AdvTransform {
-                contents: vec![
-                    AdvTransformItem {
-                        fullscreen_ratio: Some(2.0),
-                        fullscreen_option: Some(AdvTransformOption::Contain),
-                        ..default()
-                    },
-                    AdvTransformItem {
-                        scale_mult: Some((1.0, 1.0)),
-                        ..default()
-                    },
-                ],
+        config: vec![
+            VideoSequenceConfig {
+                path: "../assets/1.webm".to_string(),
+                fps: 48.0,
+                init_adv_transform: AdvTransform {
+                    contents: vec![
+                        AdvTransformItem {
+                            fullscreen_ratio: Some(2.0),
+                            fullscreen_option: Some(AdvTransformOption::Contain),
+                            ..default()
+                        },
+                        AdvTransformItem {
+                            scale_mult: Some((1.0, 1.0)),
+                            ..default()
+                        },
+                    ],
+                },
             },
-        }],
+            VideoSequenceConfig {
+                path: "../assets/2.webm".to_string(),
+                fps: 48.0,
+                init_adv_transform: AdvTransform {
+                    contents: vec![
+                        AdvTransformItem {
+                            fullscreen_ratio: Some(2.0),
+                            fullscreen_option: Some(AdvTransformOption::Contain),
+                            ..default()
+                        },
+                        AdvTransformItem {
+                            scale_mult: Some((1.0, 1.0)),
+                            ..default()
+                        },
+                    ],
+                },
+            },
+            VideoSequenceConfig {
+                path: "../assets/3.webm".to_string(),
+                fps: 60.0,
+                init_adv_transform: AdvTransform {
+                    contents: vec![
+                        AdvTransformItem {
+                            fullscreen_ratio: Some(2.0),
+                            fullscreen_option: Some(AdvTransformOption::Contain),
+                            ..default()
+                        },
+                        AdvTransformItem {
+                            scale_mult: Some((1.0, 1.0)),
+                            ..default()
+                        },
+                    ],
+                },
+            },
+        ],
         current: 0,
         ..default()
     });
