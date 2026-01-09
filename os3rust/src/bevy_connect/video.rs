@@ -111,7 +111,7 @@ impl VideoPlayer {
     }
 }
 
-pub fn cleanup_video(
+pub fn system_cleanup_video(
     mut com: Commands,
     video_player_query: Query<(&mut VideoPlayer, Entity)>,
     mut video_resource: NonSendMut<VideoResource>,
@@ -224,10 +224,11 @@ pub struct VideoSequenceConfig {
 pub struct VideoSequence {
     pub config: Vec<VideoSequenceConfig>,
     pub current: usize,
+    pub has_children: bool
 }
 
 pub fn system_video_sequence(
-    qv: Query<(&VideoSequence, Option<&Children>, Entity)>,
+    mut qv: Query<(&mut VideoSequence, Option<&Children>, Entity)>,
     qvp: Query<&VideoPlayer>,
     mut com: Commands,
     mut images: ResMut<Assets<Image>>,
@@ -235,12 +236,19 @@ pub fn system_video_sequence(
     mut materials: ResMut<Assets<CustomMaterial>>,
     mut video_resource: NonSendMut<VideoResource>,
 ) {
-    qv.iter().for_each(|(vs, c, e)| {
+    qv.iter_mut().for_each(|(mut vs, c, e)| {
         let should_start: bool = match c {
             Some(_) => {
+                vs.has_children = true;
                 false
             }
-            None => true,
+            None => {
+                if vs.has_children {
+                    vs.current += 1;
+                }
+                vs.has_children = false;
+                true
+            },
         };
         if should_start {
             let config = vs.config.get(vs.current);

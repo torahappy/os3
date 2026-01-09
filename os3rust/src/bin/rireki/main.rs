@@ -6,7 +6,7 @@ use os3rust::bevy_connect::{
     transform::{AdvTransform, AdvTransformItem, AdvTransformOption, system_adv_transform},
     video::{
         CustomMaterial, VideoPlayer, VideoResource, VideoSequence, VideoSequenceConfig,
-        cleanup_video, initialize_ffmpeg, play_video, system_video_sequence,
+        system_cleanup_video, initialize_ffmpeg, play_video, system_video_sequence,
     },
     window::{WindowMetricsResource, system_window_resize},
 };
@@ -24,7 +24,7 @@ fn main() {
         .add_systems(Update, play_video)
         .add_systems(Update, system_adv_transform)
         .add_systems(Update, system_window_resize)
-        .add_systems(Update, cleanup_video)
+        .add_systems(Update, system_cleanup_video)
         .add_systems(Update, system_video_sequence)
         .run();
 }
@@ -51,5 +51,6 @@ fn init_ui(mut commands: Commands) {
             },
         }],
         current: 0,
+        ..default()
     });
 }
