@@ -14,6 +14,8 @@ use ffmpeg::frame::Video;
 use ffmpeg::media::Type;
 use ffmpeg::software::scaling::{context::Context, flag::Flags};
 
+use crate::bevy_connect::transform::{AdvTransform, AdvTransformItem, AdvTransformOption};
+
 
 pub fn initialize_ffmpeg() {
     ffmpeg::init().unwrap();
@@ -205,4 +207,77 @@ impl Material2d for CustomMaterial {
     fn alpha_mode(&self) -> AlphaMode2d {
         AlphaMode2d::Blend
     }
+}
+
+pub struct VideoSequenceConfig {
+    pub path: String,
+    pub fps: f64,
+    pub init_adv_transform: AdvTransform
+}
+
+#[derive(Component, Default)]
+#[require(InheritedVisibility, GlobalTransform, Transform)]
+pub struct VideoSequence {
+    pub config: Vec<VideoSequenceConfig>,
+    pub current: usize,
+}
+
+pub fn system_video_sequence(
+    qv: Query<(&VideoSequence, Option<&Children>, Entity)>,
+    qvp: Query<&VideoPlayer>,
+    mut com: Commands,
+    mut images: ResMut<Assets<Image>>,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<CustomMaterial>>,
+    mut video_resource: NonSendMut<VideoResource>,
+) {
+    qv.iter().for_each(|(vs, c, e)| match c {
+        Some(x) => {
+            if x.len() == 0 || x.len() > 1 {
+                panic!("this should not happen i guess ;(")
+            } else {
+                x.iter().for_each(|c_ind| {
+                    if qvp.get(c_ind).unwrap().video_end {
+                        info!("Start next video: {} {} {}", e, c_ind, vs.current);
+                    }
+                });
+            }
+        }
+        None => {
+            let config = vs.config.get(vs.current);
+            if let Some(config_in) = config {
+                let (video_player, video_player_non_send) =
+                    VideoPlayer::new(config_in.path.clone(), &mut images, config_in.fps).unwrap();
+                com.entity(e).with_children(|com2| {
+                    let e2 = com2
+                        .spawn((
+                            Mesh2d(meshes.add(Rectangle::default())),
+                            MeshMaterial2d(materials.add(CustomMaterial {
+                                color_texture: Some(video_player.image_handle.clone()),
+                                time: 0.0,
+                            })),
+                            Transform::default().with_scale(Vec3::splat(1000.)),
+                            video_player,
+                            AdvTransform {
+                                contents: vec![
+                                    AdvTransformItem {
+                                        fullscreen_ratio: Some(2.0),
+                                        fullscreen_option: Some(AdvTransformOption::Contain),
+                                        ..default()
+                                    },
+                                    AdvTransformItem {
+                                        scale_mult: Some((1.0, 1.0)),
+                                        ..default()
+                                    },
+                                ],
+                            },
+                        ))
+                        .id();
+                    video_resource
+                        .video_players
+                        .insert(e2, video_player_non_send);
+                });
+            }
+        }
+    });
 }
