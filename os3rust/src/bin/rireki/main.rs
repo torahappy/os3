@@ -5,8 +5,8 @@ use std::time::Duration;
 use bevy::shader::ShaderRef;
 use bevy::sprite_render::{AlphaMode2d, Material2d, Material2dPlugin};
 use bevy::{prelude::*, render::render_resource::AsBindGroup};
-use bevy_tweening::{Tween, TweenAnim, TweeningPlugin};
 use bevy_tweening::lens::TransformPositionLens;
+use bevy_tweening::{Tween, TweenAnim, TweeningPlugin};
 use os3rust::bevy_connect::transform::{Lifetime, apply_adv_transform, system_lifetime};
 use os3rust::bevy_connect::video::{VideoMaterial, VideoPlayer};
 use os3rust::bevy_connect::{
@@ -113,90 +113,88 @@ fn system_spawn_images(
     mut materials: ResMut<Assets<DrawingMaterial>>,
     asset_server: Res<AssetServer>,
     wm: Res<WindowMetricsResource>,
-    time: Res<Time>
+    time: Res<Time>,
 ) {
-    let r: f32 = rand::rng().random();
-    if r < 0.003 {
-        info!("spawn picture");
-        if (q_drawing.iter().len() < 2) {
-            let mut com_fork = com.spawn((
-                Mesh2d(meshes.add(Rectangle::default())),
-                MeshMaterial2d(materials.add(DrawingMaterial {
-                    color_texture: Some(asset_server.load("pictures/a2000.webp")),
-                    time: 0.0,
-                })),
-                Drawing {},
+    info!("spawn picture");
+    if (q_drawing.iter().len() == 0) {
+        let mut com_fork = com.spawn((
+            Mesh2d(meshes.add(Rectangle::default())),
+            MeshMaterial2d(materials.add(DrawingMaterial {
+                color_texture: Some(asset_server.load("pictures/a2000.webp")),
+                time: 0.0,
+            })),
+            Drawing {},
+        ));
+
+        {
+            let advt_start = AdvTransform {
+                contents: vec![
+                    AdvTransformItem {
+                        fullscreen_ratio: Some(1.442380404405721),
+                        fullscreen_option: Some(AdvTransformOption::Cover),
+                        ..default()
+                    },
+                    AdvTransformItem {
+                        scale_mult: Some((1.0, 1.0)),
+                        ..default()
+                    },
+                    AdvTransformItem {
+                        set_z: Some(-1.0),
+                        ..default()
+                    },
+                    AdvTransformItem {
+                        translate_mult: Some((0.0, 0.9)),
+                        ..default()
+                    },
+                ],
+            };
+            let mut t_start = Transform::default();
+            apply_adv_transform(&advt_start, &mut t_start, &wm.clone());
+
+            let advt_end = AdvTransform {
+                contents: vec![
+                    AdvTransformItem {
+                        fullscreen_ratio: Some(1.442380404405721),
+                        fullscreen_option: Some(AdvTransformOption::Cover),
+                        ..default()
+                    },
+                    AdvTransformItem {
+                        scale_mult: Some((1.0, 1.0)),
+                        ..default()
+                    },
+                    AdvTransformItem {
+                        set_z: Some(-1.0),
+                        ..default()
+                    },
+                    AdvTransformItem {
+                        translate_mult: Some((0.0, -0.9)),
+                        ..default()
+                    },
+                ],
+            };
+            let mut t_end = Transform::default();
+            apply_adv_transform(&advt_end, &mut t_end, &wm.clone());
+
+            info!("{:?} {:?}", t_start, t_end);
+
+            com_fork.insert((
+                t_start,
+                TweenAnim::new(Tween::new(
+                    EaseFunction::QuadraticInOut,
+                    // It takes 1 second to go from start to end points.
+                    Duration::from_secs(40),
+                    // The lens gives access to the Transform component of the Entity,
+                    // for the TweenAnimator to animate it. It also contains the start and
+                    // end values respectively associated with the progress ratios 0. and 1.
+                    TransformPositionLens {
+                        start: t_start.translation,
+                        end: t_end.translation,
+                    },
+                )),
+                Lifetime {
+                    destruct_on: time.elapsed_secs_f64() + 40.0,
+                },
             ));
-
-            {
-
-                let advt_start = AdvTransform {
-                    contents: vec![
-                        AdvTransformItem {
-                            fullscreen_ratio: Some(1.442380404405721),
-                            fullscreen_option: Some(AdvTransformOption::Contain),
-                            ..default()
-                        },
-                        AdvTransformItem {
-                            scale_mult: Some((1.0, 1.0)),
-                            ..default()
-                        },
-                        AdvTransformItem {
-                            set_z: Some(rand::rng().random::<f32>() * 0.001 + 1.5),
-                            ..default()
-                        },
-                        AdvTransformItem {
-                            translate_mult: Some((0.0, 0.9)),
-                            ..default()
-                        },
-                    ],
-                };
-                let mut t_start = Transform::default();
-                apply_adv_transform(&advt_start, &mut t_start, &wm.clone());
-
-                let advt_end = AdvTransform {
-                    contents: vec![
-                        AdvTransformItem {
-                            fullscreen_ratio: Some(1.442380404405721),
-                            fullscreen_option: Some(AdvTransformOption::Contain),
-                            ..default()
-                        },
-                        AdvTransformItem {
-                            scale_mult: Some((1.0, 1.0)),
-                            ..default()
-                        },
-                        AdvTransformItem {
-                            set_z: Some(rand::rng().random::<f32>() * 0.001 + 1.5),
-                            ..default()
-                        },
-                        AdvTransformItem {
-                            translate_mult: Some((0.0, -0.9)),
-                            ..default()
-                        },
-                    ],
-                };
-                let mut t_end = Transform::default();
-                apply_adv_transform(&advt_end, &mut t_end, &wm.clone());
-
-                info!("{:?} {:?}", t_start, t_end);
-
-                com_fork.insert((
-                    t_start,
-                    TweenAnim::new(Tween::new(
-                        EaseFunction::QuadraticInOut,
-                        // It takes 1 second to go from start to end points.
-                        Duration::from_secs(17),
-                        // The lens gives access to the Transform component of the Entity,
-                        // for the TweenAnimator to animate it. It also contains the start and
-                        // end values respectively associated with the progress ratios 0. and 1.
-                        TransformPositionLens {
-                            start: t_start.translation,
-                            end: t_end.translation,
-                        },
-                    )),
-                    Lifetime { destruct_on: time.elapsed_secs_f64() + 17.0 }
-                ));
-            }
         }
     }
 }
