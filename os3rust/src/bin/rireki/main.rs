@@ -36,7 +36,7 @@ fn init_ui(mut commands: Commands) {
         config: vec![
             VideoSequenceConfig {
                 path: "assets/movies/1.webm".to_string(),
-                fps: 48.0,
+                fps: 96.0,
                 init_adv_transform: AdvTransform {
                     contents: vec![
                         AdvTransformItem {
@@ -53,7 +53,7 @@ fn init_ui(mut commands: Commands) {
             },
             VideoSequenceConfig {
                 path: "assets/movies/2.webm".to_string(),
-                fps: 48.0,
+                fps: 96.0,
                 init_adv_transform: AdvTransform {
                     contents: vec![
                         AdvTransformItem {
@@ -70,7 +70,7 @@ fn init_ui(mut commands: Commands) {
             },
             VideoSequenceConfig {
                 path: "assets/movies/3.webm".to_string(),
-                fps: 60.0,
+                fps: 120.0,
                 init_adv_transform: AdvTransform {
                     contents: vec![
                         AdvTransformItem {
@@ -87,7 +87,7 @@ fn init_ui(mut commands: Commands) {
             },
             VideoSequenceConfig {
                 path: "assets/movies/4.webm".to_string(),
-                fps: 60.0,
+                fps: 120.0,
                 init_adv_transform: AdvTransform {
                     contents: vec![
                         AdvTransformItem {
@@ -104,7 +104,7 @@ fn init_ui(mut commands: Commands) {
             },
             VideoSequenceConfig {
                 path: "assets/movies/5.webm".to_string(),
-                fps: 60.0,
+                fps: 120.0,
                 init_adv_transform: AdvTransform {
                     contents: vec![
                         AdvTransformItem {
@@ -121,7 +121,7 @@ fn init_ui(mut commands: Commands) {
             },
             VideoSequenceConfig {
                 path: "assets/movies/6.webm".to_string(),
-                fps: 60.0,
+                fps: 120.0,
                 init_adv_transform: AdvTransform {
                     contents: vec![
                         AdvTransformItem {
