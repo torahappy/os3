@@ -140,7 +140,7 @@ pub fn play_video(
         let window = 1.0 / video_player.fps;
         if video_player.elapsed - video_player.last_sync > window {
             let total_frames = video_player.elapsed / window;
-            let frames_skipped =
+            let mut frames_skipped =
                 ((video_player.elapsed - video_player.last_sync) / window) as u64;
             if frames_skipped > 1 {
                 info!("frame skipped: {} {}", entity, frames_skipped);
@@ -149,11 +149,13 @@ pub fn play_video(
 
             if let Some(video_player_non_send) = video_resource.video_players.get_mut(&entity) {
                 // read packets from stream until complete frame received
-                while let Some((stream, packet)) =
+                while frames_skipped > 0
+                    && let Some((stream, packet)) =
                         video_player_non_send.input_context.packets().next()
                 {
                     // check if packets is for the selected video stream
                     if stream.index() == video_player.video_stream_index {
+                        frames_skipped -= 1;
                         // pass packet to decoder
                         video_player_non_send.decoder.send_packet(&packet).unwrap();
                         let mut decoded = Video::empty();
@@ -170,12 +172,11 @@ pub fn play_video(
 
                             let frame = rgb_frame.data(0).to_vec();
                             image.data = Some(frame);
-                            
                             if m2d.contains(entity) {
-                                materials
-                                    .get_mut(m2d.get(entity).unwrap().0.id())
-                                    .unwrap()
-                                    .time += time.delta_secs();
+                                let m = materials.get_mut(m2d.get(entity).unwrap().0.id());
+                                if let Some(mm) = m {
+                                    mm.time += time.delta_secs();
+                                }
                             }
                             return;
                         }
@@ -228,6 +229,7 @@ pub struct VideoSequence {
     pub config: Vec<VideoSequenceConfig>,
     pub current: usize,
     pub has_children: bool,
+    pub custom_material: bool,
 }
 
 pub fn system_video_sequence(
@@ -259,18 +261,20 @@ pub fn system_video_sequence(
                 let (video_player, video_player_non_send) =
                     VideoPlayer::new(config_in.path.clone(), &mut images, config_in.fps).unwrap();
                 com.entity(e).with_children(|com2| {
-                    let e2 = com2
-                        .spawn((
-                            Mesh2d(meshes.add(Rectangle::default())),
-                            MeshMaterial2d(materials.add(VideoMaterial {
-                                color_texture: Some(video_player.image_handle.clone()),
-                                time: 0.0,
-                            })),
-                            Transform::default().with_scale(Vec3::splat(1000.)),
-                            video_player,
-                            config_in.init_adv_transform.clone(),
-                        ))
-                        .id();
+                    let ih = video_player.image_handle.clone(); 
+                    let mut com2_fork = com2.spawn((
+                        Mesh2d(meshes.add(Rectangle::default())),
+                        Transform::default().with_scale(Vec3::splat(1000.)),
+                        video_player,
+                        config_in.init_adv_transform.clone(),
+                    ));
+                    if vs.custom_material == false {
+                        com2_fork.insert(MeshMaterial2d(materials.add(VideoMaterial {
+                            color_texture: Some(ih),
+                            time: 0.0,
+                        })));
+                    }
+                    let e2 = com2_fork.id();
                     video_resource
                         .video_players
                         .insert(e2, video_player_non_send);

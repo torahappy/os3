@@ -7,5 +7,6 @@
 @fragment
 fn fragment(mesh: VertexOutput) -> @location(0) vec4<f32> {
     var col = textureSample(base_color_texture, base_color_sampler, mesh.uv);
+
     return col;
 }
