@@ -14,6 +14,7 @@ rustybuzz = "0.20.1"
 yew = { version = "0.22.0", features = ["csr"] }
 log = { version = "*", features = ["max_level_debug", "release_max_level_warn"] }
 quanta = "0.12.6"
+bevy_tweening = "0.14.0"
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 ffmpeg-next = "8.0.0"
