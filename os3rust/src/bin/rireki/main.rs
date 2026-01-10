@@ -3,12 +3,12 @@
 use bevy::prelude::*;
 use bevy::sprite_render::Material2dPlugin;
 use os3rust::bevy_connect::{
-    transform::{system_adv_transform, AdvTransform, AdvTransformItem, AdvTransformOption},
+    transform::{AdvTransform, AdvTransformItem, AdvTransformOption, system_adv_transform},
     video::{
-        initialize_ffmpeg, play_video, system_cleanup_video, system_video_sequence, CustomMaterial,
-        VideoPlayer, VideoResource, VideoSequence, VideoSequenceConfig,
+        CustomMaterial, VideoPlayer, VideoResource, VideoSequence, VideoSequenceConfig,
+        initialize_ffmpeg, play_video, system_cleanup_video, system_video_sequence,
     },
-    window::{system_window_resize, WindowMetricsResource},
+    window::{WindowMetricsResource, system_window_resize},
 };
 
 fn main() {

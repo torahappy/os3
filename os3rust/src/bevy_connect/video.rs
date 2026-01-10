@@ -147,46 +147,48 @@ pub fn play_video(
             }
             video_player.last_sync = total_frames * window;
 
-            let video_player_non_send = video_resource.video_players.get_mut(&entity).unwrap();
-            // read packets from stream until complete frame received
-            while frames_skipped != 0
-                && let Some((stream, packet)) = video_player_non_send.input_context.packets().next()
-            {
-                // check if packets is for the selected video stream
-                if stream.index() == video_player.video_stream_index {
-                    frames_skipped -= 1;
-                    // pass packet to decoder
-                    video_player_non_send.decoder.send_packet(&packet).unwrap();
-                    let mut decoded = Video::empty();
-                    // check if complete frame was received
-                    if let Ok(()) = video_player_non_send.decoder.receive_frame(&mut decoded) {
-                        let mut rgb_frame = Video::empty();
-                        // run frame through scaler for color space conversion
-                        video_player_non_send
-                            .scaler_context
-                            .run(&decoded, &mut rgb_frame)
-                            .unwrap();
-                        // update data of image texture
-                        let image = images.get_mut(&video_player.image_handle).unwrap();
+            if let Some(video_player_non_send) = video_resource.video_players.get_mut(&entity) {
+                // read packets from stream until complete frame received
+                while frames_skipped != 0
+                    && let Some((stream, packet)) =
+                        video_player_non_send.input_context.packets().next()
+                {
+                    // check if packets is for the selected video stream
+                    if stream.index() == video_player.video_stream_index {
+                        frames_skipped -= 1;
+                        // pass packet to decoder
+                        video_player_non_send.decoder.send_packet(&packet).unwrap();
+                        let mut decoded = Video::empty();
+                        // check if complete frame was received
+                        if let Ok(()) = video_player_non_send.decoder.receive_frame(&mut decoded) {
+                            let mut rgb_frame = Video::empty();
+                            // run frame through scaler for color space conversion
+                            video_player_non_send
+                                .scaler_context
+                                .run(&decoded, &mut rgb_frame)
+                                .unwrap();
+                            // update data of image texture
+                            let image = images.get_mut(&video_player.image_handle).unwrap();
 
-                        let frame = rgb_frame.data(0).to_vec();
-                        image.data = Some(frame);
-                        materials
-                            .get_mut(m2d.get(entity).unwrap().0.id())
-                            .unwrap()
-                            .time += time.delta_secs();
-                        return;
+                            let frame = rgb_frame.data(0).to_vec();
+                            image.data = Some(frame);
+                            materials
+                                .get_mut(m2d.get(entity).unwrap().0.id())
+                                .unwrap()
+                                .time += time.delta_secs();
+                            return;
+                        }
                     }
                 }
-            }
-            // no frame received
-            // signal end of playback to decoder
-            match video_player_non_send.decoder.send_eof() {
-                Err(ffmpeg::Error::Eof) => {
-                    info!("End of file: send cleanup signal for {}", entity);
-                    video_player.video_end = true;
+                // no frame received
+                // signal end of playback to decoder
+                match video_player_non_send.decoder.send_eof() {
+                    Err(ffmpeg::Error::Eof) => {
+                        info!("End of file: send cleanup signal for {}", entity);
+                        video_player.video_end = true;
+                    }
+                    other => other.unwrap(),
                 }
-                other => other.unwrap(),
             }
         }
     }
@@ -224,7 +226,7 @@ pub struct VideoSequenceConfig {
 pub struct VideoSequence {
     pub config: Vec<VideoSequenceConfig>,
     pub current: usize,
-    pub has_children: bool
+    pub has_children: bool,
 }
 
 pub fn system_video_sequence(
@@ -248,7 +250,7 @@ pub fn system_video_sequence(
                 }
                 vs.has_children = false;
                 true
-            },
+            }
         };
         if should_start {
             let config = vs.config.get(vs.current);
