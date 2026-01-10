@@ -91,11 +91,12 @@ fn main() {
             Material2dPlugin::<VideoMaterial>::default(),
             Material2dPlugin::<DrawingMaterial>::default(),
         ))
+        .insert_resource(Time::<Fixed>::from_hz(120.0))
         .init_resource::<WindowMetricsResource>()
         .init_non_send_resource::<VideoResource>()
         .add_systems(Startup, init_ui)
         .add_systems(Startup, initialize_ffmpeg)
-        .add_systems(Update, play_video)
+        .add_systems(FixedUpdate, play_video)
         .add_systems(Update, system_adv_transform)
         .add_systems(Update, system_window_resize)
         .add_systems(Update, system_cleanup_video)
@@ -115,8 +116,8 @@ fn system_spawn_images(
     wm: Res<WindowMetricsResource>,
     time: Res<Time>,
 ) {
-    info!("spawn picture");
     if (q_drawing.iter().len() == 0) {
+    info!("spawn picture");
         let mut com_fork = com.spawn((
             Mesh2d(meshes.add(Rectangle::default())),
             MeshMaterial2d(materials.add(DrawingMaterial {
@@ -177,12 +178,14 @@ fn system_spawn_images(
 
             info!("{:?} {:?}", t_start, t_end);
 
+            let len = 17.0 + rand::rng().random::<f32>()*25.0;
+
             com_fork.insert((
                 t_start,
                 TweenAnim::new(Tween::new(
                     EaseFunction::QuadraticInOut,
                     // It takes 1 second to go from start to end points.
-                    Duration::from_secs(40),
+                    Duration::from_secs_f32(len),
                     // The lens gives access to the Transform component of the Entity,
                     // for the TweenAnimator to animate it. It also contains the start and
                     // end values respectively associated with the progress ratios 0. and 1.
@@ -192,7 +195,7 @@ fn system_spawn_images(
                     },
                 )),
                 Lifetime {
-                    destruct_on: time.elapsed_secs_f64() + 40.0,
+                    destruct_on: time.elapsed_secs_f64() + (len as f64),
                 },
             ));
         }
@@ -262,7 +265,7 @@ fn init_ui(mut commands: Commands) {
             config: vec![
                 VideoSequenceConfig {
                     path: "assets/movies/text_1.webm".to_string(),
-                    fps: 60.0,
+                    fps: 120.0,
                     init_adv_transform: AdvTransform {
                         contents: vec![
                             AdvTransformItem {
@@ -283,7 +286,7 @@ fn init_ui(mut commands: Commands) {
                 },
                 VideoSequenceConfig {
                     path: "assets/movies/text_2.webm".to_string(),
-                    fps: 60.0,
+                    fps: 120.0,
                     init_adv_transform: AdvTransform {
                         contents: vec![
                             AdvTransformItem {
@@ -313,7 +316,7 @@ fn init_ui(mut commands: Commands) {
             config: vec![
                 VideoSequenceConfig {
                     path: "assets/movies/1.webm".to_string(),
-                    fps: 60.0,
+                    fps: 96.0,
                     init_adv_transform: AdvTransform {
                         contents: vec![
                             AdvTransformItem {
@@ -330,7 +333,7 @@ fn init_ui(mut commands: Commands) {
                 },
                 VideoSequenceConfig {
                     path: "assets/movies/2.webm".to_string(),
-                    fps: 60.0,
+                    fps: 96.0,
                     init_adv_transform: AdvTransform {
                         contents: vec![
                             AdvTransformItem {
@@ -347,7 +350,7 @@ fn init_ui(mut commands: Commands) {
                 },
                 VideoSequenceConfig {
                     path: "assets/movies/3.webm".to_string(),
-                    fps: 60.0,
+                    fps: 120.0,
                     init_adv_transform: AdvTransform {
                         contents: vec![
                             AdvTransformItem {
@@ -364,7 +367,7 @@ fn init_ui(mut commands: Commands) {
                 },
                 VideoSequenceConfig {
                     path: "assets/movies/4.webm".to_string(),
-                    fps: 60.0,
+                    fps: 120.0,
                     init_adv_transform: AdvTransform {
                         contents: vec![
                             AdvTransformItem {
@@ -381,7 +384,7 @@ fn init_ui(mut commands: Commands) {
                 },
                 VideoSequenceConfig {
                     path: "assets/movies/5.webm".to_string(),
-                    fps: 60.0,
+                    fps: 120.0,
                     init_adv_transform: AdvTransform {
                         contents: vec![
                             AdvTransformItem {
@@ -398,7 +401,7 @@ fn init_ui(mut commands: Commands) {
                 },
                 VideoSequenceConfig {
                     path: "assets/movies/6.webm".to_string(),
-                    fps: 60.0,
+                    fps: 120.0,
                     init_adv_transform: AdvTransform {
                         contents: vec![
                             AdvTransformItem {
