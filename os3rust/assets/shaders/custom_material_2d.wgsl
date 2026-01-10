@@ -32,9 +32,6 @@ fn fragment(mesh: VertexOutput) -> @location(0) vec4<f32> {
       col.z = 0.1;
     }
 
-    if (col.x > 0.848 && col.y > 0.848 && col.z > 0.848) {
-      col.w = alpha_white;
-    }
 
     if (col.x > 0.99 && col.y > 0.99 && col.z > 0.99) {
       col.x = 0.95;
@@ -44,6 +41,10 @@ fn fragment(mesh: VertexOutput) -> @location(0) vec4<f32> {
       col.x = 0.04;
       col.y = 0.07;
       col.z = 0.08;
+    }
+
+    if (col.x > 0.848 && col.y > 0.848 && col.z > 0.848) {
+      col.w = alpha_white;
     }
     return col;
 }

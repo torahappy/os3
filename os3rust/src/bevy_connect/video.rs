@@ -140,7 +140,7 @@ pub fn play_video(
         let window = 1.0 / video_player.fps;
         if video_player.elapsed - video_player.last_sync > window {
             let total_frames = video_player.elapsed / window;
-            let mut frames_skipped =
+            let frames_skipped =
                 ((video_player.elapsed - video_player.last_sync) / window) as u64;
             if frames_skipped > 1 {
                 info!("frame skipped: {} {}", entity, frames_skipped);
@@ -155,7 +155,6 @@ pub fn play_video(
                 {
                     // check if packets is for the selected video stream
                     if stream.index() == video_player.video_stream_index {
-                        frames_skipped -= 1;
                         // pass packet to decoder
                         video_player_non_send.decoder.send_packet(&packet).unwrap();
                         let mut decoded = Video::empty();

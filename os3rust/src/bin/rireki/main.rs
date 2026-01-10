@@ -81,30 +81,46 @@ fn system_video_shaders(
     time: ResMut<Time>,
 ) {
     let q_all = {
-        let mut q_main_ec = q_main.iter().map(|(x, y, z)| (y, z)).collect::<Vec<_>>();
-        let q_text_ec = q_text.iter().map(|(x, y, z)| (y, z));
+        let mut q_main_ec = q_main.iter().map(|(x, y, z)| (y, z, 0)).collect::<Vec<_>>();
+        let q_text_ec = q_text.iter().map(|(x, y, z)| (y, z, 1));
         q_main_ec.extend(q_text_ec);
         q_main_ec
     };
 
-    q_all.iter().for_each(|(e, c)| {
+    q_all.iter().for_each(|(e, c, i)| {
         if let Some(c_in) = c {
             let c_vp = c_in.get(0).unwrap();
             let (vp, custom_material) = q_vp.get(*c_vp).unwrap();
             if let Some(cm) = custom_material {
                 materials.get_mut(cm.0.id()).unwrap().time += time.delta_secs();
             } else {
-                com.entity(*c_vp)
-                    .insert(MeshMaterial2d(materials.add(CustomMaterial {
-                        color_texture: Some(vp.image_handle.clone()),
-                        time: 0.0,
-                        alpha_green: 0.0,
-                        alpha_white: 0.0,
-                        t_1: 0.03,
-                        t_2: 0.05,
-                        t_3: 0.99,
-                        t_4: 0.9,
-                    })));
+                if (*i == 0) {
+                    info!("main start");
+                    com.entity(*c_vp)
+                        .insert(MeshMaterial2d(materials.add(CustomMaterial {
+                            color_texture: Some(vp.image_handle.clone()),
+                            time: 0.0,
+                            alpha_green: 0.0,
+                            alpha_white: 1.0,
+                            t_1: 0.03,
+                            t_2: 0.05,
+                            t_3: 0.99,
+                            t_4: 0.9,
+                        })));
+                } else if (*i == 1) {
+                    info!("text start");
+                    com.entity(*c_vp)
+                        .insert(MeshMaterial2d(materials.add(CustomMaterial {
+                            color_texture: Some(vp.image_handle.clone()),
+                            time: 0.0,
+                            alpha_green: 1.0,
+                            alpha_white: 0.0,
+                            t_1: 0.03,
+                            t_2: 0.05,
+                            t_3: 0.99,
+                            t_4: 0.9,
+                        })));
+                }
             }
         }
     });
