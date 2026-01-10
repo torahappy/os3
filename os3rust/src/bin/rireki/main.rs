@@ -27,6 +27,18 @@ pub struct CustomMaterial {
     pub color_texture: Option<Handle<Image>>,
     #[uniform(2)]
     pub time: f32,
+    #[uniform(3)]
+    pub alpha_green: f32,
+    #[uniform(4)]
+    pub alpha_white: f32,
+    #[uniform(5)]
+    pub t_1: f32,
+    #[uniform(6)]
+    pub t_2: f32,
+    #[uniform(7)]
+    pub t_3: f32,
+    #[uniform(8)]
+    pub t_4: f32,
 }
 
 const SHADER_ASSET_PATH: &str = "shaders/custom_material_2d.wgsl";
@@ -86,6 +98,12 @@ fn system_video_shaders(
                     .insert(MeshMaterial2d(materials.add(CustomMaterial {
                         color_texture: Some(vp.image_handle.clone()),
                         time: 0.0,
+                        alpha_green: 0.0,
+                        alpha_white: 0.0,
+                        t_1: 0.03,
+                        t_2: 0.05,
+                        t_3: 0.99,
+                        t_4: 0.9,
                     })));
             }
         }
