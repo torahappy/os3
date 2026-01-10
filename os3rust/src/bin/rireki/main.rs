@@ -1,8 +1,13 @@
 // りれきしょ
 
+use std::time::Duration;
+
 use bevy::shader::ShaderRef;
 use bevy::sprite_render::{AlphaMode2d, Material2d, Material2dPlugin};
 use bevy::{prelude::*, render::render_resource::AsBindGroup};
+use bevy_tweening::{Tween, TweenAnim, TweeningPlugin};
+use bevy_tweening::lens::TransformPositionLens;
+use os3rust::bevy_connect::transform::{Lifetime, apply_adv_transform, system_lifetime};
 use os3rust::bevy_connect::video::{VideoMaterial, VideoPlayer};
 use os3rust::bevy_connect::{
     transform::{AdvTransform, AdvTransformItem, AdvTransformOption, system_adv_transform},
@@ -12,12 +17,37 @@ use os3rust::bevy_connect::{
     },
     window::{WindowMetricsResource, system_window_resize},
 };
+use rand::prelude::*;
 
 #[derive(Component)]
 pub struct MainVideo {}
 
 #[derive(Component)]
 pub struct TextVideo {}
+
+#[derive(Component)]
+pub struct Drawing {}
+
+// This is the struct that will be passed to your shader
+#[derive(Asset, TypePath, AsBindGroup, Debug, Clone)]
+pub struct DrawingMaterial {
+    #[texture(0)]
+    #[sampler(1)]
+    pub color_texture: Option<Handle<Image>>,
+    #[uniform(2)]
+    pub time: f32,
+}
+
+const SHADER_ASSET_PATH_DRAWING: &str = "shaders/drawing_2d.wgsl";
+impl Material2d for DrawingMaterial {
+    fn fragment_shader() -> ShaderRef {
+        SHADER_ASSET_PATH_DRAWING.into()
+    }
+
+    fn alpha_mode(&self) -> AlphaMode2d {
+        AlphaMode2d::Blend
+    }
+}
 
 // This is the struct that will be passed to your shader
 #[derive(Asset, TypePath, AsBindGroup, Debug, Clone)]
@@ -56,8 +86,10 @@ fn main() {
     App::new()
         .add_plugins((
             DefaultPlugins,
+            TweeningPlugin,
             Material2dPlugin::<CustomMaterial>::default(),
             Material2dPlugin::<VideoMaterial>::default(),
+            Material2dPlugin::<DrawingMaterial>::default(),
         ))
         .init_resource::<WindowMetricsResource>()
         .init_non_send_resource::<VideoResource>()
@@ -68,8 +100,104 @@ fn main() {
         .add_systems(Update, system_window_resize)
         .add_systems(Update, system_cleanup_video)
         .add_systems(Update, system_video_sequence)
+        .add_systems(Update, system_lifetime)
         .add_systems(Update, system_video_shaders)
+        .add_systems(Update, system_spawn_images)
         .run();
+}
+
+fn system_spawn_images(
+    mut com: Commands,
+    q_drawing: Query<&Drawing>,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<DrawingMaterial>>,
+    asset_server: Res<AssetServer>,
+    wm: Res<WindowMetricsResource>,
+    time: Res<Time>
+) {
+    let r: f32 = rand::rng().random();
+    if r < 0.003 {
+        info!("spawn picture");
+        if (q_drawing.iter().len() < 3) {
+            let mut com_fork = com.spawn((
+                Mesh2d(meshes.add(Rectangle::default())),
+                MeshMaterial2d(materials.add(DrawingMaterial {
+                    color_texture: Some(asset_server.load("pictures/a2000.webp")),
+                    time: 0.0,
+                })),
+                Drawing {},
+            ));
+
+            {
+                let advt_start = AdvTransform {
+                    contents: vec![
+                        AdvTransformItem {
+                            fullscreen_ratio: Some(1.442380404405721),
+                            fullscreen_option: Some(AdvTransformOption::Contain),
+                            ..default()
+                        },
+                        AdvTransformItem {
+                            scale_mult: Some((1.0, 1.0)),
+                            ..default()
+                        },
+                        AdvTransformItem {
+                            set_z: Some((1.5)),
+                            ..default()
+                        },
+                        AdvTransformItem {
+                            translate_mult: Some((0.0, 0.9)),
+                            ..default()
+                        },
+                    ],
+                };
+                let mut t_start = Transform::default();
+                apply_adv_transform(&advt_start, &mut t_start, &wm.clone());
+
+                let advt_end = AdvTransform {
+                    contents: vec![
+                        AdvTransformItem {
+                            fullscreen_ratio: Some(1.442380404405721),
+                            fullscreen_option: Some(AdvTransformOption::Contain),
+                            ..default()
+                        },
+                        AdvTransformItem {
+                            scale_mult: Some((1.0, 1.0)),
+                            ..default()
+                        },
+                        AdvTransformItem {
+                            set_z: Some((1.5)),
+                            ..default()
+                        },
+                        AdvTransformItem {
+                            translate_mult: Some((0.0, -0.9)),
+                            ..default()
+                        },
+                    ],
+                };
+                let mut t_end = Transform::default();
+                apply_adv_transform(&advt_end, &mut t_end, &wm.clone());
+
+                info!("{:?} {:?}", t_start, t_end);
+
+                com_fork.insert((
+                    t_start,
+                    TweenAnim::new(Tween::new(
+                        EaseFunction::QuadraticInOut,
+                        // It takes 1 second to go from start to end points.
+                        Duration::from_secs(17),
+                        // The lens gives access to the Transform component of the Entity,
+                        // for the TweenAnimator to animate it. It also contains the start and
+                        // end values respectively associated with the progress ratios 0. and 1.
+                        TransformPositionLens {
+                            start: t_start.translation,
+                            end: t_end.translation,
+                        },
+                    )),
+                    Lifetime { destruct_on: time.elapsed_secs_f64() + 17.0 }
+                ));
+            }
+        }
+    }
 }
 
 fn system_video_shaders(
@@ -135,7 +263,7 @@ fn init_ui(mut commands: Commands) {
             config: vec![
                 VideoSequenceConfig {
                     path: "assets/movies/text_1.webm".to_string(),
-                    fps: 24.0,
+                    fps: 60.0,
                     init_adv_transform: AdvTransform {
                         contents: vec![
                             AdvTransformItem {
@@ -156,7 +284,7 @@ fn init_ui(mut commands: Commands) {
                 },
                 VideoSequenceConfig {
                     path: "assets/movies/text_2.webm".to_string(),
-                    fps: 24.0,
+                    fps: 60.0,
                     init_adv_transform: AdvTransform {
                         contents: vec![
                             AdvTransformItem {
@@ -182,10 +310,11 @@ fn init_ui(mut commands: Commands) {
 
     commands
         .spawn(VideoSequence {
+            custom_material: true,
             config: vec![
                 VideoSequenceConfig {
                     path: "assets/movies/1.webm".to_string(),
-                    fps: 48.0,
+                    fps: 60.0,
                     init_adv_transform: AdvTransform {
                         contents: vec![
                             AdvTransformItem {
@@ -202,7 +331,7 @@ fn init_ui(mut commands: Commands) {
                 },
                 VideoSequenceConfig {
                     path: "assets/movies/2.webm".to_string(),
-                    fps: 48.0,
+                    fps: 60.0,
                     init_adv_transform: AdvTransform {
                         contents: vec![
                             AdvTransformItem {

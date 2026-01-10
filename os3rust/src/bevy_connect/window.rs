@@ -1,6 +1,6 @@
 use bevy::{prelude::*, window::WindowResized};
 
-#[derive(Resource, Default)]
+#[derive(Resource, Default, Clone)]
 pub struct WindowMetricsResource {
     pub window_width: f32,
     pub window_height: f32,
