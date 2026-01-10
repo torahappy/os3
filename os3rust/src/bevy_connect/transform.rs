@@ -18,6 +18,7 @@ pub struct AdvTransformItem {
     pub translate_mult: Option<(f32, f32)>,
     pub scale_mult: Option<(f32, f32)>,
     pub rotate: Option<f32>,
+    pub set_z: Option<f32>
 }
 
 #[derive(Component, Default, Clone)]
@@ -78,6 +79,8 @@ pub fn system_adv_transform(
                 t.scale.y = t.scale.y * y;
             } else if let Some(x) = mf.rotate {
                 t.rotate_z(x);
+            } else if let Some(x) = mf.set_z {
+                t.translation.z = x;
             }
         });
     });

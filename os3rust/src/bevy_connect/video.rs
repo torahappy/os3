@@ -131,8 +131,8 @@ pub fn play_video(
     mut video_player_query: Query<(&mut VideoPlayer, Entity)>,
     mut video_resource: NonSendMut<VideoResource>,
     mut images: ResMut<Assets<Image>>,
-    mut materials: ResMut<Assets<CustomMaterial>>,
-    m2d: Query<&MeshMaterial2d<CustomMaterial>>,
+    mut materials: ResMut<Assets<VideoMaterial>>,
+    m2d: Query<&MeshMaterial2d<VideoMaterial>>,
     time: Res<Time>,
 ) {
     for (mut video_player, entity) in video_player_query.iter_mut() {
@@ -140,7 +140,7 @@ pub fn play_video(
         let window = 1.0 / video_player.fps;
         if video_player.elapsed - video_player.last_sync > window {
             let total_frames = video_player.elapsed / window;
-            let mut frames_skipped =
+            let frames_skipped =
                 ((video_player.elapsed - video_player.last_sync) / window) as u64;
             if frames_skipped > 1 {
                 info!("frame skipped: {} {}", entity, frames_skipped);
@@ -149,13 +149,11 @@ pub fn play_video(
 
             if let Some(video_player_non_send) = video_resource.video_players.get_mut(&entity) {
                 // read packets from stream until complete frame received
-                while frames_skipped != 0
-                    && let Some((stream, packet)) =
+                while let Some((stream, packet)) =
                         video_player_non_send.input_context.packets().next()
                 {
                     // check if packets is for the selected video stream
                     if stream.index() == video_player.video_stream_index {
-                        frames_skipped -= 1;
                         // pass packet to decoder
                         video_player_non_send.decoder.send_packet(&packet).unwrap();
                         let mut decoded = Video::empty();
@@ -172,10 +170,13 @@ pub fn play_video(
 
                             let frame = rgb_frame.data(0).to_vec();
                             image.data = Some(frame);
-                            materials
-                                .get_mut(m2d.get(entity).unwrap().0.id())
-                                .unwrap()
-                                .time += time.delta_secs();
+                            
+                            if m2d.contains(entity) {
+                                materials
+                                    .get_mut(m2d.get(entity).unwrap().0.id())
+                                    .unwrap()
+                                    .time += time.delta_secs();
+                            }
                             return;
                         }
                     }
@@ -196,7 +197,7 @@ pub fn play_video(
 
 // This is the struct that will be passed to your shader
 #[derive(Asset, TypePath, AsBindGroup, Debug, Clone)]
-pub struct CustomMaterial {
+pub struct VideoMaterial {
     #[texture(0)]
     #[sampler(1)]
     pub color_texture: Option<Handle<Image>>,
@@ -204,8 +205,8 @@ pub struct CustomMaterial {
     pub time: f32,
 }
 
-const SHADER_ASSET_PATH: &str = "shaders/custom_material_2d.wgsl";
-impl Material2d for CustomMaterial {
+const SHADER_ASSET_PATH: &str = "shaders/video_material_2d.wgsl";
+impl Material2d for VideoMaterial {
     fn fragment_shader() -> ShaderRef {
         SHADER_ASSET_PATH.into()
     }
@@ -235,7 +236,7 @@ pub fn system_video_sequence(
     mut com: Commands,
     mut images: ResMut<Assets<Image>>,
     mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<CustomMaterial>>,
+    mut materials: ResMut<Assets<VideoMaterial>>,
     mut video_resource: NonSendMut<VideoResource>,
 ) {
     qv.iter_mut().for_each(|(mut vs, c, e)| {
@@ -261,7 +262,7 @@ pub fn system_video_sequence(
                     let e2 = com2
                         .spawn((
                             Mesh2d(meshes.add(Rectangle::default())),
-                            MeshMaterial2d(materials.add(CustomMaterial {
+                            MeshMaterial2d(materials.add(VideoMaterial {
                                 color_texture: Some(video_player.image_handle.clone()),
                                 time: 0.0,
                             })),
