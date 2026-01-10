@@ -118,7 +118,7 @@ fn system_spawn_images(
     let r: f32 = rand::rng().random();
     if r < 0.003 {
         info!("spawn picture");
-        if (q_drawing.iter().len() < 3) {
+        if (q_drawing.iter().len() < 2) {
             let mut com_fork = com.spawn((
                 Mesh2d(meshes.add(Rectangle::default())),
                 MeshMaterial2d(materials.add(DrawingMaterial {
@@ -129,6 +129,7 @@ fn system_spawn_images(
             ));
 
             {
+
                 let advt_start = AdvTransform {
                     contents: vec![
                         AdvTransformItem {
@@ -141,7 +142,7 @@ fn system_spawn_images(
                             ..default()
                         },
                         AdvTransformItem {
-                            set_z: Some((1.5)),
+                            set_z: Some(rand::rng().random::<f32>() * 0.001 + 1.5),
                             ..default()
                         },
                         AdvTransformItem {
@@ -165,7 +166,7 @@ fn system_spawn_images(
                             ..default()
                         },
                         AdvTransformItem {
-                            set_z: Some((1.5)),
+                            set_z: Some(rand::rng().random::<f32>() * 0.001 + 1.5),
                             ..default()
                         },
                         AdvTransformItem {
