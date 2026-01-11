@@ -90,9 +90,15 @@ def update(frame):
     sample = len(voice_data)
 
     # sigma_v, arcoefs, pacf, sigma, phi = levinson_durbin(voice_data, lpcOrder)
+
     # coeffs_1 = np.hstack((1, arcoefs))
     # error_1 = sigma_v * sample
+    # coeffs = coeffs_1
+    # error = error_1
+
     coeffs_2, error_2 = my_levinson(voice_data, lpcOrder)
+    coeffs = coeffs_2
+    error = error_2
 
     # print("Variance 1: " + str(error_1))
     # print("Variance 2: " + str(error_2 / sample))
@@ -102,14 +108,14 @@ def update(frame):
     # LPC係数の振幅スペクトルを求める
     # オリジナル信号の対数スペクトル
     # LPC対数スペクトル
-    w, h = scipy.signal.freqz(np.sqrt(error_2), coeffs_2, sample, "whole")
+    w, h = scipy.signal.freqz(np.sqrt(error), coeffs, sample, "whole")
     lpcspec = np.abs(h)
     loglpcspec = 20 * np.log10(lpcspec)
     #出力をプロットしてみて出力
     maxId = scipy.signal.argrelmax(loglpcspec[:sample//2],order=3)
     maxId = maxId[0]
     print(json.dumps(
-        [float(error_2 / sample), [int(x) for x in maxId]]
+        [float(error / sample), [int(x) for x in maxId]]
     ), flush=True)
     return
 
