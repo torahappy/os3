@@ -264,29 +264,8 @@ fn init_ui(mut commands: Commands) {
             custom_material: true,
             config: vec![
                 VideoSequenceConfig {
-                    path: "assets/movies/text_1.webm".to_string(),
-                    fps: 60.0,
-                    init_adv_transform: AdvTransform {
-                        contents: vec![
-                            AdvTransformItem {
-                                fullscreen_ratio: Some(2.0),
-                                fullscreen_option: Some(AdvTransformOption::Contain),
-                                ..default()
-                            },
-                            AdvTransformItem {
-                                scale_mult: Some((1.0, 1.0)),
-                                ..default()
-                            },
-                            AdvTransformItem {
-                                set_z: Some(1.0),
-                                ..default()
-                            },
-                        ],
-                    },
-                },
-                VideoSequenceConfig {
-                    path: "assets/movies/text_2.webm".to_string(),
-                    fps: 60.0,
+                    path: "assets/movies/concat_text.webm".to_string(),
+                    fps: 24.0,
                     init_adv_transform: AdvTransform {
                         contents: vec![
                             AdvTransformItem {
@@ -315,93 +294,8 @@ fn init_ui(mut commands: Commands) {
             custom_material: true,
             config: vec![
                 VideoSequenceConfig {
-                    path: "assets/movies/1.webm".to_string(),
-                    fps: 96.0,
-                    init_adv_transform: AdvTransform {
-                        contents: vec![
-                            AdvTransformItem {
-                                fullscreen_ratio: Some(2.0),
-                                fullscreen_option: Some(AdvTransformOption::Contain),
-                                ..default()
-                            },
-                            AdvTransformItem {
-                                scale_mult: Some((1.0, 1.0)),
-                                ..default()
-                            },
-                        ],
-                    },
-                },
-                VideoSequenceConfig {
-                    path: "assets/movies/2.webm".to_string(),
-                    fps: 96.0,
-                    init_adv_transform: AdvTransform {
-                        contents: vec![
-                            AdvTransformItem {
-                                fullscreen_ratio: Some(2.0),
-                                fullscreen_option: Some(AdvTransformOption::Contain),
-                                ..default()
-                            },
-                            AdvTransformItem {
-                                scale_mult: Some((1.0, 1.0)),
-                                ..default()
-                            },
-                        ],
-                    },
-                },
-                VideoSequenceConfig {
-                    path: "assets/movies/3.webm".to_string(),
-                    fps: 120.0,
-                    init_adv_transform: AdvTransform {
-                        contents: vec![
-                            AdvTransformItem {
-                                fullscreen_ratio: Some(2.0),
-                                fullscreen_option: Some(AdvTransformOption::Contain),
-                                ..default()
-                            },
-                            AdvTransformItem {
-                                scale_mult: Some((1.0, 1.0)),
-                                ..default()
-                            },
-                        ],
-                    },
-                },
-                VideoSequenceConfig {
-                    path: "assets/movies/4.webm".to_string(),
-                    fps: 120.0,
-                    init_adv_transform: AdvTransform {
-                        contents: vec![
-                            AdvTransformItem {
-                                fullscreen_ratio: Some(2.0),
-                                fullscreen_option: Some(AdvTransformOption::Contain),
-                                ..default()
-                            },
-                            AdvTransformItem {
-                                scale_mult: Some((1.0, 1.0)),
-                                ..default()
-                            },
-                        ],
-                    },
-                },
-                VideoSequenceConfig {
-                    path: "assets/movies/5.webm".to_string(),
-                    fps: 120.0,
-                    init_adv_transform: AdvTransform {
-                        contents: vec![
-                            AdvTransformItem {
-                                fullscreen_ratio: Some(2.0),
-                                fullscreen_option: Some(AdvTransformOption::Contain),
-                                ..default()
-                            },
-                            AdvTransformItem {
-                                scale_mult: Some((1.0, 1.0)),
-                                ..default()
-                            },
-                        ],
-                    },
-                },
-                VideoSequenceConfig {
-                    path: "assets/movies/6.webm".to_string(),
-                    fps: 120.0,
+                    path: "assets/movies/concat_main.webm".to_string(),
+                    fps: 24.0,
                     init_adv_transform: AdvTransform {
                         contents: vec![
                             AdvTransformItem {
