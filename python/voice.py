@@ -87,19 +87,19 @@ def update(frame):
 
     sample = len(voice_data)
 
-    sigma_v, arcoefs, pacf, sigma, phi = levinson_durbin(voice_data, lpcOrder)
-    coeffs_1 = np.hstack((1, arcoefs))
-    error_1 = sigma_v * sample
+    # sigma_v, arcoefs, pacf, sigma, phi = levinson_durbin(voice_data, lpcOrder)
+    # coeffs_1 = np.hstack((1, arcoefs))
+    # error_1 = sigma_v * sample
     coeffs_2, error_2 = my_levinson(voice_data, lpcOrder)
 
-    if error_1 < 0.1:
-        return
-
-    ax.clear()
-    print("Variance 1: " + str(error_1))
-    print("Variance 2: " + str(error_2))
-    print("Coeffs 1: " + str(coeffs_1))
+    # print("Variance 1: " + str(error_1))
+    print("Variance 2: " + str(error_2 / sample))
+    # print("Coeffs 1: " + str(coeffs_1))
     print("Coeffs 2: " + str(coeffs_2))
+
+    if error_2 / sample < 0.0001:
+        return
+    ax.clear()
     # LPC係数の振幅スペクトルを求める
     fscale = np.fft.fftfreq(sample, d = 1.0 / fs)[:sample//2]
     # オリジナル信号の対数スペクトル
@@ -107,7 +107,7 @@ def update(frame):
     logspec = 20 * np.log10(spec)
     ax.plot(fscale, logspec[:sample//2])
     # LPC対数スペクトル
-    w, h = scipy.signal.freqz(np.sqrt(error_1), coeffs_1, sample, "whole")
+    w, h = scipy.signal.freqz(np.sqrt(error_2), coeffs_2, sample, "whole")
     lpcspec = np.abs(h)
     loglpcspec = 20 * np.log10(lpcspec)
     #出力をプロットしてみて出力
