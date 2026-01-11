@@ -63,6 +63,6 @@ async def read_read():
             b = await proc.stdout.readline()
             j = json.loads(b.decode())
             js.append(j)
-        return {"status": js}
+        return js
     else:
         return {"status": "ERROR", "error": "Process not started yet"}

@@ -11,5 +11,8 @@ fn fragment(mesh: VertexOutput) -> @location(0) vec4<f32> {
     if (col.x > 0.99 && col.y > 0.99 && col.z > 0.99) {
       col.w = 0.03;
     }
+    col.x = 1.0 - col.x;
+    col.y = 1.0 - col.y;
+    col.z = 1.0 - col.z;
     return col;
 }

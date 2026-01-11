@@ -4,16 +4,16 @@ channel = "nightly"
 [target.x86_64-unknown-linux-gnu]
 # WARN: might be unstable
 rustflags = [
-# "-Zshare-generics=y", "-C", "link-arg=-fuse-ld=/usr/bin/lld"
-  "-Zshare-generics=y", "-C", "link-arg=-fuse-ld=/usr/bin/mold"
+# "-Zshare-generics=y", "-C", "link-arg=-fuse-ld=/usr/bin/ld.lld"
+ "-Zshare-generics=y", "-C", "link-arg=-fuse-ld=/usr/bin/mold"
 ]
 linker = "clang"
 
 [target.aarch64-unknown-linux-gnu]
 # WARN: might be unstable
 rustflags = [
-# "-Zshare-generics=y", "-C", "link-arg=-fuse-ld=/usr/bin/lld"
-  "-Zshare-generics=y", "-C", "link-arg=-fuse-ld=/usr/bin/mold"
+# "-Zshare-generics=y", "-C", "link-arg=-fuse-ld=/usr/bin/ld.lld"
+ "-Zshare-generics=y", "-C", "link-arg=-fuse-ld=/usr/bin/mold"
 ]
 linker = "clang"
 

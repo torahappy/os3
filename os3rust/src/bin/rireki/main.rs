@@ -1,9 +1,12 @@
 // りれきしょ
 
+use futures_lite::future;
 use std::time::Duration;
 
+use bevy::platform::collections::HashMap;
 use bevy::shader::ShaderRef;
 use bevy::sprite_render::{AlphaMode2d, Material2d, Material2dPlugin};
+use bevy::tasks::{IoTaskPool, Task, TaskPool, block_on};
 use bevy::{prelude::*, render::render_resource::AsBindGroup};
 use bevy_tweening::lens::TransformPositionLens;
 use bevy_tweening::{Tween, TweenAnim, TweeningPlugin};
@@ -17,7 +20,14 @@ use os3rust::bevy_connect::{
     },
     window::{WindowMetricsResource, system_window_resize},
 };
-use rand::prelude::*;
+use rand::{prelude::*, rng};
+#[derive(Resource, Default)]
+pub struct VoiceData {
+    tasks: HashMap<u64, Task<Vec<(f64, Vec<u64>)>>>,
+    last_run: f64,
+    last_task_id: u64,
+    history: Vec<(f64, Vec<u64>)>,
+}
 
 #[derive(Component)]
 pub struct MainVideo {}
@@ -91,8 +101,10 @@ fn main() {
             Material2dPlugin::<VideoMaterial>::default(),
             Material2dPlugin::<DrawingMaterial>::default(),
         ))
+        .insert_resource(ClearColor(Color::srgb(0., 0., 0.)))
         .insert_resource(Time::<Fixed>::from_hz(120.0))
         .init_resource::<WindowMetricsResource>()
+        .init_resource::<VoiceData>()
         .init_non_send_resource::<VideoResource>()
         .add_systems(Startup, init_ui)
         .add_systems(Startup, initialize_ffmpeg)
@@ -104,7 +116,67 @@ fn main() {
         .add_systems(Update, system_lifetime)
         .add_systems(Update, system_video_shaders)
         .add_systems(Update, system_spawn_images)
+        .add_systems(FixedUpdate, system_voice_queue)
+        .add_systems(Update, system_voice_history)
+        .add_systems(Update, system_voice_history_calc)
         .run();
+}
+
+fn system_voice_history_calc(data: Res<VoiceData>, mut cc: ResMut<ClearColor>) {
+    let dev_all: f64 =
+        data.history.iter().map(|x| x.0 * x.0).sum::<f64>() / data.history.len() as f64;
+    let mean_all: f64 = data.history.iter().map(|x| x.0).sum::<f64>() / data.history.len() as f64;
+    if let Some(last) = data.history.last() {
+        let mean_ratio = last.0 as f32 / mean_all as f32;
+        // last.0
+        let mr_max = 7.0;
+        let mr_processed = mean_ratio.min(mr_max) / mr_max * 0.7;
+        cc.0 = Color::srgb(0.3 + mr_processed, 0.05 + mr_processed, 0.12 + mr_processed);
+
+        info!("{} {} {}", data.history.len(), last.0 / mean_all, dev_all);
+    }
+}
+
+fn system_voice_history(mut data: ResMut<VoiceData>) {
+    let mut vectors = Vec::new();
+    data.tasks.retain(|k, task| {
+        let status: Option<Vec<(f64, Vec<u64>)>> = block_on(future::poll_once(task));
+        let retain = status.is_none();
+        if let Some(mut v) = status {
+            vectors.append(&mut v);
+        }
+        return retain;
+    });
+    data.history.append(&mut vectors);
+    if data.history.len() > 10000 {
+        data.history.clear();
+    }
+}
+
+fn system_voice_queue(mut data: ResMut<VoiceData>, time: Res<Time>) {
+    if time.elapsed_secs_f64() - data.last_run > 1.0 / 24.0 {
+        data.last_run = time.elapsed_secs_f64();
+        let task_pool = IoTaskPool::get();
+        let task = task_pool.spawn(async move {
+            let res = reqwest::blocking::get("http://127.0.0.1:8000/readlines");
+            match res {
+                Ok(x) => match x.json() {
+                    Ok(x) => x,
+                    Err(e) => {
+                        info!("Request parse failed ! {}", e);
+                        Vec::new()
+                    }
+                },
+                Err(e) => {
+                    info!("{}", e);
+                    Vec::new()
+                }
+            }
+        });
+        let i = data.last_task_id;
+        data.tasks.insert(i, task);
+        data.last_task_id += 1;
+    }
 }
 
 fn system_spawn_images(
@@ -116,12 +188,18 @@ fn system_spawn_images(
     wm: Res<WindowMetricsResource>,
     time: Res<Time>,
 ) {
+    let picture_urls = [
+        "pictures/a_25percent.webp",
+        "pictures/b_25percent.webp",
+        "pictures/c_25percent.webp",
+    ];
+    let picture_url = picture_urls.choose(&mut rng()).unwrap();
     if (q_drawing.iter().len() == 0) {
-    info!("spawn picture");
+        info!("spawn picture");
         let mut com_fork = com.spawn((
             Mesh2d(meshes.add(Rectangle::default())),
             MeshMaterial2d(materials.add(DrawingMaterial {
-                color_texture: Some(asset_server.load("pictures/a2000.webp")),
+                color_texture: Some(asset_server.load(*picture_url)),
                 time: 0.0,
             })),
             Drawing {},
@@ -178,7 +256,7 @@ fn system_spawn_images(
 
             info!("{:?} {:?}", t_start, t_end);
 
-            let len = 17.0 + rand::rng().random::<f32>()*25.0;
+            let len = 17.0 + rand::rng().random::<f32>() * 25.0;
 
             com_fork.insert((
                 t_start,
@@ -195,7 +273,7 @@ fn system_spawn_images(
                     },
                 )),
                 Lifetime {
-                    destruct_on: time.elapsed_secs_f64() + (len as f64),
+                    destruct_on: time.elapsed_secs_f64() + ((len * 1.5) as f64),
                 },
             ));
         }
@@ -262,29 +340,27 @@ fn init_ui(mut commands: Commands) {
     commands
         .spawn(VideoSequence {
             custom_material: true,
-            config: vec![
-                VideoSequenceConfig {
-                    path: "assets/movies/concat_text.webm".to_string(),
-                    fps: 24.0,
-                    init_adv_transform: AdvTransform {
-                        contents: vec![
-                            AdvTransformItem {
-                                fullscreen_ratio: Some(2.0),
-                                fullscreen_option: Some(AdvTransformOption::Contain),
-                                ..default()
-                            },
-                            AdvTransformItem {
-                                scale_mult: Some((1.0, 1.0)),
-                                ..default()
-                            },
-                            AdvTransformItem {
-                                set_z: Some(1.0),
-                                ..default()
-                            },
-                        ],
-                    },
+            config: vec![VideoSequenceConfig {
+                path: "assets/movies/concat_text.webm".to_string(),
+                fps: 24.0,
+                init_adv_transform: AdvTransform {
+                    contents: vec![
+                        AdvTransformItem {
+                            fullscreen_ratio: Some(2.0),
+                            fullscreen_option: Some(AdvTransformOption::Contain),
+                            ..default()
+                        },
+                        AdvTransformItem {
+                            scale_mult: Some((1.0, 1.0)),
+                            ..default()
+                        },
+                        AdvTransformItem {
+                            set_z: Some(1.0),
+                            ..default()
+                        },
+                    ],
                 },
-            ],
+            }],
             ..default()
         })
         .insert(TextVideo {});
@@ -292,25 +368,23 @@ fn init_ui(mut commands: Commands) {
     commands
         .spawn(VideoSequence {
             custom_material: true,
-            config: vec![
-                VideoSequenceConfig {
-                    path: "assets/movies/concat_main.webm".to_string(),
-                    fps: 24.0,
-                    init_adv_transform: AdvTransform {
-                        contents: vec![
-                            AdvTransformItem {
-                                fullscreen_ratio: Some(2.0),
-                                fullscreen_option: Some(AdvTransformOption::Contain),
-                                ..default()
-                            },
-                            AdvTransformItem {
-                                scale_mult: Some((1.0, 1.0)),
-                                ..default()
-                            },
-                        ],
-                    },
+            config: vec![VideoSequenceConfig {
+                path: "assets/movies/concat_main.webm".to_string(),
+                fps: 24.0,
+                init_adv_transform: AdvTransform {
+                    contents: vec![
+                        AdvTransformItem {
+                            fullscreen_ratio: Some(2.0),
+                            fullscreen_option: Some(AdvTransformOption::Contain),
+                            ..default()
+                        },
+                        AdvTransformItem {
+                            scale_mult: Some((1.0, 1.0)),
+                            ..default()
+                        },
+                    ],
                 },
-            ],
+            }],
             current: 0,
             ..default()
         })
