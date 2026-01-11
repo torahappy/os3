@@ -1,6 +1,8 @@
 // りれきしょ
 
+use bevy::window::WindowResolution;
 use futures_lite::future;
+use rand::distr::uniform::SampleRange;
 use std::time::Duration;
 
 use bevy::platform::collections::HashMap;
@@ -38,7 +40,7 @@ pub struct VoicePacketData {
 
 #[derive(Resource, Default)]
 pub struct VoiceGameData {
-    cat1_atari_timer: f64
+    cat1_atari_timer: f64,
 }
 
 #[derive(Component)]
@@ -131,7 +133,13 @@ impl Material2d for RirekiVideoMaterial {
 fn main() {
     App::new()
         .add_plugins((
-            DefaultPlugins,
+            DefaultPlugins.set(WindowPlugin {
+                primary_window: Some(Window {
+                    mode: bevy::window::WindowMode::BorderlessFullscreen(MonitorSelection::Current),
+                    ..Default::default()
+                }),
+                ..default()
+            }),
             TweeningPlugin,
             Material2dPlugin::<RirekiVideoMaterial>::default(),
             Material2dPlugin::<VoiceSphereMaterial>::default(),
@@ -175,13 +183,30 @@ fn init_voice_sphere(
                 color_texture: Some(asset_server.load("pictures/voicesphere2.webp")),
                 ..default()
             })),
+            VoiceSphere { id: i, category: 2 },
+            Transform::default()
+                .with_scale(Vec3::splat(100.0))
+                .with_translation(Vec3 {
+                    x: 0.,
+                    y: 0.,
+                    z: 0.95 + (0.000001 * rng().random_range(0.0..1.0))
+                }),
+        ));
+    }
+    for i in 0..20 {
+        com.spawn((
+            Mesh2d(meshes.add(Circle::default())),
+            MeshMaterial2d(materials.add(VoiceSphereMaterial {
+                color_texture: Some(asset_server.load("pictures/voicesphere2.webp")),
+                ..default()
+            })),
             VoiceSphere { id: i, category: 1 },
             Transform::default()
                 .with_scale(Vec3::splat(100.0))
                 .with_translation(Vec3 {
                     x: 0.,
                     y: 0.,
-                    z: 0.9,
+                    z: 0.9 + (0.000001 * rng().random_range(0.0..1.0)),
                 }),
         ));
     }
@@ -198,7 +223,7 @@ fn system_voice_history_calc(
     )>,
     wm: Res<WindowMetricsResource>,
     mut materials: ResMut<Assets<VoiceSphereMaterial>>,
-    time: Res<Time>
+    time: Res<Time>,
 ) {
     let dev_all: f64 =
         data.history.iter().map(|x| x.0 * x.0).sum::<f64>() / data.history.len() as f64;
@@ -246,7 +271,8 @@ fn system_voice_history_calc(
                     }
                 };
 
-                if (v_data.category == 1 && level == 1
+                if (v_data.category == 1
+                    && level == 1
                     && -0.20 < a_final
                     && a_final < -0.10
                     && -0.05 < b_final
@@ -272,9 +298,9 @@ fn system_voice_history_calc(
             }
         }
     });
-    if (atari > 5) {
-                    g_data.cat1_atari_timer += time.delta_secs_f64();
-                    info!("special!! {}", g_data.cat1_atari_timer);
+    if (atari > 3) {
+        g_data.cat1_atari_timer += time.delta_secs_f64();
+        info!("special!! {}", g_data.cat1_atari_timer);
     } else {
         g_data.cat1_atari_timer = 0.;
     }

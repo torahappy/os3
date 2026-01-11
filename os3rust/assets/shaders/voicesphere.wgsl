@@ -22,5 +22,15 @@ fn fragment(mesh: VertexOutput) -> @location(0) vec4<f32> {
       col.w += 0.1;
     }
 
+    if (category > 1.99) {
+	col.x = 1.0 - col.x;
+	col.y = 1.0 - col.y;
+	col.z = 1.0 - col.z;
+	col.z *= 0.5;
+      }
+    if (level < 0.1) {
+	col.w = 0.0;
+      }
+
     return col;
 }
