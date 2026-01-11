@@ -13,7 +13,7 @@ from matplotlib.animation import FuncAnimation
 import json
 import time
 
-MATPLOT_ENABLED = True
+MATPLOT_ENABLED = False
 
 # プリエンファシス(高域強調)
 def preEmphasis(wave, p=0.97):
@@ -104,8 +104,6 @@ def update(frame):
     # print("Coeffs 1: " + str(coeffs_1))
     # print("Coeffs 2: " + str(coeffs_2))
 
-    if error_2 / sample < 0.0001:
-        return
     if MATPLOT_ENABLED:
         ax.clear()
     # LPC係数の振幅スペクトルを求める
@@ -129,7 +127,7 @@ def update(frame):
             ax.axvline(fscale[maxId[0]], ls = "--", color = "navy")
             ax.axvline(fscale[maxId[1]], ls = "--", color = "navy")
         plt.show()
-    print(json.dumps([int(x) for x in maxId]))
+    print(str(error_2 / sample), json.dumps([int(x) for x in maxId]))
     return
 
 if MATPLOT_ENABLED:
