@@ -166,8 +166,18 @@ fn main() {
         .add_systems(FixedUpdate, system_voice_queue)
         .add_systems(Update, system_voice_history)
         .add_systems(Update, system_voice_history_calc)
+        .add_systems(Update, system_end_condition)
         .run();
 }
+
+fn system_end_condition (q: Query<(&VideoSequence, &TextVideo)>, mut ae: MessageWriter<AppExit>) {
+    q.iter().for_each(|(vs, _)| {
+        if vs.current == 1 {
+            ae.write(AppExit::Success);
+        }
+    });
+}
+
 
 fn init_voice_sphere(
     mut com: Commands,
