@@ -1,4 +1,5 @@
 # 使用するパッケージ
+from re import M
 import numpy as np
 from numpy.typing import NDArray
 import scipy.signal
@@ -9,6 +10,10 @@ from scipy.fftpack import fft
 import scipy.io.wavfile as wavfile
 import sounddevice as sd
 from matplotlib.animation import FuncAnimation
+import json
+import time
+
+MATPLOT_ENABLED = True
 
 # プリエンファシス(高域強調)
 def preEmphasis(wave, p=0.97):
@@ -43,9 +48,9 @@ fs = 48000
 
 dl = sd.query_devices()
 for dev in dl:
-    print(dev)
+    #print(dev)
     if 'default' == dev['name']:
-        print("found: ", dev)
+        #print("found: ", dev)
         my_idx = dev['index']
         break
 
@@ -63,7 +68,9 @@ window_2 = int(fs / 1000 * ms_2)
 
 arcoefs, coeffs_2 = [None, None]
 
-fig, ax = plt.subplots()
+if MATPLOT_ENABLED:
+    fig, ax = plt.subplots()
+
 def update(frame):
     v = sd.rec(window_2, samplerate=fs, channels=1, dtype=np.int16).mean(axis=1)
 
@@ -93,34 +100,42 @@ def update(frame):
     coeffs_2, error_2 = my_levinson(voice_data, lpcOrder)
 
     # print("Variance 1: " + str(error_1))
-    print("Variance 2: " + str(error_2 / sample))
+    # print("Variance 2: " + str(error_2 / sample))
     # print("Coeffs 1: " + str(coeffs_1))
-    print("Coeffs 2: " + str(coeffs_2))
+    # print("Coeffs 2: " + str(coeffs_2))
 
     if error_2 / sample < 0.0001:
         return
-    ax.clear()
+    if MATPLOT_ENABLED:
+        ax.clear()
     # LPC係数の振幅スペクトルを求める
     fscale = np.fft.fftfreq(sample, d = 1.0 / fs)[:sample//2]
     # オリジナル信号の対数スペクトル
     spec = np.abs(fft(voice_data, sample))
     logspec = 20 * np.log10(spec)
-    ax.plot(fscale, logspec[:sample//2])
+    if MATPLOT_ENABLED:
+        ax.plot(fscale, logspec[:sample//2])
     # LPC対数スペクトル
     w, h = scipy.signal.freqz(np.sqrt(error_2), coeffs_2, sample, "whole")
     lpcspec = np.abs(h)
     loglpcspec = 20 * np.log10(lpcspec)
     #出力をプロットしてみて出力
-    ax.plot(fscale, loglpcspec[:sample//2], "r", linewidth=2)
+    if MATPLOT_ENABLED:
+        ax.plot(fscale, loglpcspec[:sample//2], "r", linewidth=2)
     maxId = scipy.signal.argrelmax(loglpcspec[:sample//2],order=3)
-    if len(maxId[0]) > 1:
-        maxId = maxId[0]
-    #とりあえず4つ分ぐらいのフォルマントの位置を出力
-        ax.axvline(fscale[maxId[0]], ls = "--", color = "navy")
-        ax.axvline(fscale[maxId[1]], ls = "--", color = "navy")
-    plt.show()
+    maxId = maxId[0]
+    if MATPLOT_ENABLED:
+        if len(maxId) > 1:
+            ax.axvline(fscale[maxId[0]], ls = "--", color = "navy")
+            ax.axvline(fscale[maxId[1]], ls = "--", color = "navy")
+        plt.show()
+    print(json.dumps([int(x) for x in maxId]))
     return
 
-anim = FuncAnimation(fig, update, frames = None, cache_frame_data=False, interval=0)
-plt.show()
+if MATPLOT_ENABLED:
+    anim = FuncAnimation(fig, update, frames = None, cache_frame_data=False, interval=0)
+    plt.show()
+else:
+    while True:
+        update(None)
 
