@@ -8,6 +8,10 @@ import os
 import atexit
 import re
 import signal
+import time
+
+MAX_APP_TIME = 3600
+APP_START_TIME = time.perf_counter()
 
 class MyState(TypedDict):
     started: bool
@@ -29,7 +33,7 @@ def initial_state() -> MyState:
         "started": False,
         "process_rireki": None,
         "process_voice_server": None,
-        "to_check_startup_flag": [False, False]
+        "to_check_startup_flag": [False, False],
     }
 
 basepath = os.path.dirname(os.path.abspath(__file__))
@@ -41,6 +45,9 @@ src_path = os.path.join(
 my_state: MyState = initial_state()
 
 while True:
+    if time.perf_counter() - APP_START_TIME > MAX_APP_TIME:
+        print("Something Bad happened !!! app executing time is way longer than expected !! shutting down...")
+        sys.exit()
     if not my_state['started']:
         my_state['started'] = True
         my_state['process_rireki'] = subprocess.Popen(["cargo", "run", "--profile", "release", "--bin", "rireki"], cwd=src_path, stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
