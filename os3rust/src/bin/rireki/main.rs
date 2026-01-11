@@ -290,7 +290,12 @@ fn system_voice_history_calc(
                         contents: vec![AdvTransformItem {
                             translate_rel_window: Some((a_final, b_final)),
                             ..default()
-                        }],
+                        },
+                        AdvTransformItem {
+                            scale_mult_rel_window_width: Some((0.053, 0.053)),
+                            ..default()
+                        } 
+                        ],
                     },
                     t.into_inner(),
                     &wm,
