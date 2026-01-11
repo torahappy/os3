@@ -13,8 +13,6 @@ from matplotlib.animation import FuncAnimation
 import json
 import time
 
-MATPLOT_ENABLED = False
-
 # プリエンファシス(高域強調)
 def preEmphasis(wave, p=0.97):
     # 係数 (1.0, -p) のFIRフィルタを作成
@@ -68,9 +66,6 @@ window_2 = int(fs / 1000 * ms_2)
 
 arcoefs, coeffs_2 = [None, None]
 
-if MATPLOT_ENABLED:
-    fig, ax = plt.subplots()
-
 def update(frame):
     v = sd.rec(window_2, samplerate=fs, channels=1, dtype=np.int16).mean(axis=1)
 
@@ -104,36 +99,20 @@ def update(frame):
     # print("Coeffs 1: " + str(coeffs_1))
     # print("Coeffs 2: " + str(coeffs_2))
 
-    if MATPLOT_ENABLED:
-        ax.clear()
     # LPC係数の振幅スペクトルを求める
-    fscale = np.fft.fftfreq(sample, d = 1.0 / fs)[:sample//2]
     # オリジナル信号の対数スペクトル
-    spec = np.abs(fft(voice_data, sample))
-    logspec = 20 * np.log10(spec)
-    if MATPLOT_ENABLED:
-        ax.plot(fscale, logspec[:sample//2])
     # LPC対数スペクトル
     w, h = scipy.signal.freqz(np.sqrt(error_2), coeffs_2, sample, "whole")
     lpcspec = np.abs(h)
     loglpcspec = 20 * np.log10(lpcspec)
     #出力をプロットしてみて出力
-    if MATPLOT_ENABLED:
-        ax.plot(fscale, loglpcspec[:sample//2], "r", linewidth=2)
     maxId = scipy.signal.argrelmax(loglpcspec[:sample//2],order=3)
     maxId = maxId[0]
-    if MATPLOT_ENABLED:
-        if len(maxId) > 1:
-            ax.axvline(fscale[maxId[0]], ls = "--", color = "navy")
-            ax.axvline(fscale[maxId[1]], ls = "--", color = "navy")
-        plt.show()
-    print(str(error_2 / sample), json.dumps([int(x) for x in maxId]))
+    print(json.dumps(
+        [float(error_2 / sample), [int(x) for x in maxId]]
+    ))
     return
 
-if MATPLOT_ENABLED:
-    anim = FuncAnimation(fig, update, frames = None, cache_frame_data=False, interval=0)
-    plt.show()
-else:
-    while True:
-        update(None)
+while True:
+    update(None)
 
