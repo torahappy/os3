@@ -110,7 +110,7 @@ def update(frame):
     maxId = maxId[0]
     print(json.dumps(
         [float(error_2 / sample), [int(x) for x in maxId]]
-    ))
+    ), flush=True)
     return
 
 while True:
