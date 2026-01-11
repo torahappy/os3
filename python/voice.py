@@ -44,20 +44,20 @@ fs = 48000
 dl = sd.query_devices()
 for dev in dl:
     print(dev)
-    if 'hw:0,0' in dev['name']:
+    if 'default' == dev['name']:
         print("found: ", dev)
         my_idx = dev['index']
         break
 
 sd.default.samplerate = fs
-sd.default.channels = 1
 sd.default.device = my_idx
-sd.default.dtype = 'int16'
 
-ms = 40
+ms = 30
+ms_2 = 30
 
 duration = 1 / 1000 * ms #再生時間[秒]
 window = int(fs / 1000 * ms)
+window_2 = int(fs / 1000 * ms_2)
 
 # タップ数、サンプルレート、チャンネル数
 
@@ -65,17 +65,17 @@ arcoefs, coeffs_2 = [None, None]
 
 fig, ax = plt.subplots()
 def update(frame):
-    ax.clear()
-    v = sd.rec(window, samplerate=fs).mean(axis=1)
+    v = sd.rec(window_2, samplerate=fs, channels=1, dtype=np.int16).mean(axis=1)
+
     # print(v.shape)
     sd.wait()
 
     wav_list = []
     
     # LPC係数を求める(lpcの次数は要調整)
-    lpcOrder = 20
+    lpcOrder = 32
     #センター部分を使う
-    voice_data = v
+    voice_data = v[:window]
     #正規化
     voice_data = voice_data/abs(voice_data).max()
     #プリエンファシス
@@ -92,10 +92,14 @@ def update(frame):
     error_1 = sigma_v * sample
     coeffs_2, error_2 = my_levinson(voice_data, lpcOrder)
 
-    #print("Variance 1: " + str(error_1))
-    #print("Variance 2: " + str(error_2))
-    #print("Coeffs 1: " + str(coeffs_1))
-    #print("Coeffs 2: " + str(coeffs_2))
+    if error_1 < 0.1:
+        return
+
+    ax.clear()
+    print("Variance 1: " + str(error_1))
+    print("Variance 2: " + str(error_2))
+    print("Coeffs 1: " + str(coeffs_1))
+    print("Coeffs 2: " + str(coeffs_2))
     # LPC係数の振幅スペクトルを求める
     fscale = np.fft.fftfreq(sample, d = 1.0 / fs)[:sample//2]
     # オリジナル信号の対数スペクトル
