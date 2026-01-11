@@ -30,6 +30,7 @@ pub struct AdvTransformItem {
     pub fullscreen_ratio: Option<f32>,
     pub fullscreen_option: Option<AdvTransformOption>,
     pub translate_mult: Option<(f32, f32)>,
+    pub translate_rel_window: Option<(f32, f32)>,
     pub scale_mult: Option<(f32, f32)>,
     pub rotate: Option<f32>,
     pub set_z: Option<f32>,
@@ -91,6 +92,9 @@ pub fn apply_adv_transform(mfs: &AdvTransform, t: &mut Transform, wm: &WindowMet
             t.rotate_z(x);
         } else if let Some(x) = mf.set_z {
             t.translation.z = x;
+        } else if let Some((x, y)) = mf.translate_rel_window {
+            t.translation.x += wm.window_width * x;
+            t.translation.y += wm.window_height * y;
         }
     });
 }

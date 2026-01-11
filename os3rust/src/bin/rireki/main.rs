@@ -21,12 +21,24 @@ use os3rust::bevy_connect::{
     window::{WindowMetricsResource, system_window_resize},
 };
 use rand::{prelude::*, rng};
+
+#[derive(Component, Default)]
+pub struct VoiceSphere {
+    id: usize,
+    category: u64,
+}
+
 #[derive(Resource, Default)]
-pub struct VoiceData {
+pub struct VoicePacketData {
     tasks: HashMap<u64, Task<Vec<(f64, Vec<u64>)>>>,
     last_run: f64,
     last_task_id: u64,
     history: Vec<(f64, Vec<u64>)>,
+}
+
+#[derive(Resource, Default)]
+pub struct VoiceGameData {
+    cat1_atari_timer: f64
 }
 
 #[derive(Component)]
@@ -36,7 +48,31 @@ pub struct MainVideo {}
 pub struct TextVideo {}
 
 #[derive(Component)]
-pub struct Drawing {}
+pub struct DrawingBack {}
+
+#[derive(Asset, TypePath, AsBindGroup, Debug, Clone, Default)]
+pub struct VoiceSphereMaterial {
+    #[texture(0)]
+    #[sampler(1)]
+    pub color_texture: Option<Handle<Image>>,
+    #[uniform(2)]
+    pub time: f32,
+    #[uniform(3)]
+    pub category: f32,
+    #[uniform(4)]
+    pub level: f32,
+}
+
+const SHADER_ASSET_PATH_VOICESPHERE: &str = "shaders/voicesphere.wgsl";
+impl Material2d for VoiceSphereMaterial {
+    fn fragment_shader() -> ShaderRef {
+        SHADER_ASSET_PATH_VOICESPHERE.into()
+    }
+
+    fn alpha_mode(&self) -> AlphaMode2d {
+        AlphaMode2d::Blend
+    }
+}
 
 // This is the struct that will be passed to your shader
 #[derive(Asset, TypePath, AsBindGroup, Debug, Clone)]
@@ -61,7 +97,7 @@ impl Material2d for DrawingMaterial {
 
 // This is the struct that will be passed to your shader
 #[derive(Asset, TypePath, AsBindGroup, Debug, Clone)]
-pub struct CustomMaterial {
+pub struct RirekiVideoMaterial {
     #[texture(0)]
     #[sampler(1)]
     pub color_texture: Option<Handle<Image>>,
@@ -82,7 +118,7 @@ pub struct CustomMaterial {
 }
 
 const SHADER_ASSET_PATH: &str = "shaders/custom_material_2d.wgsl";
-impl Material2d for CustomMaterial {
+impl Material2d for RirekiVideoMaterial {
     fn fragment_shader() -> ShaderRef {
         SHADER_ASSET_PATH.into()
     }
@@ -97,16 +133,19 @@ fn main() {
         .add_plugins((
             DefaultPlugins,
             TweeningPlugin,
-            Material2dPlugin::<CustomMaterial>::default(),
+            Material2dPlugin::<RirekiVideoMaterial>::default(),
+            Material2dPlugin::<VoiceSphereMaterial>::default(),
             Material2dPlugin::<VideoMaterial>::default(),
             Material2dPlugin::<DrawingMaterial>::default(),
         ))
         .insert_resource(ClearColor(Color::srgb(0., 0., 0.)))
         .insert_resource(Time::<Fixed>::from_hz(120.0))
         .init_resource::<WindowMetricsResource>()
-        .init_resource::<VoiceData>()
+        .init_resource::<VoicePacketData>()
+        .init_resource::<VoiceGameData>()
         .init_non_send_resource::<VideoResource>()
         .add_systems(Startup, init_ui)
+        .add_systems(Startup, init_voice_sphere)
         .add_systems(Startup, initialize_ffmpeg)
         .add_systems(FixedUpdate, play_video)
         .add_systems(Update, system_adv_transform)
@@ -122,7 +161,45 @@ fn main() {
         .run();
 }
 
-fn system_voice_history_calc(data: Res<VoiceData>, mut cc: ResMut<ClearColor>) {
+fn init_voice_sphere(
+    mut com: Commands,
+    q_drawing: Query<&DrawingBack>,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<VoiceSphereMaterial>>,
+    asset_server: Res<AssetServer>,
+) {
+    for i in 0..20 {
+        com.spawn((
+            Mesh2d(meshes.add(Circle::default())),
+            MeshMaterial2d(materials.add(VoiceSphereMaterial {
+                color_texture: Some(asset_server.load("pictures/voicesphere2.webp")),
+                ..default()
+            })),
+            VoiceSphere { id: i, category: 1 },
+            Transform::default()
+                .with_scale(Vec3::splat(100.0))
+                .with_translation(Vec3 {
+                    x: 0.,
+                    y: 0.,
+                    z: 0.9,
+                }),
+        ));
+    }
+}
+
+fn system_voice_history_calc(
+    data: Res<VoicePacketData>,
+    mut g_data: ResMut<VoiceGameData>,
+    mut cc: ResMut<ClearColor>,
+    mut q_sphere: Query<(
+        &VoiceSphere,
+        &mut Transform,
+        &MeshMaterial2d<VoiceSphereMaterial>,
+    )>,
+    wm: Res<WindowMetricsResource>,
+    mut materials: ResMut<Assets<VoiceSphereMaterial>>,
+    time: Res<Time>
+) {
     let dev_all: f64 =
         data.history.iter().map(|x| x.0 * x.0).sum::<f64>() / data.history.len() as f64;
     let mean_all: f64 = data.history.iter().map(|x| x.0).sum::<f64>() / data.history.len() as f64;
@@ -133,11 +210,77 @@ fn system_voice_history_calc(data: Res<VoiceData>, mut cc: ResMut<ClearColor>) {
         let mr_processed = mean_ratio.min(mr_max) / mr_max * 0.7;
         cc.0 = Color::srgb(0.3 + mr_processed, 0.05 + mr_processed, 0.12 + mr_processed);
 
-        info!("{} {} {}", data.history.len(), last.0 / mean_all, dev_all);
+        // info!("{} {} {}", data.history.len(), last.0 / mean_all, dev_all);
+    }
+
+    let mut atari = 0;
+
+    q_sphere.iter_mut().for_each(|(v_data, mut t, matref)| {
+        let i = v_data.id;
+        if data.history.len() < i + 1 {
+            return;
+        }
+        let item = data.history.get(data.history.len() - i - 1);
+        if let Some(h) = item {
+            t.translation = Vec3::default();
+
+            let (idx_a, idx_b) = (
+                (v_data.category * 2 - 2) as usize,
+                (v_data.category * 2 - 1) as usize,
+            );
+
+            if h.1.get(idx_a).is_some() && h.1.get(idx_b).is_some() {
+                let a = *h.1.get(idx_a).unwrap() as f32;
+                let a_large = a / 1200. - 0.5;
+                let a_small = a / 100. - 0.5;
+
+                let b = *h.1.get(idx_b).unwrap() as f32;
+                let b_large = b / 1200. - 0.5;
+                let b_small = b / 200. - 0.5;
+
+                let (a_final, b_final, level) = {
+                    if (a_large < -0.4 && b_large < -0.4) {
+                        (a_small, b_small, 1)
+                    } else {
+                        (a_large, b_large, 2)
+                    }
+                };
+
+                if (v_data.category == 1 && level == 1
+                    && -0.20 < a_final
+                    && a_final < -0.10
+                    && -0.05 < b_final
+                    && b_final < 0.05)
+                {
+                    atari += 1;
+                }
+
+                let mm = materials.get_mut(matref.id()).unwrap();
+                mm.level = level as f32;
+                mm.category = v_data.category as f32;
+
+                apply_adv_transform(
+                    &AdvTransform {
+                        contents: vec![AdvTransformItem {
+                            translate_rel_window: Some((a_final, b_final)),
+                            ..default()
+                        }],
+                    },
+                    t.into_inner(),
+                    &wm,
+                );
+            }
+        }
+    });
+    if (atari > 5) {
+                    g_data.cat1_atari_timer += time.delta_secs_f64();
+                    info!("special!! {}", g_data.cat1_atari_timer);
+    } else {
+        g_data.cat1_atari_timer = 0.;
     }
 }
 
-fn system_voice_history(mut data: ResMut<VoiceData>) {
+fn system_voice_history(mut data: ResMut<VoicePacketData>) {
     let mut vectors = Vec::new();
     data.tasks.retain(|k, task| {
         let status: Option<Vec<(f64, Vec<u64>)>> = block_on(future::poll_once(task));
@@ -148,12 +291,16 @@ fn system_voice_history(mut data: ResMut<VoiceData>) {
         return retain;
     });
     data.history.append(&mut vectors);
-    if data.history.len() > 10000 {
-        data.history.clear();
+    if data.history.len() > 1000 {
+        let x = data.history[500..]
+            .iter()
+            .map(|x| x.clone())
+            .collect::<Vec<_>>();
+        data.history = x;
     }
 }
 
-fn system_voice_queue(mut data: ResMut<VoiceData>, time: Res<Time>) {
+fn system_voice_queue(mut data: ResMut<VoicePacketData>, time: Res<Time>) {
     if time.elapsed_secs_f64() - data.last_run > 1.0 / 24.0 {
         data.last_run = time.elapsed_secs_f64();
         let task_pool = IoTaskPool::get();
@@ -181,7 +328,7 @@ fn system_voice_queue(mut data: ResMut<VoiceData>, time: Res<Time>) {
 
 fn system_spawn_images(
     mut com: Commands,
-    q_drawing: Query<&Drawing>,
+    q_drawing: Query<&DrawingBack>,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<DrawingMaterial>>,
     asset_server: Res<AssetServer>,
@@ -189,9 +336,9 @@ fn system_spawn_images(
     time: Res<Time>,
 ) {
     let picture_urls = [
-        "pictures/a_25percent.webp",
-        "pictures/b_25percent.webp",
-        "pictures/c_25percent.webp",
+        "pictures/a2000.webp",
+        "pictures/b2000.webp",
+        "pictures/c2000.webp",
     ];
     let picture_url = picture_urls.choose(&mut rng()).unwrap();
     if (q_drawing.iter().len() == 0) {
@@ -202,7 +349,7 @@ fn system_spawn_images(
                 color_texture: Some(asset_server.load(*picture_url)),
                 time: 0.0,
             })),
-            Drawing {},
+            DrawingBack {},
         ));
 
         {
@@ -284,8 +431,8 @@ fn system_video_shaders(
     mut com: Commands,
     q_main: Query<(&MainVideo, Entity, Option<&Children>)>,
     q_text: Query<(&TextVideo, Entity, Option<&Children>)>,
-    q_vp: Query<(&VideoPlayer, Option<&MeshMaterial2d<CustomMaterial>>)>,
-    mut materials: ResMut<Assets<CustomMaterial>>,
+    q_vp: Query<(&VideoPlayer, Option<&MeshMaterial2d<RirekiVideoMaterial>>)>,
+    mut materials: ResMut<Assets<RirekiVideoMaterial>>,
     time: ResMut<Time>,
 ) {
     let q_all = {
@@ -305,7 +452,7 @@ fn system_video_shaders(
                 if (*i == 0) {
                     info!("main start");
                     com.entity(*c_vp)
-                        .insert(MeshMaterial2d(materials.add(CustomMaterial {
+                        .insert(MeshMaterial2d(materials.add(RirekiVideoMaterial {
                             color_texture: Some(vp.image_handle.clone()),
                             time: 0.0,
                             alpha_green: 0.0,
@@ -318,7 +465,7 @@ fn system_video_shaders(
                 } else if (*i == 1) {
                     info!("text start");
                     com.entity(*c_vp)
-                        .insert(MeshMaterial2d(materials.add(CustomMaterial {
+                        .insert(MeshMaterial2d(materials.add(RirekiVideoMaterial {
                             color_texture: Some(vp.image_handle.clone()),
                             time: 0.0,
                             alpha_green: 1.0,
