@@ -265,7 +265,7 @@ fn init_ui(mut commands: Commands) {
             config: vec![
                 VideoSequenceConfig {
                     path: "assets/movies/text_1.webm".to_string(),
-                    fps: 120.0,
+                    fps: 60.0,
                     init_adv_transform: AdvTransform {
                         contents: vec![
                             AdvTransformItem {
@@ -286,7 +286,7 @@ fn init_ui(mut commands: Commands) {
                 },
                 VideoSequenceConfig {
                     path: "assets/movies/text_2.webm".to_string(),
-                    fps: 120.0,
+                    fps: 60.0,
                     init_adv_transform: AdvTransform {
                         contents: vec![
                             AdvTransformItem {
