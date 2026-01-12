@@ -13,3 +13,5 @@ create-pages:
   script:
     - mkdir public
     - cp -r ocr_web public/ocr_web
+  artifacts:
+    expire_in: 1 hour
