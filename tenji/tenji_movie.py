@@ -89,6 +89,8 @@ while True:
             shutil.rmtree(os.path.join(os.path.expanduser('~'), '.config', 'vlc'))
         except Exception as e:
             print(e)
+        subprocess.run(["pactl", "set-default-sink", "alsa_output.pci-0000_e5_00.6.analog-stereo"], stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
+        subprocess.run(["pactl", "set-sink-volume", "@DEFAULT_SINK@", "64%"], stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
         my_state['process_douga'] = subprocess.Popen(["vlc", "--loop", "--fullscreen", "--no-video-title-show", "--no-qt-privacy-ask", "/douga/douga.mov"], stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
 
     pids_raw = subprocess.run(["ps", "-Ao", "pid,args"], capture_output=True, text=True)
