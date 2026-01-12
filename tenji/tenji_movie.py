@@ -1,6 +1,6 @@
 #!/bin/python3
 
-# rireki lvl.1 watcher
+# douga lvl.1 watcher
 
 import subprocess
 import sys
@@ -27,7 +27,7 @@ window resize
 """
 
 try:
-    display_pos = 1
+    display_pos = 0
     number_of_displays = 2
     wmctrl_result = subprocess.run(["/usr/bin/wmctrl", "-d"], capture_output=True, text=True)
     m = [re.match(r"^\d+\s+\*\s+DG:\s+(\d+)x(\d+)", l) for l in wmctrl_result.stdout.split('\n')]
@@ -51,12 +51,11 @@ APP_START_TIME = time.perf_counter()
 
 class MyState(TypedDict):
     started: bool
-    process_voice_server: subprocess.Popen | None
-    process_rireki: subprocess.Popen | None
+    process_douga: subprocess.Popen | None
     to_check_startup_flag: list[bool]
 
 def exit_func():
-    to_terminate = [my_state['process_rireki'], my_state['process_voice_server']]
+    to_terminate = [my_state['process_douga']]
     for p in to_terminate:
         if p is not None and p.poll() == None:
             p.terminate()
@@ -67,9 +66,8 @@ atexit.register(exit_func)
 def initial_state() -> MyState:
     return {
         "started": False,
-        "process_rireki": None,
-        "process_voice_server": None,
-        "to_check_startup_flag": [False, False],
+        "process_douga": None,
+        "to_check_startup_flag": [False],
     }
 
 basepath = os.path.dirname(os.path.abspath(__file__))
@@ -86,22 +84,15 @@ while True:
         sys.exit()
     if not my_state['started']:
         my_state['started'] = True
-        my_state['process_rireki'] = subprocess.Popen(["cargo", "run", "--profile", "release", "--bin", "rireki"], cwd=src_path, stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
-        my_state['process_rireki'] = subprocess.Popen([os.path.join(
-            basepath, "..", "python", "venv", "bin", "uvicorn"
-        ), "voice_server:app"], cwd=os.path.join(
-            basepath, "..", "python"
-        ), stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
+        my_state['process_douga'] = subprocess.Popen(["mpv", "--loop", "/douga/douga.mov", "--fullscreen"], stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
 
     pids_raw = subprocess.run(["ps", "-Ao", "pid,args"], capture_output=True, text=True)
     pids = [re.match(r'^\s*(\d+)\s*(.*)$', l) for l in pids_raw.stdout.split("\n")]
     pids = [(int(p[1]), str(p[2])) for p in pids if p is not None]
 
-    voice_server_pids = [p[0] for p in pids if 'python/venv/bin/uvicorn voice_server:app' in p[1]]
+    voice_mpv = [p[0] for p in pids if 'mpv --loop /douga/douga.mov' in p[1]]
 
-    rireki_pids = [p[0] for p in pids if p[1].endswith('target/release/rireki')]
-
-    to_check = [voice_server_pids, rireki_pids]
+    to_check = [voice_mpv]
 
     for i, x in enumerate(to_check):
         if len(x) > 0 and my_state['to_check_startup_flag'][i] == False:
