@@ -77,6 +77,7 @@ src_path = os.path.join(
         )
 
 my_state: MyState = initial_state()
+import shutil
 
 while True:
     if time.perf_counter() - APP_START_TIME > MAX_APP_TIME:
@@ -84,13 +85,17 @@ while True:
         sys.exit()
     if not my_state['started']:
         my_state['started'] = True
-        my_state['process_douga'] = subprocess.Popen(["mpv", "--loop", "/douga/douga.mov", "--fullscreen"], stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
+        try:
+            shutil.rmtree(os.path.join(os.path.expanduser('~'), '.config', 'vlc'))
+        except Exception as e:
+            print(e)
+        my_state['process_douga'] = subprocess.Popen(["vlc", "--loop", "--fullscreen", "--no-video-title-show", "--no-qt-privacy-ask", "/douga/douga.mov"], stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
 
     pids_raw = subprocess.run(["ps", "-Ao", "pid,args"], capture_output=True, text=True)
     pids = [re.match(r'^\s*(\d+)\s*(.*)$', l) for l in pids_raw.stdout.split("\n")]
     pids = [(int(p[1]), str(p[2])) for p in pids if p is not None]
 
-    voice_mpv = [p[0] for p in pids if 'mpv --loop /douga/douga.mov' in p[1]]
+    voice_mpv = [p[0] for p in pids if '/douga/douga.mov' in p[1]]
 
     to_check = [voice_mpv]
 
