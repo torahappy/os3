@@ -47,7 +47,7 @@ fs = 48000
 dl = sd.query_devices()
 for dev in dl:
     #print(dev)
-    if 'default' == dev['name']:
+    if 'pulse' == dev['name']:
         #print("found: ", dev)
         my_idx = dev['index']
         break

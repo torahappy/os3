@@ -1,5 +1,0 @@
-#!/bin/bash
-cd "$(dirname "$0")"
-while true; do
-  /usr/bin/python3 ./tenji_rireki.py
-done

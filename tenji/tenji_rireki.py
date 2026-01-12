@@ -1,5 +1,7 @@
 #!/bin/python3
 
+# rireki lvl.1 watcher
+
 import subprocess
 import sys
 import time
@@ -9,6 +11,40 @@ import atexit
 import re
 import signal
 import time
+
+"""
+window resize
+            size_x = 500
+            size_y = 500
+            pos_x = single_w // 2 - size_x // 2 + display_pos * single_w
+            pos_y = single_h // 2 - size_y // 2
+             subprocess.run(["wmctrl", "-x", "-r", "rireki_lvl_2_watcher", "-b", "remove,fullscreen"])
+            time.sleep(1)
+            subprocess.run(["wmctrl", "-x", "-r", "rireki_lvl_2_watcher", "-e", "0,%s,%s,%s,%s" % (pos_x, pos_y, size_x, size_y)])
+            time.sleep(1)
+            subprocess.run(["wmctrl", "-x", "-r", "rireki_lvl_2_watcher", "-a"])
+            time.sleep(1)
+"""
+
+try:
+    display_pos = 1
+    number_of_displays = 2
+    wmctrl_result = subprocess.run(["/usr/bin/wmctrl", "-d"], capture_output=True, text=True)
+    m = [re.match(r"^\d+\s+\*\s+DG:\s+(\d+)x(\d+)", l) for l in wmctrl_result.stdout.split('\n')]
+    m = [l for l in m if l is not None]
+    if len(m) > 0:
+        m = m[0]
+        whole_w = int(m[1])
+        whole_h = int(m[2])
+        if whole_w > whole_h:
+            single_w = whole_w // number_of_displays
+            single_h = whole_h
+            pos_x = single_w // 2 + display_pos * single_w
+            pos_y = single_h // 2
+            subprocess.run(["xdotool", "mousemove", str(pos_x), str(pos_y)])
+            sleep(1)
+except Exception as e:
+    print(str(e))
 
 MAX_APP_TIME = 3600
 APP_START_TIME = time.perf_counter()
