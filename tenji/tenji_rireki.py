@@ -58,11 +58,19 @@ class MyState(TypedDict):
 def exit_func():
     to_terminate = [my_state['process_rireki'], my_state['process_voice_server']]
     for p in to_terminate:
-        if p is not None and p.poll() == None:
+        print(p)
+        if p is not None and p.poll() is None:
             p.terminate()
             p.wait()
 
+
 atexit.register(exit_func)
+
+def sigterm_handler(signum, frame):
+    exit_func()
+    sys.exit()
+
+signal.signal(signal.SIGTERM, sigterm_handler)
 
 def initial_state() -> MyState:
     return {
@@ -86,8 +94,12 @@ while True:
         sys.exit()
     if not my_state['started']:
         my_state['started'] = True
+        
+        subprocess.run(["pactl", "set-default-source", "alsa_input.usb-KTMicro_KT_USB_Audio_2020-02-20-0000-0000-0000--00.mono-fallback"], stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
+        subprocess.run(["pactl", "set-source-volume", "@DEFAULT_SOURCE@", "100%"], stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
+
         my_state['process_rireki'] = subprocess.Popen(["cargo", "run", "--profile", "release", "--bin", "rireki"], cwd=src_path, stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
-        my_state['process_rireki'] = subprocess.Popen([os.path.join(
+        my_state['process_voice_server'] = subprocess.Popen([os.path.join(
             basepath, "..", "python", "venv", "bin", "uvicorn"
         ), "voice_server:app"], cwd=os.path.join(
             basepath, "..", "python"
@@ -103,6 +115,9 @@ while True:
 
     to_check = [voice_server_pids, rireki_pids]
 
+    dup_procs = False
+    sent_sigterm = []
+
     for i, x in enumerate(to_check):
         if len(x) > 0 and my_state['to_check_startup_flag'][i] == False:
             my_state['to_check_startup_flag'][i] = True
@@ -117,14 +132,18 @@ while True:
                 except:
                     pass
 
-                time.sleep(10)
+                dup_procs = True
+                sent_sigterm.append(pid)
 
-                try:
-                    os.kill(pid, signal.SIGKILL)
-                except:
-                    pass
+    if dup_procs:
+        time.sleep(10)
+        for pid in sent_sigterm:
+            try:
+                os.kill(pid, signal.SIGKILL)
+            except:
+                pass
+        sys.exit()
 
-                sys.exit()
 
     time.sleep(1)
 

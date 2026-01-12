@@ -46,9 +46,6 @@ try:
 except Exception as e:
     print(str(e))
 
-MAX_APP_TIME = 3600
-APP_START_TIME = time.perf_counter()
-
 class MyState(TypedDict):
     started: bool
     process_douga: subprocess.Popen | None
@@ -57,11 +54,17 @@ class MyState(TypedDict):
 def exit_func():
     to_terminate = [my_state['process_douga']]
     for p in to_terminate:
-        if p is not None and p.poll() == None:
+        if p is not None and p.poll() is None:
             p.terminate()
             p.wait()
 
 atexit.register(exit_func)
+
+def sigterm_handler(signum, frame):
+    exit_func()
+    sys.exit()
+
+signal.signal(signal.SIGTERM, sigterm_handler)
 
 def initial_state() -> MyState:
     return {
@@ -80,17 +83,14 @@ my_state: MyState = initial_state()
 import shutil
 
 while True:
-    if time.perf_counter() - APP_START_TIME > MAX_APP_TIME:
-        print("Something Bad happened !!! app executing time is way longer than expected !! shutting down...")
-        sys.exit()
     if not my_state['started']:
         my_state['started'] = True
         try:
             shutil.rmtree(os.path.join(os.path.expanduser('~'), '.config', 'vlc'))
         except Exception as e:
             print(e)
-        subprocess.run(["pactl", "set-default-sink", "alsa_output.pci-0000_e5_00.6.analog-stereo"], stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
-        subprocess.run(["pactl", "set-sink-volume", "@DEFAULT_SINK@", "64%"], stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
+        subprocess.run(["pactl", "set-default-sink", "alsa_output.usb-KTMicro_KT_USB_Audio_2020-02-20-0000-0000-0000--00.analog-stereo"], stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
+        subprocess.run(["pactl", "set-sink-volume", "@DEFAULT_SINK@", "80%"], stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
         my_state['process_douga'] = subprocess.Popen(["vlc", "--loop", "--fullscreen", "--no-video-title-show", "--no-qt-privacy-ask", "/douga/douga.mov"], stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
 
     pids_raw = subprocess.run(["ps", "-Ao", "pid,args"], capture_output=True, text=True)
@@ -100,6 +100,9 @@ while True:
     voice_mpv = [p[0] for p in pids if '/douga/douga.mov' in p[1]]
 
     to_check = [voice_mpv]
+
+    dup_procs = False
+    sent_sigterm = []
 
     for i, x in enumerate(to_check):
         if len(x) > 0 and my_state['to_check_startup_flag'][i] == False:
@@ -115,14 +118,17 @@ while True:
                 except:
                     pass
 
-                time.sleep(10)
+                dup_procs = True
+                sent_sigterm.append(pid)
 
-                try:
-                    os.kill(pid, signal.SIGKILL)
-                except:
-                    pass
-
-                sys.exit()
+    if dup_procs:
+        time.sleep(10)
+        for pid in sent_sigterm:
+            try:
+                os.kill(pid, signal.SIGKILL)
+            except:
+                pass
+        sys.exit()
 
     time.sleep(1)
 
