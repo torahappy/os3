@@ -1,6 +1,6 @@
 // りれきしょ
 
-use bevy::window::WindowResolution;
+use bevy::window::{CursorOptions, WindowResolution};
 use futures_lite::future;
 use rand::distr::uniform::SampleRange;
 use std::time::Duration;
@@ -167,6 +167,7 @@ fn main() {
         .add_systems(Update, system_voice_history)
         .add_systems(Update, system_voice_history_calc)
         .add_systems(Update, system_end_condition)
+        .add_systems(Update, hide_mouse)
         .run();
 }
 
@@ -178,6 +179,9 @@ fn system_end_condition (q: Query<(&VideoSequence, &TextVideo)>, mut ae: Message
     });
 }
 
+fn hide_mouse (mut cursor_options: Single<&mut CursorOptions>) {
+    cursor_options.visible = false;
+}
 
 fn init_voice_sphere(
     mut com: Commands,
