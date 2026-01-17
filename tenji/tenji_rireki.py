@@ -27,6 +27,9 @@ window resize
 """
 
 try:
+    subprocess.run(["pactl", "set-default-source", "alsa_input.usb-KTMicro_KT_USB_Audio_2020-02-20-0000-0000-0000--00.mono-fallback"], stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
+    time.sleep(1.0)
+    subprocess.run(["pactl", "set-source-volume", "@DEFAULT_SOURCE@", "100%"], stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
     display_pos = 1
     number_of_displays = 2
     wmctrl_result = subprocess.run(["/usr/bin/wmctrl", "-d"], capture_output=True, text=True)
@@ -42,7 +45,7 @@ try:
             pos_x = single_w // 2 + display_pos * single_w
             pos_y = single_h // 2
             subprocess.run(["xdotool", "mousemove", str(pos_x), str(pos_y)])
-            time.sleep(1)
+            time.sleep(1.0)
 except Exception as e:
     print(str(e))
 
@@ -95,8 +98,6 @@ while True:
     if not my_state['started']:
         my_state['started'] = True
         
-        subprocess.run(["pactl", "set-default-source", "alsa_input.usb-KTMicro_KT_USB_Audio_2020-02-20-0000-0000-0000--00.mono-fallback"], stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
-        subprocess.run(["pactl", "set-source-volume", "@DEFAULT_SOURCE@", "100%"], stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
 
         my_state['process_rireki'] = subprocess.Popen(["cargo", "run", "--profile", "release", "--bin", "rireki"], cwd=src_path, stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
         my_state['process_voice_server'] = subprocess.Popen([os.path.join(
