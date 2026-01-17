@@ -12,24 +12,20 @@ import re
 import signal
 import time
 
-"""
-window resize
-            size_x = 500
-            size_y = 500
-            pos_x = single_w // 2 - size_x // 2 + display_pos * single_w
-            pos_y = single_h // 2 - size_y // 2
-             subprocess.run(["wmctrl", "-x", "-r", "rireki_lvl_2_watcher", "-b", "remove,fullscreen"])
-            time.sleep(1)
-            subprocess.run(["wmctrl", "-x", "-r", "rireki_lvl_2_watcher", "-e", "0,%s,%s,%s,%s" % (pos_x, pos_y, size_x, size_y)])
-            time.sleep(1)
-            subprocess.run(["wmctrl", "-x", "-r", "rireki_lvl_2_watcher", "-a"])
-            time.sleep(1)
-"""
+DEFAULT_SOURCE = "alsa_input.usb-KTMicro_KT_USB_Audio_2020-02-20-0000-0000-0000--00.mono-fallback"
+SOURCE_VOLUME = '100%'
+
+def check_pulseaudio():
+    r = subprocess.run(["pactl", "get-default-source"], stderr=subprocess.PIPE, stdout=subprocess.PIPE, text=True)
+    if not DEFAULT_SOURCE in r.stdout:
+        subprocess.run(["pactl", "set-default-source", DEFAULT_SOURCE], stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
+    time.sleep(1.0)
+    r = subprocess.run(["pactl", "get-source-volume", "@DEFAULT_SOURCE@"], stderr=subprocess.PIPE, stdout=subprocess.PIPE, text=True)
+    # TODO: mono/stereo
+    if not re.match(r'.*%s.*' % SOURCE_VOLUME, r.stdout):
+        subprocess.run(["pactl", "set-source-volume", "@DEFAULT_SOURCE@", SOURCE_VOLUME], stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
 
 try:
-    subprocess.run(["pactl", "set-default-source", "alsa_input.usb-KTMicro_KT_USB_Audio_2020-02-20-0000-0000-0000--00.mono-fallback"], stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
-    time.sleep(1.0)
-    subprocess.run(["pactl", "set-source-volume", "@DEFAULT_SOURCE@", "100%"], stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
     display_pos = 1
     number_of_displays = 2
     wmctrl_result = subprocess.run(["/usr/bin/wmctrl", "-d"], capture_output=True, text=True)
@@ -92,6 +88,8 @@ src_path = os.path.join(
 my_state: MyState = initial_state()
 
 while True:
+    check_pulseaudio()
+
     if time.perf_counter() - APP_START_TIME > MAX_APP_TIME:
         print("Something Bad happened !!! app executing time is way longer than expected !! shutting down...")
         sys.exit()

@@ -12,24 +12,20 @@ import re
 import signal
 import time
 
-"""
-window resize
-            size_x = 500
-            size_y = 500
-            pos_x = single_w // 2 - size_x // 2 + display_pos * single_w
-            pos_y = single_h // 2 - size_y // 2
-             subprocess.run(["wmctrl", "-x", "-r", "rireki_lvl_2_watcher", "-b", "remove,fullscreen"])
-            time.sleep(1)
-            subprocess.run(["wmctrl", "-x", "-r", "rireki_lvl_2_watcher", "-e", "0,%s,%s,%s,%s" % (pos_x, pos_y, size_x, size_y)])
-            time.sleep(1)
-            subprocess.run(["wmctrl", "-x", "-r", "rireki_lvl_2_watcher", "-a"])
-            time.sleep(1)
-"""
+DEFAULT_SINK = 'alsa_output.pci-0000_e5_00.6.analog-stereo'
+SINK_VOLUME = '80%'
+
+def check_pulseaudio():
+    r = subprocess.run(["pactl", "get-default-sink"], stderr=subprocess.PIPE, stdout=subprocess.PIPE, text=True)
+    if not DEFAULT_SINK in r.stdout:
+        subprocess.run(["pactl", "set-default-sink", DEFAULT_SINK], stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
+    time.sleep(1.0)
+    r = subprocess.run(["pactl", "get-sink-volume", "@DEFAULT_SINK@"], stderr=subprocess.PIPE, stdout=subprocess.PIPE, text=True)
+    # TODO: mono/stereo
+    if not re.match(r'.*%s.*' % SINK_VOLUME, r.stdout):
+        subprocess.run(["pactl", "set-sink-volume", "@DEFAULT_SINK@", SINK_VOLUME], stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
 
 try:
-    subprocess.run(["pactl", "set-default-sink", "alsa_output.pci-0000_e5_00.6.analog-stereo"], stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
-    time.sleep(1.0)
-    subprocess.run(["pactl", "set-sink-volume", "@DEFAULT_SINK@", "80%"], stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
     display_pos = 0
     number_of_displays = 2
     wmctrl_result = subprocess.run(["/usr/bin/wmctrl", "-d"], capture_output=True, text=True)
@@ -45,7 +41,7 @@ try:
             pos_x = single_w // 2 + display_pos * single_w
             pos_y = single_h // 2
             subprocess.run(["xdotool", "mousemove", str(pos_x), str(pos_y)])
-            time.sleep(1.0)
+            time.sleep(0.1)
 except Exception as e:
     print(str(e))
 
@@ -86,6 +82,8 @@ my_state: MyState = initial_state()
 import shutil
 
 while True:
+    check_pulseaudio()
+
     if not my_state['started']:
         my_state['started'] = True
         try:
