@@ -1,5 +1,9 @@
 use std::f32::consts::PI;
 
+use num_complex::Complex;
+use num_traits::ConstZero;
+use rustfft::FftPlanner;
+
 pub fn pre_emphasis_in_place(wave: &mut [f32], p: f32) {
     let mut prev = 0.0;
 
@@ -32,7 +36,7 @@ pub fn check_vectors(wave: Vec<f32>, expected: Vec<f32>, epsilon: f32) {
 
 /// Computes autocorrelation up to a specific lag order.
 /// Equivalent to: r[i] = np.sum(x[0:N-i] * x[i:N])
-fn my_autocorr(x: &[f32], order: usize) -> Vec<f32> {
+pub fn my_autocorr(x: &[f32], order: usize) -> Vec<f32> {
     let n = x.len();
     let mut r = Vec::with_capacity(order);
 
@@ -49,7 +53,7 @@ fn my_autocorr(x: &[f32], order: usize) -> Vec<f32> {
 
 /// The Levinson-Durbin recursion.
 /// Returns (A, e) where A is the LPC coefficients and e is the prediction error.
-fn my_levinson(signal: &[f32], order: usize) -> (Vec<f32>, f32) {
+pub fn my_levinson(signal: &[f32], order: usize) -> (Vec<f32>, f32) {
     // 1. Compute Autocorrelation (need size order + 1)
     let r = my_autocorr(signal, order + 1);
 
@@ -100,7 +104,7 @@ fn my_levinson(signal: &[f32], order: usize) -> (Vec<f32>, f32) {
     (a, e)
 }
 
-fn apply_hamming_in_place(buffer: &mut [f32]) {
+pub fn apply_hamming_in_place(buffer: &mut [f32]) {
     let m = buffer.len();
     if m <= 1 {
         return;
@@ -114,9 +118,98 @@ fn apply_hamming_in_place(buffer: &mut [f32]) {
     }
 }
 
+fn compute_freqz(b: &f32, a: &[f32], n_fft: usize) -> Vec<Complex<f32>> {
+    let mut planner = FftPlanner::new();
+    let fft = planner.plan_fft_forward(n_fft);
+
+    let mut a_padded = vec![Complex::ZERO; n_fft];
+    for (i, &val) in a.iter().enumerate().take(n_fft) {
+        a_padded[i] = Complex::new(val, 0.0);
+    }
+    fft.process(&mut a_padded);
+    a_padded.iter_mut().for_each(|x| *x = *b / *x);
+
+    return a_padded;
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn test_scipy_freqz_equivalence() {
+        // --- 1. Setup Inputs ---
+        let b = 100.0f32;
+        let a = vec![1.0, 0.2, -0.4, 0.3, 0.6];
+        let n_fft = 20;
+
+        // --- 2. Run Rust Function ---
+        let result = compute_freqz(&b, &a, n_fft);
+
+        // --- 3. Define Expected Python Output ---
+        // These values are copied directly from your scipy output
+        let expected_re = [
+            58.82352941,
+            64.02724394,
+            130.55961852,
+            104.45918885,
+            55.54755273,
+            49.87531172,
+            47.90550898,
+            49.59964001,
+            111.36027537,
+            201.12697686,
+            142.85714286,
+            201.12697686,
+            111.36027537,
+            49.59964001,
+            47.90550898,
+            49.87531172,
+            55.54755273,
+            104.45918885,
+            130.55961852,
+            64.02724394,
+        ];
+
+        let expected_im = [
+            0.00000000,
+            33.36120750,
+            106.45043900,
+            -106.26855500,
+            -33.11953980,
+            -2.49376559,
+            23.23454520,
+            60.77836210,
+            148.98057900,
+            -12.59390060,
+            -0.00000000,
+            12.59390060,
+            -148.98057900,
+            -60.77836210,
+            -23.23454520,
+            2.49376559,
+            33.11953980,
+            106.26855500,
+            -106.45043900,
+            -33.36120750,
+        ];
+
+        // --- 4. Assert Equality ---
+        assert_eq!(result.len(), expected_re.len());
+
+        let epsilon = 1e-4; // Floating point tolerance
+
+        check_vectors(
+            result.iter().map(|x| x.re).collect(),
+            expected_re.to_vec(),
+            epsilon,
+        );
+        check_vectors(
+            result.iter().map(|x| x.im).collect(),
+            expected_im.to_vec(),
+            epsilon,
+        );
+    }
 
     #[test]
     fn test_pre_emphasis() {

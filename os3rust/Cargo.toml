@@ -16,12 +16,14 @@ yew = { version = "0.22.0", features = ["csr"] }
 log = { version = "*", features = ["max_level_debug", "release_max_level_warn"] }
 quanta = "0.12.6"
 bevy_tweening = "0.14.0"
-arima = "0.3.0"
 cpal = "0.17.1"
 rand = "0.9.2"
 serde_json = "1.0.149"
 reqwest = { version = "0.12", features = ["json", "blocking"] }
 futures-lite = "2.6.1"
+rustfft = "6.4.1"
+num-complex = "0.4.6"
+num-traits = "0.2.19"
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 ffmpeg-next = "8.0.0"

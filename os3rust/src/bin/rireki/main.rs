@@ -5,13 +5,15 @@ use bevy_mod_audio::ModAudioPlugins;
 use bevy_mod_audio::audio_output::AudioOutput;
 use bevy_mod_audio::microphone::MicrophoneAudio;
 use futures_lite::future;
+use os3rust::math::{self, wave};
 use rand::distr::uniform::SampleRange;
+use core::slice;
 use std::time::Duration;
 
 use bevy::platform::collections::HashMap;
 use bevy::shader::ShaderRef;
 use bevy::sprite_render::{AlphaMode2d, Material2d, Material2dPlugin};
-use bevy::tasks::{IoTaskPool, Task, TaskPool, block_on};
+use bevy::tasks::{IoTaskPool, Task, TaskPool, AsyncComputeTaskPool, block_on};
 use bevy::{prelude::*, render::render_resource::AsBindGroup};
 use bevy_tweening::lens::TransformPositionLens;
 use bevy_tweening::{Tween, TweenAnim, TweeningPlugin};
@@ -31,6 +33,11 @@ use rand::{prelude::*, rng};
 pub struct VoiceSphere {
     id: usize,
     category: u64,
+}
+
+#[derive(Resource, Default)]
+pub struct VoiceRawData {
+    microphone_data: Vec<f32>,
 }
 
 #[derive(Resource, Default)]
@@ -154,6 +161,7 @@ fn main() {
         .insert_resource(Time::<Fixed>::from_hz(120.0))
         .init_resource::<WindowMetricsResource>()
         .init_resource::<VoicePacketData>()
+        .init_resource::<VoiceRawData>()
         .init_resource::<VoiceGameData>()
         .init_non_send_resource::<VideoResource>()
         .add_systems(Startup, init_ui)
@@ -172,15 +180,30 @@ fn main() {
         .add_systems(Update, system_voice_history_calc)
         .add_systems(Update, system_end_condition)
         .add_systems(Update, hide_mouse)
-        .add_systems(Update, system_microphone)
+        .add_systems(FixedUpdate, system_microphone)
         .run();
 }
 
-fn system_microphone(
-    mic: ResMut<MicrophoneAudio>){
-    mic.try_iter().for_each(|x| {
-        info!("Mic input {}", x.len());
-    });
+fn system_microphone(mic: ResMut<MicrophoneAudio>){
+    let ms = 30.0;
+    let samples = ((mic.config.sample_rate as f64) / 1000.0 * ms) as usize;
+
+    let mut mic_in = mic.try_iter().collect::<Vec<Vec<_>>>().concat();
+
+    if mic_in.len() > samples {
+        info!("sent async compute task {} {}", mic_in.len(), samples);
+        let task_pool = TaskPool::new();
+        mic_in.truncate(samples);
+        let mut slice_left = mic_in.clone();
+        let task = task_pool.spawn(async move {
+            let max = slice_left.iter().map(|x| x.abs()).fold(0.0/0.0, |a, b| b.max(a));
+            slice_left.iter_mut().for_each(|x| *x /= max);
+            wave::pre_emphasis_in_place(&mut slice_left, 0.97);
+            wave::apply_hamming_in_place(&mut slice_left);
+            let result = wave::my_levinson(&slice_left, 32);
+            info!("{:?}", result);
+        });
+    }
 }
 
 fn system_end_condition (q: Query<(&VideoSequence, &TextVideo)>, mut ae: MessageWriter<AppExit>) {
