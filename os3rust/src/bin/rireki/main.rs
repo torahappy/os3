@@ -1,19 +1,21 @@
 // りれきしょ
 
+use bevy::tasks::futures::check_ready;
 use bevy::window::{CursorOptions, WindowResolution};
 use bevy_mod_audio::ModAudioPlugins;
 use bevy_mod_audio::audio_output::AudioOutput;
 use bevy_mod_audio::microphone::MicrophoneAudio;
-use futures_lite::future;
-use os3rust::math::{self, wave};
-use rand::distr::uniform::SampleRange;
 use core::slice;
+use futures_lite::future;
+use num_complex::ComplexFloat;
+use os3rust::math::wave;
+use rand::distr::uniform::SampleRange;
 use std::time::Duration;
 
 use bevy::platform::collections::HashMap;
 use bevy::shader::ShaderRef;
 use bevy::sprite_render::{AlphaMode2d, Material2d, Material2dPlugin};
-use bevy::tasks::{IoTaskPool, Task, TaskPool, AsyncComputeTaskPool, block_on};
+use bevy::tasks::{AsyncComputeTaskPool, IoTaskPool, Task, TaskPool, block_on};
 use bevy::{prelude::*, render::render_resource::AsBindGroup};
 use bevy_tweening::lens::TransformPositionLens;
 use bevy_tweening::{Tween, TweenAnim, TweeningPlugin};
@@ -36,15 +38,8 @@ pub struct VoiceSphere {
 }
 
 #[derive(Resource, Default)]
-pub struct VoiceRawData {
-    microphone_data: Vec<f32>,
-}
-
-#[derive(Resource, Default)]
 pub struct VoicePacketData {
-    tasks: HashMap<u64, Task<Vec<(f64, Vec<u64>)>>>,
-    last_run: f64,
-    last_task_id: u64,
+    tasks: Vec<Task<(f64, Vec<u64>)>>,
     history: Vec<(f64, Vec<u64>)>,
 }
 
@@ -161,7 +156,6 @@ fn main() {
         .insert_resource(Time::<Fixed>::from_hz(120.0))
         .init_resource::<WindowMetricsResource>()
         .init_resource::<VoicePacketData>()
-        .init_resource::<VoiceRawData>()
         .init_resource::<VoiceGameData>()
         .init_non_send_resource::<VideoResource>()
         .add_systems(Startup, init_ui)
@@ -184,7 +178,7 @@ fn main() {
         .run();
 }
 
-fn system_microphone(mic: ResMut<MicrophoneAudio>){
+fn system_microphone(mic: ResMut<MicrophoneAudio>, mut vpd: ResMut<VoicePacketData>) {
     let ms = 30.0;
     let samples = ((mic.config.sample_rate as f64) / 1000.0 * ms) as usize;
 
@@ -192,21 +186,38 @@ fn system_microphone(mic: ResMut<MicrophoneAudio>){
 
     if mic_in.len() > samples {
         info!("sent async compute task {} {}", mic_in.len(), samples);
-        let task_pool = TaskPool::new();
+        let task_pool = AsyncComputeTaskPool::get();
         mic_in.truncate(samples);
         let mut slice_left = mic_in.clone();
         let task = task_pool.spawn(async move {
-            let max = slice_left.iter().map(|x| x.abs()).fold(0.0/0.0, |a, b| b.max(a));
+            let max = slice_left
+                .iter()
+                .map(|x| x.abs())
+                .fold(0.0 / 0.0, |a, b| b.max(a));
             slice_left.iter_mut().for_each(|x| *x /= max);
             wave::pre_emphasis_in_place(&mut slice_left, 0.97);
             wave::apply_hamming_in_place(&mut slice_left);
             let result = wave::my_levinson(&slice_left, 32);
-            info!("{:?}", result);
+            let fft_result = wave::compute_freqz(&result.1, result.0.as_slice(), samples);
+            let log_abs = fft_result
+                .iter()
+                .map(|x| x.abs().log10() * 20.0)
+                .collect::<Vec<_>>();
+            let mut pf = find_peaks::PeakFinder::new(&log_abs);
+            pf.with_min_prominence(10.0);
+            let mut peaks = pf
+                .find_peaks()
+                .iter()
+                .map(|x| x.position.start as u64)
+                .collect::<Vec<_>>();
+            peaks.sort();
+            return (result.1 as f64, peaks);
         });
+        vpd.tasks.push(task);
     }
 }
 
-fn system_end_condition (q: Query<(&VideoSequence, &TextVideo)>, mut ae: MessageWriter<AppExit>) {
+fn system_end_condition(q: Query<(&VideoSequence, &TextVideo)>, mut ae: MessageWriter<AppExit>) {
     q.iter().for_each(|(vs, _)| {
         if vs.current == 1 {
             ae.write(AppExit::Success);
@@ -214,7 +225,7 @@ fn system_end_condition (q: Query<(&VideoSequence, &TextVideo)>, mut ae: Message
     });
 }
 
-fn hide_mouse (mut cursor_options: Single<&mut CursorOptions>) {
+fn hide_mouse(mut cursor_options: Single<&mut CursorOptions>) {
     cursor_options.visible = false;
 }
 
@@ -238,7 +249,7 @@ fn init_voice_sphere(
                 .with_translation(Vec3 {
                     x: 0.,
                     y: 0.,
-                    z: 0.95 + (0.000001 * rng().random_range(0.0..1.0))
+                    z: 0.95 + (0.000001 * rng().random_range(0.0..1.0)),
                 }),
         ));
     }
@@ -336,14 +347,15 @@ fn system_voice_history_calc(
 
                 apply_adv_transform(
                     &AdvTransform {
-                        contents: vec![AdvTransformItem {
-                            translate_rel_window: Some((a_final, b_final)),
-                            ..default()
-                        },
-                        AdvTransformItem {
-                            scale_mult_rel_window_width: Some((0.053, 0.053)),
-                            ..default()
-                        } 
+                        contents: vec![
+                            AdvTransformItem {
+                                translate_rel_window: Some((a_final, b_final)),
+                                ..default()
+                            },
+                            AdvTransformItem {
+                                scale_mult_rel_window_width: Some((0.053, 0.053)),
+                                ..default()
+                            },
                         ],
                     },
                     t.into_inner(),
@@ -362,13 +374,15 @@ fn system_voice_history_calc(
 
 fn system_voice_history(mut data: ResMut<VoicePacketData>) {
     let mut vectors = Vec::new();
-    data.tasks.retain(|k, task| {
-        let status: Option<Vec<(f64, Vec<u64>)>> = block_on(future::poll_once(task));
-        let retain = status.is_none();
-        if let Some(mut v) = status {
-            vectors.append(&mut v);
+    data.tasks.retain_mut(|x|{
+        let status = check_ready(x);
+        if let Some(v) = status {
+            vectors.push(v);
+            info!("recv");
+            return false;
+        } else {
+            return true;
         }
-        return retain;
     });
     data.history.append(&mut vectors);
     if data.history.len() > 1000 {
@@ -381,29 +395,29 @@ fn system_voice_history(mut data: ResMut<VoicePacketData>) {
 }
 
 fn system_voice_queue(mut data: ResMut<VoicePacketData>, time: Res<Time>) {
-//    if time.elapsed_secs_f64() - data.last_run > 1.0 / 24.0 {
-//        data.last_run = time.elapsed_secs_f64();
-//        let task_pool = IoTaskPool::get();
-//        let task = task_pool.spawn(async move {
-//            let res = reqwest::blocking::get("http://127.0.0.1:8000/readlines");
-//            match res {
-//                Ok(x) => match x.json() {
-//                    Ok(x) => x,
-//                    Err(e) => {
-//                        info!("Request parse failed ! {}", e);
-//                        Vec::new()
-//                    }
-//                },
-//                Err(e) => {
-//                    info!("{}", e);
-//                    Vec::new()
-//                }
-//            }
-//        });
-//        let i = data.last_task_id;
-//        data.tasks.insert(i, task);
-//        data.last_task_id += 1;
-//    }
+    //    if time.elapsed_secs_f64() - data.last_run > 1.0 / 24.0 {
+    //        data.last_run = time.elapsed_secs_f64();
+    //        let task_pool = IoTaskPool::get();
+    //        let task = task_pool.spawn(async move {
+    //            let res = reqwest::blocking::get("http://127.0.0.1:8000/readlines");
+    //            match res {
+    //                Ok(x) => match x.json() {
+    //                    Ok(x) => x,
+    //                    Err(e) => {
+    //                        info!("Request parse failed ! {}", e);
+    //                        Vec::new()
+    //                    }
+    //                },
+    //                Err(e) => {
+    //                    info!("{}", e);
+    //                    Vec::new()
+    //                }
+    //            }
+    //        });
+    //        let i = data.last_task_id;
+    //        data.tasks.insert(i, task);
+    //        data.last_task_id += 1;
+    //    }
 }
 
 fn system_spawn_images(

@@ -1,0 +1,3 @@
+bevy_mod_audio
+by @MalekiRe (https://github.com/MalekiRe)
+MIT License

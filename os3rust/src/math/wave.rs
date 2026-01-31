@@ -118,7 +118,7 @@ pub fn apply_hamming_in_place(buffer: &mut [f32]) {
     }
 }
 
-fn compute_freqz(b: &f32, a: &[f32], n_fft: usize) -> Vec<Complex<f32>> {
+pub fn compute_freqz(b: &f32, a: &[f32], n_fft: usize) -> Vec<Complex<f32>> {
     let mut planner = FftPlanner::new();
     let fft = planner.plan_fft_forward(n_fft);
 

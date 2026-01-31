@@ -2476,6 +2476,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "645cbb3a84e60b7531617d5ae4e57f7e27308f6445f5abf653209ea76dec8dff"
 
 [[package]]
+name = "find_peaks"
+version = "0.1.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "17ba6fe8df99019a8cb0c712414e10081b3bbdb10d8f7ab95719863ced5db982"
+
+[[package]]
 name = "fixedbitset"
 version = "0.5.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4573,6 +4579,7 @@ dependencies = [
  "bevy_tweening",
  "cpal 0.17.1",
  "ffmpeg-next",
+ "find_peaks",
  "futures-lite",
  "log",
  "num-complex",
