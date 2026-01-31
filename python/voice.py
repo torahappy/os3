@@ -67,7 +67,7 @@ window_2 = int(fs / 1000 * ms_2)
 arcoefs, coeffs_2 = [None, None]
 
 def update(frame):
-    v = sd.rec(window_2, samplerate=fs, channels=1, dtype=np.int16).mean(axis=1)
+    v = sd.rec(window_2, samplerate=fs, channels=1, dtype=np.int16)[:,0]
 
     # print(v.shape)
     sd.wait()
