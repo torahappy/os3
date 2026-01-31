@@ -185,7 +185,7 @@ fn system_microphone(mic: ResMut<MicrophoneAudio>, mut vpd: ResMut<VoicePacketDa
     let mut mic_in = mic.try_iter().collect::<Vec<Vec<_>>>().concat();
 
     if mic_in.len() > samples {
-        info!("sent async compute task {} {}", mic_in.len(), samples);
+        // info!("sent async compute task {} {}", mic_in.len(), samples);
         let task_pool = AsyncComputeTaskPool::get();
         mic_in.truncate(samples);
         let mut slice_left = mic_in.clone();
@@ -289,10 +289,10 @@ fn system_voice_history_calc(
         data.history.iter().map(|x| x.0 * x.0).sum::<f64>() / data.history.len() as f64;
     let mean_all: f64 = data.history.iter().map(|x| x.0).sum::<f64>() / data.history.len() as f64;
     if let Some(last) = data.history.last() {
-        let mean_ratio = last.0 as f32 / mean_all as f32;
+        let mean_ratio = (mean_all as f32 / last.0 as f32).log10();
         // last.0
         let mr_max = 7.0;
-        let mr_processed = mean_ratio.min(mr_max) / mr_max * 0.7;
+        let mr_processed = (mean_ratio.min(mr_max) / mr_max * 0.7).max(0.0);
         cc.0 = Color::srgb(0.3 + mr_processed, 0.05 + mr_processed, 0.12 + mr_processed);
 
         // info!("{} {} {}", data.history.len(), last.0 / mean_all, dev_all);
@@ -378,7 +378,7 @@ fn system_voice_history(mut data: ResMut<VoicePacketData>) {
         let status = check_ready(x);
         if let Some(v) = status {
             vectors.push(v);
-            info!("recv");
+            // info!("recv");
             return false;
         } else {
             return true;
