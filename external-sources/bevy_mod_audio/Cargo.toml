@@ -1,0 +1,18 @@
+[package]
+name = "bevy_mod_audio"
+version = "0.1.0"
+edition = "2024"
+description = "streaming spatial audio and microphone support for bevy"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/MalekiRe/bevy_mod_audio"
+
+[dependencies]
+bevy = "0.17.3"
+rodio = "0.20.1"
+cpal = { version = "0.15.3" }
+flume = "0.11.1"
+
+[target.'cfg(target_arch="wasm32")'.dependencies]
+cpal = { version = "0.15.3", features = ["wasm-bindgen"] }
+wasm-bindgen = "0.2.100"
+web-sys = "0.3.77"

@@ -6,6 +6,7 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+bevy_mod_audio = { path = "../external-sources/bevy_mod_audio" }
 askama = "0.14.0"
 bevy = { version = "0.17.3", features = ["dynamic_linking", "webp", "jpeg"] }
 resvg = "0.45.1"

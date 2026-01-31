@@ -1,6 +1,9 @@
 // りれきしょ
 
 use bevy::window::{CursorOptions, WindowResolution};
+use bevy_mod_audio::ModAudioPlugins;
+use bevy_mod_audio::audio_output::AudioOutput;
+use bevy_mod_audio::microphone::MicrophoneAudio;
 use futures_lite::future;
 use rand::distr::uniform::SampleRange;
 use std::time::Duration;
@@ -140,6 +143,7 @@ fn main() {
                 }),
                 ..default()
             }),
+            ModAudioPlugins,
             TweeningPlugin,
             Material2dPlugin::<RirekiVideoMaterial>::default(),
             Material2dPlugin::<VoiceSphereMaterial>::default(),
@@ -168,7 +172,15 @@ fn main() {
         .add_systems(Update, system_voice_history_calc)
         .add_systems(Update, system_end_condition)
         .add_systems(Update, hide_mouse)
+        .add_systems(Update, system_microphone)
         .run();
+}
+
+fn system_microphone(
+    mic: ResMut<MicrophoneAudio>){
+    mic.try_iter().for_each(|x| {
+        info!("Mic input {}", x.len());
+    });
 }
 
 fn system_end_condition (q: Query<(&VideoSequence, &TextVideo)>, mut ae: MessageWriter<AppExit>) {
@@ -346,29 +358,29 @@ fn system_voice_history(mut data: ResMut<VoicePacketData>) {
 }
 
 fn system_voice_queue(mut data: ResMut<VoicePacketData>, time: Res<Time>) {
-    if time.elapsed_secs_f64() - data.last_run > 1.0 / 24.0 {
-        data.last_run = time.elapsed_secs_f64();
-        let task_pool = IoTaskPool::get();
-        let task = task_pool.spawn(async move {
-            let res = reqwest::blocking::get("http://127.0.0.1:8000/readlines");
-            match res {
-                Ok(x) => match x.json() {
-                    Ok(x) => x,
-                    Err(e) => {
-                        info!("Request parse failed ! {}", e);
-                        Vec::new()
-                    }
-                },
-                Err(e) => {
-                    info!("{}", e);
-                    Vec::new()
-                }
-            }
-        });
-        let i = data.last_task_id;
-        data.tasks.insert(i, task);
-        data.last_task_id += 1;
-    }
+//    if time.elapsed_secs_f64() - data.last_run > 1.0 / 24.0 {
+//        data.last_run = time.elapsed_secs_f64();
+//        let task_pool = IoTaskPool::get();
+//        let task = task_pool.spawn(async move {
+//            let res = reqwest::blocking::get("http://127.0.0.1:8000/readlines");
+//            match res {
+//                Ok(x) => match x.json() {
+//                    Ok(x) => x,
+//                    Err(e) => {
+//                        info!("Request parse failed ! {}", e);
+//                        Vec::new()
+//                    }
+//                },
+//                Err(e) => {
+//                    info!("{}", e);
+//                    Vec::new()
+//                }
+//            }
+//        });
+//        let i = data.last_task_id;
+//        data.tasks.insert(i, task);
+//        data.last_task_id += 1;
+//    }
 }
 
 fn system_spawn_images(
