@@ -8,7 +8,7 @@ use bevy_mod_audio::microphone::MicrophoneAudio;
 use core::slice;
 use futures_lite::future;
 use num_complex::ComplexFloat;
-use os3rust::math::wave;
+use os3bevy::math::wave;
 use rand::distr::uniform::SampleRange;
 use std::time::Duration;
 
@@ -19,9 +19,9 @@ use bevy::tasks::{AsyncComputeTaskPool, IoTaskPool, Task, TaskPool, block_on};
 use bevy::{prelude::*, render::render_resource::AsBindGroup};
 use bevy_tweening::lens::TransformPositionLens;
 use bevy_tweening::{Tween, TweenAnim, TweeningPlugin};
-use os3rust::bevy_connect::transform::{Lifetime, apply_adv_transform, system_lifetime};
-use os3rust::bevy_connect::video::{VideoMaterial, VideoPlayer};
-use os3rust::bevy_connect::{
+use os3bevy::bevy_connect::transform::{Lifetime, apply_adv_transform, system_lifetime};
+use os3bevy::bevy_connect::video::{VideoMaterial, VideoPlayer};
+use os3bevy::bevy_connect::{
     transform::{AdvTransform, AdvTransformItem, AdvTransformOption, system_adv_transform},
     video::{
         VideoResource, VideoSequence, VideoSequenceConfig, initialize_ffmpeg, play_video,

@@ -75,7 +75,7 @@ def initial_state() -> MyState:
 basepath = os.path.dirname(os.path.abspath(__file__))
 
 src_path = os.path.join(
-            basepath, "..", "os3rust"
+            basepath, "..", "os3bevy"
         )
 
 my_state: MyState = initial_state()
