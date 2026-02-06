@@ -15,4 +15,4 @@ flume = "0.11.1"
 [target.'cfg(target_arch="wasm32")'.dependencies]
 cpal = { version = "0.15.3", features = ["wasm-bindgen"] }
 wasm-bindgen = "0.2.100"
-web-sys = "0.3.77"
+web-sys = { version = "0.3.85", features = ["MediaStream","MediaStreamAudioSourceNode","MediaStreamConstraints","AudioProcessingEvent","Navigator", "Window", "ScriptProcessorNode", "MediaDevices"] }

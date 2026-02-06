@@ -63,6 +63,8 @@ pub fn create_microphone(mut commands: Commands) {
     let (tx, rx) = flume::unbounded();
     #[cfg(target_arch = "wasm32")]
     {
+        use bevy::utils::default;
+
         let window = window().unwrap();
         let navigator = window.navigator();
         let media_devices = navigator.media_devices().unwrap();
@@ -125,7 +127,7 @@ pub fn create_microphone(mut commands: Commands) {
 
         promise.then(&closure);
         closure.forget();
-        commands.insert_resource(MicrophoneAudio(Mutex::new(rx)));
+        commands.insert_resource(MicrophoneAudio { audio_data: rx, config: default() });
         return;
     }
 
