@@ -1,5 +1,15 @@
-# The Docker image that will be used to build your app
 image: node:lts
+
+variables:
+  CARGO_HOME: ${CI_PROJECT_DIR}/.cargo
+
+default:
+  cache:
+    key: ${CI_COMMIT_REF_SLUG}
+    paths:
+      - .cargo/
+      - os3bevy/target/
+
 build:
   pages:
     # The folder that contains the files to be exposed at the Page URL
