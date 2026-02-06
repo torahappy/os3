@@ -1,6 +1,6 @@
 # The Docker image that will be used to build your app
 image: node:lts
-create-pages:
+build:
   pages:
     # The folder that contains the files to be exposed at the Page URL
     publish: public
@@ -13,7 +13,7 @@ create-pages:
   script:
     - mkdir public
     - cp -r ocr_web public/ocr_web
-    - curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+    - curl --proto '=https' --tlsv1.2 -y -sSf https://sh.rustup.rs | sh
     - . $HOME/.cargo/env; ./build_scripts/wasm-once.sh os3bevy rireki
     - mkdir public/rireki_web
     - cp ./os3bevy/wasm/rireki/rireki_bg.wasm public/rireki_web
