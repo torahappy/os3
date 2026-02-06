@@ -1,0 +1,56 @@
+name: Pages
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Install
+        run: |
+          rustup update stable
+          rustup target install wasm32-unknown-unknown
+          cargo install wasm-pack
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+      - name: Build
+        run: |
+          mkdir -p examples/web/simple
+          cp examples/simple/index.html examples/web/simple
+          wasm-pack build --target web examples/simple --out-dir ../web/simple/pkg
+          mkdir -p examples/web/cubes
+          cp examples/cubes/index.html examples/web/cubes
+          wasm-pack build --target web examples/cubes --out-dir ../web/cubes/pkg
+          mkdir -p examples/web/captions
+          cp examples/captions/index.html examples/web/captions
+          wasm-pack build --target web examples/captions --out-dir ../web/captions/pkg
+          mkdir -p examples/web/skyvid
+          cp examples/skyvid/index.html examples/web/skyvid
+          wasm-pack build --target web examples/skyvid --out-dir ../web/skyvid/pkg
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: "examples/web"
+
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

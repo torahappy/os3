@@ -1,10 +1,13 @@
 // りれきしょ
 
+use bevy::math::VectorSpace;
 use bevy::tasks::futures::check_ready;
 use bevy::window::{CursorOptions, WindowResolution};
 use bevy_mod_audio::ModAudioPlugins;
 use bevy_mod_audio::audio_output::AudioOutput;
 use bevy_mod_audio::microphone::MicrophoneAudio;
+#[cfg(target_arch = "wasm32")]
+use bevy_web_video::WebVideoPlugin;
 use core::slice;
 use futures_lite::future;
 use num_complex::ComplexFloat;
@@ -63,11 +66,9 @@ pub struct VoiceSphereMaterial {
     #[sampler(1)]
     pub color_texture: Option<Handle<Image>>,
     #[uniform(2)]
-    pub time: f32,
+    pub time: Vec4,
     #[uniform(3)]
-    pub category: f32,
-    #[uniform(4)]
-    pub level: f32,
+    pub category_level_p3_p4: Vec4,
 }
 
 const SHADER_ASSET_PATH_VOICESPHERE: &str = "shaders/voicesphere.wgsl";
@@ -88,7 +89,7 @@ pub struct DrawingMaterial {
     #[sampler(1)]
     pub color_texture: Option<Handle<Image>>,
     #[uniform(2)]
-    pub time: f32,
+    pub time: Vec4,
 }
 
 const SHADER_ASSET_PATH_DRAWING: &str = "shaders/drawing_2d.wgsl";
@@ -109,19 +110,9 @@ pub struct RirekiVideoMaterial {
     #[sampler(1)]
     pub color_texture: Option<Handle<Image>>,
     #[uniform(2)]
-    pub time: f32,
+    pub time: Vec4,
     #[uniform(3)]
-    pub alpha_green: f32,
-    #[uniform(4)]
-    pub alpha_white: f32,
-    #[uniform(5)]
-    pub t_1: f32,
-    #[uniform(6)]
-    pub t_2: f32,
-    #[uniform(7)]
-    pub t_3: f32,
-    #[uniform(8)]
-    pub t_4: f32,
+    pub green_white_p3_p4: Vec4,
 }
 
 const SHADER_ASSET_PATH: &str = "shaders/custom_material_2d.wgsl";
@@ -136,46 +127,50 @@ impl Material2d for RirekiVideoMaterial {
 }
 
 fn main() {
-    App::new()
-        .add_plugins((
-            DefaultPlugins.set(WindowPlugin {
-                primary_window: Some(Window {
-                    mode: bevy::window::WindowMode::BorderlessFullscreen(MonitorSelection::Current),
-                    ..Default::default()
-                }),
-                ..default()
+    let mut app = App::new();
+
+    app.add_plugins((
+        DefaultPlugins.set(WindowPlugin {
+            primary_window: Some(Window {
+                mode: bevy::window::WindowMode::BorderlessFullscreen(MonitorSelection::Current),
+                ..Default::default()
             }),
-            ModAudioPlugins,
-            TweeningPlugin,
-            Material2dPlugin::<RirekiVideoMaterial>::default(),
-            Material2dPlugin::<VoiceSphereMaterial>::default(),
-            Material2dPlugin::<VideoMaterial>::default(),
-            Material2dPlugin::<DrawingMaterial>::default(),
-        ))
-        .insert_resource(ClearColor(Color::srgb(0., 0., 0.)))
-        .insert_resource(Time::<Fixed>::from_hz(120.0))
-        .init_resource::<WindowMetricsResource>()
-        .init_resource::<VoicePacketData>()
-        .init_resource::<VoiceGameData>()
-        .init_non_send_resource::<VideoResource>()
-        .add_systems(Startup, init_ui)
-        .add_systems(Startup, init_voice_sphere)
-        .add_systems(Startup, initialize_ffmpeg)
-        .add_systems(FixedUpdate, play_video)
-        .add_systems(Update, system_adv_transform)
-        .add_systems(Update, system_window_resize)
-        .add_systems(Update, system_cleanup_video)
-        .add_systems(Update, system_video_sequence)
-        .add_systems(Update, system_lifetime)
-        .add_systems(Update, system_video_shaders)
-        .add_systems(Update, system_spawn_images)
-        .add_systems(FixedUpdate, system_voice_queue)
-        .add_systems(Update, system_voice_history)
-        .add_systems(Update, system_voice_history_calc)
-        .add_systems(Update, system_end_condition)
-        .add_systems(Update, hide_mouse)
-        .add_systems(FixedUpdate, system_microphone)
-        .run();
+            ..default()
+        }),
+        ModAudioPlugins,
+        TweeningPlugin,
+        Material2dPlugin::<RirekiVideoMaterial>::default(),
+        Material2dPlugin::<VoiceSphereMaterial>::default(),
+        Material2dPlugin::<VideoMaterial>::default(),
+        Material2dPlugin::<DrawingMaterial>::default(),
+        #[cfg(target_arch = "wasm32")]
+        WebVideoPlugin,
+    ))
+    .insert_resource(ClearColor(Color::srgb(0., 0., 0.)))
+    .insert_resource(Time::<Fixed>::from_hz(120.0))
+    .init_resource::<WindowMetricsResource>()
+    .init_resource::<VoicePacketData>()
+    .init_resource::<VoiceGameData>()
+    .init_non_send_resource::<VideoResource>()
+    .add_systems(Startup, init_ui)
+    .add_systems(Startup, init_voice_sphere)
+    .add_systems(Startup, initialize_ffmpeg)
+    .add_systems(FixedUpdate, play_video)
+    .add_systems(Update, system_adv_transform)
+    .add_systems(Update, system_window_resize)
+    .add_systems(Update, system_cleanup_video)
+    .add_systems(Update, system_video_sequence)
+    .add_systems(Update, system_lifetime)
+    .add_systems(Update, system_video_shaders)
+    .add_systems(Update, system_spawn_images)
+    .add_systems(FixedUpdate, system_voice_queue)
+    .add_systems(Update, system_voice_history)
+    .add_systems(Update, system_voice_history_calc)
+    .add_systems(Update, system_end_condition)
+    .add_systems(Update, hide_mouse)
+    .add_systems(FixedUpdate, system_microphone);
+
+    app.run();
 }
 
 fn system_microphone(mic: ResMut<MicrophoneAudio>, mut vpd: ResMut<VoicePacketData>) {
@@ -287,7 +282,12 @@ fn system_voice_history_calc(
 ) {
     let dev_all: f64 =
         data.history.iter().map(|x| x.0 * x.0).sum::<f64>() / data.history.len() as f64;
-    let mean_all: f64 = data.history.iter().map(|x| x.0).sum::<f64>() / data.history.len() as f64;
+    let mean_all: f64 = data
+        .history
+        .iter()
+        .map(|x| if x.0.is_nan() { 0.0 } else { x.0 })
+        .sum::<f64>()
+        / data.history.len() as f64;
     if let Some(last) = data.history.last() {
         let mean_ratio = (mean_all as f32 / last.0 as f32).log10();
         // last.0
@@ -342,8 +342,7 @@ fn system_voice_history_calc(
                 }
 
                 let mm = materials.get_mut(matref.id()).unwrap();
-                mm.level = level as f32;
-                mm.category = v_data.category as f32;
+                mm.category_level_p3_p4 = Vec4::new(v_data.category as f32, level as f32, 0.0, 0.0);
 
                 apply_adv_transform(
                     &AdvTransform {
@@ -374,7 +373,7 @@ fn system_voice_history_calc(
 
 fn system_voice_history(mut data: ResMut<VoicePacketData>) {
     let mut vectors = Vec::new();
-    data.tasks.retain_mut(|x|{
+    data.tasks.retain_mut(|x| {
         let status = check_ready(x);
         if let Some(v) = status {
             vectors.push(v);
@@ -441,7 +440,7 @@ fn system_spawn_images(
             Mesh2d(meshes.add(Rectangle::default())),
             MeshMaterial2d(materials.add(DrawingMaterial {
                 color_texture: Some(asset_server.load(*picture_url)),
-                time: 0.0,
+                time: Vec4::ZERO,
             })),
             DrawingBack {},
         ));
@@ -548,26 +547,16 @@ fn system_video_shaders(
                     com.entity(*c_vp)
                         .insert(MeshMaterial2d(materials.add(RirekiVideoMaterial {
                             color_texture: Some(vp.image_handle.clone()),
-                            time: 0.0,
-                            alpha_green: 0.0,
-                            alpha_white: 1.0,
-                            t_1: 0.03,
-                            t_2: 0.05,
-                            t_3: 0.99,
-                            t_4: 0.9,
+                            time: Vec4::ZERO,
+                            green_white_p3_p4: Vec4::new(0.0, 1.0, 0.0, 0.0),
                         })));
                 } else if (*i == 1) {
                     info!("text start");
                     com.entity(*c_vp)
                         .insert(MeshMaterial2d(materials.add(RirekiVideoMaterial {
                             color_texture: Some(vp.image_handle.clone()),
-                            time: 0.0,
-                            alpha_green: 1.0,
-                            alpha_white: 0.0,
-                            t_1: 0.03,
-                            t_2: 0.05,
-                            t_3: 0.99,
-                            t_4: 0.9,
+                            time: Vec4::ZERO,
+                            green_white_p3_p4: Vec4::new(1.0, 0.0, 0.0, 0.0),
                         })));
                 }
             }

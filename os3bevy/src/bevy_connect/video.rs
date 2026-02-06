@@ -1,23 +1,33 @@
 use std::path::Path;
 
 use bevy::asset::RenderAssetUsages;
+use bevy::math::VectorSpace;
 use bevy::prelude::*;
 use bevy::render::render_resource::{AsBindGroup, TextureDimension, TextureFormat, TextureUsages};
 use bevy::shader::ShaderRef;
 use bevy::sprite_render::{AlphaMode2d, Material2d};
+#[cfg(target_arch = "wasm32")]
+use bevy_web_video::{VideoElement, VideoElementRegistry, WebVideo};
 use std::collections::HashMap;
 
-use ffmpeg_next::{self as ffmpeg};
-
+#[cfg(not(target_arch = "wasm32"))]
 use ffmpeg::format::{Pixel, input};
+#[cfg(not(target_arch = "wasm32"))]
 use ffmpeg::frame::Video;
+#[cfg(not(target_arch = "wasm32"))]
 use ffmpeg::media::Type;
+#[cfg(not(target_arch = "wasm32"))]
 use ffmpeg::software::scaling::{context::Context, flag::Flags};
+#[cfg(not(target_arch = "wasm32"))]
+use ffmpeg_next::{self as ffmpeg};
 
 use crate::bevy_connect::transform::{AdvTransform, AdvTransformItem, AdvTransformOption};
 
 pub fn initialize_ffmpeg() {
-    ffmpeg::init().unwrap();
+    #[cfg(not(target_arch = "wasm32"))]
+    {
+        ffmpeg::init().unwrap();
+    }
 }
 
 // workaround non-send data not being allowed in components by using non-send resource instead
@@ -27,8 +37,11 @@ pub struct VideoResource {
 }
 
 pub struct VideoPlayerNonSendData {
+    #[cfg(not(target_arch = "wasm32"))]
     pub decoder: ffmpeg::decoder::Video,
+    #[cfg(not(target_arch = "wasm32"))]
     pub input_context: ffmpeg::format::context::Input,
+    #[cfg(not(target_arch = "wasm32"))]
     pub scaler_context: Context,
 }
 
@@ -43,11 +56,12 @@ pub struct VideoPlayer {
 }
 
 impl VideoPlayer {
+    #[cfg(not(target_arch = "wasm32"))]
     pub fn new<'a, P>(
         path: P,
         images: &mut ResMut<Assets<Image>>,
         fps: f64,
-    ) -> Result<(VideoPlayer, VideoPlayerNonSendData), ffmpeg::Error>
+    ) -> Result<(VideoPlayer, VideoPlayerNonSendData), anyhow::Error>
     where
         P: AsRef<Path>,
     {
@@ -109,6 +123,41 @@ impl VideoPlayer {
             },
         ))
     }
+
+    #[cfg(target_arch = "wasm32")]
+    pub fn new<'a, P>(
+        path: P,
+        images: &mut ResMut<Assets<Image>>,
+        fps: f64,
+        video_elements: &mut ResMut<Assets<VideoElement>>,
+        registry: &mut NonSendMut<VideoElementRegistry>,
+    ) -> Result<(VideoPlayer, WebVideo, VideoPlayerNonSendData), anyhow::Error>
+    where
+        P: AsRef<Path>,
+    {
+        use bevy_web_video::{VideoElement, VideoElementAssetsExt, WebVideo};
+        let new_image = images.reserve_handle();
+        let (handle, elem) = video_elements.new_video(new_image.id(), registry);
+        elem.set_src(path.as_ref().to_str().unwrap());
+        elem.set_muted(true);
+        elem.set_loop(false);
+        if let Err(e) = elem.play() {
+            warn!("{:?}", e);
+        }
+
+        Ok((
+            VideoPlayer {
+                image_handle: new_image,
+                video_stream_index: 0,
+                fps,
+                last_sync: 0.0,
+                elapsed: 0.0,
+                video_end: false,
+            },
+            WebVideo::new(handle),
+            VideoPlayerNonSendData {},
+        ))
+    }
 }
 
 pub fn system_cleanup_video(
@@ -135,13 +184,13 @@ pub fn play_video(
     m2d: Query<&MeshMaterial2d<VideoMaterial>>,
     time: Res<Time>,
 ) {
+    #[cfg(not(target_arch = "wasm32"))]
     for (mut video_player, entity) in video_player_query.iter_mut() {
         video_player.elapsed += time.delta_secs_f64();
         let window = 1.0 / video_player.fps;
         if video_player.elapsed - video_player.last_sync > window {
             let total_frames = video_player.elapsed / window;
-            let frames_skipped =
-                ((video_player.elapsed - video_player.last_sync) / window) as u64;
+            let frames_skipped = ((video_player.elapsed - video_player.last_sync) / window) as u64;
             if frames_skipped > 1 {
                 info!("frame skipped: {} {}", entity, frames_skipped);
             }
@@ -193,6 +242,9 @@ pub fn play_video(
             }
         }
     }
+
+    #[cfg(target_arch = "wasm32")]
+    for (mut video_player, entity) in video_player_query.iter_mut() {}
 }
 
 // This is the struct that will be passed to your shader
@@ -202,7 +254,7 @@ pub struct VideoMaterial {
     #[sampler(1)]
     pub color_texture: Option<Handle<Image>>,
     #[uniform(2)]
-    pub time: f32,
+    pub time: Vec4,
 }
 
 const SHADER_ASSET_PATH: &str = "shaders/video_material_2d.wgsl";
@@ -239,6 +291,8 @@ pub fn system_video_sequence(
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<VideoMaterial>>,
     mut video_resource: NonSendMut<VideoResource>,
+    #[cfg(target_arch = "wasm32")] mut video_elements: ResMut<Assets<VideoElement>>,
+    #[cfg(target_arch = "wasm32")] mut registry: NonSendMut<VideoElementRegistry>,
 ) {
     qv.iter_mut().for_each(|(mut vs, c, e)| {
         let should_start: bool = match c {
@@ -257,20 +311,32 @@ pub fn system_video_sequence(
         if should_start {
             let config = vs.config.get(vs.current);
             if let Some(config_in) = config {
+                #[cfg(not(target_arch = "wasm32"))]
                 let (video_player, video_player_non_send) =
                     VideoPlayer::new(config_in.path.clone(), &mut images, config_in.fps).unwrap();
+                #[cfg(target_arch = "wasm32")]
+                let (video_player, web_video, video_player_non_send) = VideoPlayer::new(
+                    config_in.path.clone(),
+                    &mut images,
+                    config_in.fps,
+                    &mut video_elements,
+                    &mut registry,
+                )
+                .unwrap();
                 com.entity(e).with_children(|com2| {
-                    let ih = video_player.image_handle.clone(); 
+                    let ih = video_player.image_handle.clone();
                     let mut com2_fork = com2.spawn((
                         Mesh2d(meshes.add(Rectangle::default())),
                         Transform::default().with_scale(Vec3::splat(1000.)),
                         video_player,
                         config_in.init_adv_transform.clone(),
+                        #[cfg(target_arch = "wasm32")]
+                        web_video,
                     ));
                     if vs.custom_material == false {
                         com2_fork.insert(MeshMaterial2d(materials.add(VideoMaterial {
                             color_texture: Some(ih),
-                            time: 0.0,
+                            time: Vec4::ZERO,
                         })));
                     }
                     let e2 = com2_fork.id();
