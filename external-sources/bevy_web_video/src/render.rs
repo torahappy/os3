@@ -78,7 +78,7 @@ impl RenderAsset for RenderVideoElement {
                     origin: Origin3d::ZERO,
                     aspect: TextureAspect::All,
                     color_space: PredefinedColorSpace::Srgb,
-                    premultiplied_alpha: true,
+                    premultiplied_alpha: false,
                 },
                 gpu_image.size,
             );

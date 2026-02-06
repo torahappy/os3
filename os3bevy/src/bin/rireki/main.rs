@@ -129,49 +129,46 @@ impl Material2d for RirekiVideoMaterial {
 fn main() {
     let mut app = App::new();
 
-    app
-        .add_plugins((
-            DefaultPlugins.set(WindowPlugin {
-                primary_window: Some(Window {
-                    mode: bevy::window::WindowMode::BorderlessFullscreen(MonitorSelection::Current),
-                    ..Default::default()
-                }),
-                ..default()
+    app.add_plugins((
+        DefaultPlugins.set(WindowPlugin {
+            primary_window: Some(Window {
+                mode: bevy::window::WindowMode::BorderlessFullscreen(MonitorSelection::Current),
+                ..Default::default()
             }),
-            ModAudioPlugins,
-            TweeningPlugin,
-            Material2dPlugin::<RirekiVideoMaterial>::default(),
-            Material2dPlugin::<VoiceSphereMaterial>::default(),
-            Material2dPlugin::<VideoMaterial>::default(),
-            Material2dPlugin::<DrawingMaterial>::default(),
-            #[cfg(target_arch = "wasm32")]
-            WebVideoPlugin,
-        ))
-        .insert_resource(ClearColor(Color::srgb(0., 0., 0.)))
-        .insert_resource(Time::<Fixed>::from_hz(120.0))
-        .init_resource::<WindowMetricsResource>()
-        .init_resource::<VoicePacketData>()
-        .init_resource::<VoiceGameData>()
-        .init_non_send_resource::<VideoResource>()
-        .add_systems(Startup, init_ui)
-        .add_systems(Startup, init_voice_sphere)
-        .add_systems(Startup, initialize_ffmpeg)
-        .add_systems(FixedUpdate, play_video)
-        .add_systems(Update, system_adv_transform)
-        .add_systems(Update, system_window_resize)
-        .add_systems(Update, system_cleanup_video)
-        .add_systems(Update, system_video_sequence)
-        .add_systems(Update, system_lifetime)
-        .add_systems(Update, system_video_shaders)
-        .add_systems(Update, system_spawn_images)
-        .add_systems(FixedUpdate, system_voice_queue)
-        .add_systems(Update, system_voice_history)
-        .add_systems(Update, system_voice_history_calc)
-        .add_systems(Update, system_end_condition)
-        .add_systems(Update, hide_mouse)
-        .add_systems(FixedUpdate, system_microphone);
-
-
+            ..default()
+        }),
+        ModAudioPlugins,
+        TweeningPlugin,
+        Material2dPlugin::<RirekiVideoMaterial>::default(),
+        Material2dPlugin::<VoiceSphereMaterial>::default(),
+        Material2dPlugin::<VideoMaterial>::default(),
+        Material2dPlugin::<DrawingMaterial>::default(),
+        #[cfg(target_arch = "wasm32")]
+        WebVideoPlugin,
+    ))
+    .insert_resource(ClearColor(Color::srgb(0., 0., 0.)))
+    .insert_resource(Time::<Fixed>::from_hz(120.0))
+    .init_resource::<WindowMetricsResource>()
+    .init_resource::<VoicePacketData>()
+    .init_resource::<VoiceGameData>()
+    .init_non_send_resource::<VideoResource>()
+    .add_systems(Startup, init_ui)
+    .add_systems(Startup, init_voice_sphere)
+    .add_systems(Startup, initialize_ffmpeg)
+    .add_systems(FixedUpdate, play_video)
+    .add_systems(Update, system_adv_transform)
+    .add_systems(Update, system_window_resize)
+    .add_systems(Update, system_cleanup_video)
+    .add_systems(Update, system_video_sequence)
+    .add_systems(Update, system_lifetime)
+    .add_systems(Update, system_video_shaders)
+    .add_systems(Update, system_spawn_images)
+    .add_systems(FixedUpdate, system_voice_queue)
+    .add_systems(Update, system_voice_history)
+    .add_systems(Update, system_voice_history_calc)
+    .add_systems(Update, system_end_condition)
+    .add_systems(Update, hide_mouse)
+    .add_systems(FixedUpdate, system_microphone);
 
     app.run();
 }
@@ -285,7 +282,12 @@ fn system_voice_history_calc(
 ) {
     let dev_all: f64 =
         data.history.iter().map(|x| x.0 * x.0).sum::<f64>() / data.history.len() as f64;
-    let mean_all: f64 = data.history.iter().map(|x| x.0).sum::<f64>() / data.history.len() as f64;
+    let mean_all: f64 = data
+        .history
+        .iter()
+        .map(|x| if x.0.is_nan() { 0.0 } else { x.0 })
+        .sum::<f64>()
+        / data.history.len() as f64;
     if let Some(last) = data.history.last() {
         let mean_ratio = (mean_all as f32 / last.0 as f32).log10();
         // last.0
@@ -371,7 +373,7 @@ fn system_voice_history_calc(
 
 fn system_voice_history(mut data: ResMut<VoicePacketData>) {
     let mut vectors = Vec::new();
-    data.tasks.retain_mut(|x|{
+    data.tasks.retain_mut(|x| {
         let status = check_ready(x);
         if let Some(v) = status {
             vectors.push(v);
