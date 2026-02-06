@@ -329,8 +329,9 @@ pub fn system_video_sequence(
                         Mesh2d(meshes.add(Rectangle::default())),
                         Transform::default().with_scale(Vec3::splat(1000.)),
                         video_player,
-                        web_video,
                         config_in.init_adv_transform.clone(),
+                        #[cfg(target_arch = "wasm32")]
+                        web_video,
                     ));
                     if vs.custom_material == false {
                         com2_fork.insert(MeshMaterial2d(materials.add(VideoMaterial {
