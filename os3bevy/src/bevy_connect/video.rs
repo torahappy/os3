@@ -6,6 +6,8 @@ use bevy::prelude::*;
 use bevy::render::render_resource::{AsBindGroup, TextureDimension, TextureFormat, TextureUsages};
 use bevy::shader::ShaderRef;
 use bevy::sprite_render::{AlphaMode2d, Material2d};
+#[cfg(target_arch = "wasm32")]
+use bevy_web_video::{VideoElement, VideoElementRegistry, WebVideo};
 use std::collections::HashMap;
 
 #[cfg(not(target_arch = "wasm32"))]
@@ -54,6 +56,7 @@ pub struct VideoPlayer {
 }
 
 impl VideoPlayer {
+    #[cfg(not(target_arch = "wasm32"))]
     pub fn new<'a, P>(
         path: P,
         images: &mut ResMut<Assets<Image>>,
@@ -62,99 +65,98 @@ impl VideoPlayer {
     where
         P: AsRef<Path>,
     {
-        #[cfg(not(target_arch = "wasm32"))]
-        let ret = {
-            info!("Sprite FPS: {}", fps);
-            let input_context = input(&path)?;
+        info!("Sprite FPS: {}", fps);
+        let input_context = input(&path)?;
 
-            // initialize decoder
-            let input_stream = input_context
-                .streams()
-                .best(Type::Video)
-                .ok_or(ffmpeg::Error::StreamNotFound)?;
-            let orig_file_rate: f64 = input_stream.rate().into();
-            info!("File FPS: {}", orig_file_rate);
-            let video_stream_index = input_stream.index();
-            let param = input_stream.parameters();
-            let context_decoder = ffmpeg::codec::context::Context::from_parameters(param)?;
-            let decoder = context_decoder.decoder().video()?;
+        // initialize decoder
+        let input_stream = input_context
+            .streams()
+            .best(Type::Video)
+            .ok_or(ffmpeg::Error::StreamNotFound)?;
+        let orig_file_rate: f64 = input_stream.rate().into();
+        info!("File FPS: {}", orig_file_rate);
+        let video_stream_index = input_stream.index();
+        let param = input_stream.parameters();
+        let context_decoder = ffmpeg::codec::context::Context::from_parameters(param)?;
+        let decoder = context_decoder.decoder().video()?;
 
-            // initialize scaler
-            let scaler_context = Context::get(
-                decoder.format(),
-                decoder.width(),
-                decoder.height(),
-                Pixel::RGBA,
-                decoder.width(),
-                decoder.height(),
-                Flags::BILINEAR,
-            )?;
+        // initialize scaler
+        let scaler_context = Context::get(
+            decoder.format(),
+            decoder.width(),
+            decoder.height(),
+            Pixel::RGBA,
+            decoder.width(),
+            decoder.height(),
+            Flags::BILINEAR,
+        )?;
 
-            // create image texture
-            let mut image = Image::new_fill(
-                bevy::render::render_resource::Extent3d {
-                    width: decoder.width(),
-                    height: decoder.height(),
-                    depth_or_array_layers: 1,
-                },
-                TextureDimension::D2,
-                &[255, 255, 255, 255],
-                TextureFormat::Rgba8UnormSrgb,
-                RenderAssetUsages::all(),
-            );
-            image.texture_descriptor.usage =
-                TextureUsages::COPY_DST | TextureUsages::TEXTURE_BINDING;
+        // create image texture
+        let mut image = Image::new_fill(
+            bevy::render::render_resource::Extent3d {
+                width: decoder.width(),
+                height: decoder.height(),
+                depth_or_array_layers: 1,
+            },
+            TextureDimension::D2,
+            &[255, 255, 255, 255],
+            TextureFormat::Rgba8UnormSrgb,
+            RenderAssetUsages::all(),
+        );
+        image.texture_descriptor.usage = TextureUsages::COPY_DST | TextureUsages::TEXTURE_BINDING;
 
-            let image_handle = images.add(image);
+        let image_handle = images.add(image);
 
-            Ok((
-                VideoPlayer {
-                    image_handle,
-                    video_stream_index,
-                    fps,
-                    last_sync: 0.0,
-                    elapsed: 0.0,
-                    video_end: false,
-                },
-                VideoPlayerNonSendData {
-                    decoder,
-                    input_context,
-                    scaler_context,
-                },
-            ))
-        };
+        Ok((
+            VideoPlayer {
+                image_handle,
+                video_stream_index,
+                fps,
+                last_sync: 0.0,
+                elapsed: 0.0,
+                video_end: false,
+            },
+            VideoPlayerNonSendData {
+                decoder,
+                input_context,
+                scaler_context,
+            },
+        ))
+    }
 
-        #[cfg(target_arch = "wasm32")]
-        let ret = {
-            let mut image = Image::new_fill(
-                bevy::render::render_resource::Extent3d {
-                    width: 100,  // TODO
-                    height: 100, // TODO
-                    depth_or_array_layers: 1,
-                },
-                TextureDimension::D2,
-                &[255, 255, 255, 255],
-                TextureFormat::Rgba8UnormSrgb,
-                RenderAssetUsages::all(),
-            );
-            image.texture_descriptor.usage =
-                TextureUsages::COPY_DST | TextureUsages::TEXTURE_BINDING;
+    #[cfg(target_arch = "wasm32")]
+    pub fn new<'a, P>(
+        path: P,
+        images: &mut ResMut<Assets<Image>>,
+        fps: f64,
+        video_elements: &mut ResMut<Assets<VideoElement>>,
+        registry: &mut NonSendMut<VideoElementRegistry>,
+    ) -> Result<(VideoPlayer, WebVideo, VideoPlayerNonSendData), anyhow::Error>
+    where
+        P: AsRef<Path>,
+    {
+        use bevy_web_video::{VideoElement, VideoElementAssetsExt, WebVideo};
+        let new_image = images.reserve_handle();
+        let (handle, elem) = video_elements.new_video(new_image.id(), registry);
+        elem.set_src(path.as_ref().to_str().unwrap());
+        elem.set_muted(true);
+        elem.set_loop(false);
+        if let Err(e) = elem.play() {
+            warn!("{:?}", e);
+        }
 
-            let image_handle = images.add(image);
-            Ok((
-                VideoPlayer {
-                    image_handle,
-                    video_stream_index: 0,
-                    fps,
-                    last_sync: 0.0,
-                    elapsed: 0.0,
-                    video_end: false,
-                },
-                VideoPlayerNonSendData {},
-            ))
-        };
-
-        return ret;
+        Ok((
+            VideoPlayer {
+                image_handle: new_image,
+                video_stream_index: 0,
+                fps,
+                last_sync: 0.0,
+                elapsed: 0.0,
+                video_end: false,
+            },
+            WebVideo::new(handle),
+            VideoPlayerNonSendData {},
+        ))
     }
 }
 
@@ -240,6 +242,9 @@ pub fn play_video(
             }
         }
     }
+
+    #[cfg(target_arch = "wasm32")]
+    for (mut video_player, entity) in video_player_query.iter_mut() {}
 }
 
 // This is the struct that will be passed to your shader
@@ -286,6 +291,8 @@ pub fn system_video_sequence(
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<VideoMaterial>>,
     mut video_resource: NonSendMut<VideoResource>,
+    #[cfg(target_arch = "wasm32")] mut video_elements: ResMut<Assets<VideoElement>>,
+    #[cfg(target_arch = "wasm32")] mut registry: NonSendMut<VideoElementRegistry>,
 ) {
     qv.iter_mut().for_each(|(mut vs, c, e)| {
         let should_start: bool = match c {
@@ -304,14 +311,25 @@ pub fn system_video_sequence(
         if should_start {
             let config = vs.config.get(vs.current);
             if let Some(config_in) = config {
+                #[cfg(not(target_arch = "wasm32"))]
                 let (video_player, video_player_non_send) =
                     VideoPlayer::new(config_in.path.clone(), &mut images, config_in.fps).unwrap();
+                #[cfg(target_arch = "wasm32")]
+                let (video_player, web_video, video_player_non_send) = VideoPlayer::new(
+                    config_in.path.clone(),
+                    &mut images,
+                    config_in.fps,
+                    &mut video_elements,
+                    &mut registry,
+                )
+                .unwrap();
                 com.entity(e).with_children(|com2| {
                     let ih = video_player.image_handle.clone();
                     let mut com2_fork = com2.spawn((
                         Mesh2d(meshes.add(Rectangle::default())),
                         Transform::default().with_scale(Vec3::splat(1000.)),
                         video_player,
+                        web_video,
                         config_in.init_adv_transform.clone(),
                     ));
                     if vs.custom_material == false {

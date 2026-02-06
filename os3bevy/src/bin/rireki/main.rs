@@ -6,6 +6,8 @@ use bevy::window::{CursorOptions, WindowResolution};
 use bevy_mod_audio::ModAudioPlugins;
 use bevy_mod_audio::audio_output::AudioOutput;
 use bevy_mod_audio::microphone::MicrophoneAudio;
+#[cfg(target_arch = "wasm32")]
+use bevy_web_video::WebVideoPlugin;
 use core::slice;
 use futures_lite::future;
 use num_complex::ComplexFloat;
@@ -125,7 +127,9 @@ impl Material2d for RirekiVideoMaterial {
 }
 
 fn main() {
-    App::new()
+    let mut app = App::new();
+
+    app
         .add_plugins((
             DefaultPlugins.set(WindowPlugin {
                 primary_window: Some(Window {
@@ -140,6 +144,8 @@ fn main() {
             Material2dPlugin::<VoiceSphereMaterial>::default(),
             Material2dPlugin::<VideoMaterial>::default(),
             Material2dPlugin::<DrawingMaterial>::default(),
+            #[cfg(target_arch = "wasm32")]
+            WebVideoPlugin,
         ))
         .insert_resource(ClearColor(Color::srgb(0., 0., 0.)))
         .insert_resource(Time::<Fixed>::from_hz(120.0))
@@ -163,8 +169,11 @@ fn main() {
         .add_systems(Update, system_voice_history_calc)
         .add_systems(Update, system_end_condition)
         .add_systems(Update, hide_mouse)
-        .add_systems(FixedUpdate, system_microphone)
-        .run();
+        .add_systems(FixedUpdate, system_microphone);
+
+
+
+    app.run();
 }
 
 fn system_microphone(mic: ResMut<MicrophoneAudio>, mut vpd: ResMut<VoicePacketData>) {
