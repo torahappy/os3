@@ -14,6 +14,7 @@ build:
     - mkdir public
     - cp -r ocr_web public/ocr_web
     - curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+    - sudo apt install -y clang
     - . $HOME/.cargo/env; ./build_scripts/wasm-once.sh os3bevy rireki
     - mkdir public/rireki_web
     - cp ./os3bevy/wasm/rireki/rireki_bg.wasm public/rireki_web
