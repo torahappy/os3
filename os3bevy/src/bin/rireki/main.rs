@@ -1,5 +1,6 @@
 // りれきしょ
 
+use bevy::math::VectorSpace;
 use bevy::tasks::futures::check_ready;
 use bevy::window::{CursorOptions, WindowResolution};
 use bevy_mod_audio::ModAudioPlugins;
@@ -63,11 +64,9 @@ pub struct VoiceSphereMaterial {
     #[sampler(1)]
     pub color_texture: Option<Handle<Image>>,
     #[uniform(2)]
-    pub time: f32,
+    pub time: Vec4,
     #[uniform(3)]
-    pub category: f32,
-    #[uniform(4)]
-    pub level: f32,
+    pub category_level_p3_p4: Vec4,
 }
 
 const SHADER_ASSET_PATH_VOICESPHERE: &str = "shaders/voicesphere.wgsl";
@@ -88,7 +87,7 @@ pub struct DrawingMaterial {
     #[sampler(1)]
     pub color_texture: Option<Handle<Image>>,
     #[uniform(2)]
-    pub time: f32,
+    pub time: Vec4,
 }
 
 const SHADER_ASSET_PATH_DRAWING: &str = "shaders/drawing_2d.wgsl";
@@ -109,19 +108,9 @@ pub struct RirekiVideoMaterial {
     #[sampler(1)]
     pub color_texture: Option<Handle<Image>>,
     #[uniform(2)]
-    pub time: f32,
+    pub time: Vec4,
     #[uniform(3)]
-    pub alpha_green: f32,
-    #[uniform(4)]
-    pub alpha_white: f32,
-    #[uniform(5)]
-    pub t_1: f32,
-    #[uniform(6)]
-    pub t_2: f32,
-    #[uniform(7)]
-    pub t_3: f32,
-    #[uniform(8)]
-    pub t_4: f32,
+    pub green_white_p3_p4: Vec4,
 }
 
 const SHADER_ASSET_PATH: &str = "shaders/custom_material_2d.wgsl";
@@ -342,8 +331,7 @@ fn system_voice_history_calc(
                 }
 
                 let mm = materials.get_mut(matref.id()).unwrap();
-                mm.level = level as f32;
-                mm.category = v_data.category as f32;
+                mm.category_level_p3_p4 = Vec4::new(v_data.category as f32, level as f32, 0.0, 0.0);
 
                 apply_adv_transform(
                     &AdvTransform {
@@ -441,7 +429,7 @@ fn system_spawn_images(
             Mesh2d(meshes.add(Rectangle::default())),
             MeshMaterial2d(materials.add(DrawingMaterial {
                 color_texture: Some(asset_server.load(*picture_url)),
-                time: 0.0,
+                time: Vec4::ZERO,
             })),
             DrawingBack {},
         ));
@@ -548,26 +536,16 @@ fn system_video_shaders(
                     com.entity(*c_vp)
                         .insert(MeshMaterial2d(materials.add(RirekiVideoMaterial {
                             color_texture: Some(vp.image_handle.clone()),
-                            time: 0.0,
-                            alpha_green: 0.0,
-                            alpha_white: 1.0,
-                            t_1: 0.03,
-                            t_2: 0.05,
-                            t_3: 0.99,
-                            t_4: 0.9,
+                            time: Vec4::ZERO,
+                            green_white_p3_p4: Vec4::new(0.0, 1.0, 0.0, 0.0),
                         })));
                 } else if (*i == 1) {
                     info!("text start");
                     com.entity(*c_vp)
                         .insert(MeshMaterial2d(materials.add(RirekiVideoMaterial {
                             color_texture: Some(vp.image_handle.clone()),
-                            time: 0.0,
-                            alpha_green: 1.0,
-                            alpha_white: 0.0,
-                            t_1: 0.03,
-                            t_2: 0.05,
-                            t_3: 0.99,
-                            t_4: 0.9,
+                            time: Vec4::ZERO,
+                            green_white_p3_p4: Vec4::new(1.0, 0.0, 0.0, 0.0),
                         })));
                 }
             }
