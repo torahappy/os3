@@ -125,7 +125,7 @@ fn resize_image(
             depth_or_array_layers: 1,
         },
         TextureDimension::D2,
-        TextureFormat::Rgba8Unorm,
+        TextureFormat::Rgba8UnormSrgb,
         RenderAssetUsages::default(),
     );
     image.texture_descriptor.usage |= TextureUsages::RENDER_ATTACHMENT;
