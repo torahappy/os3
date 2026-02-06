@@ -119,7 +119,7 @@ pushd tesseract-$TESSERACT_VERSION
 
   sed -i'.bak' -e s/libwebp// -e s/libwebpmux// "${SCRIPT_DIR}/../external-apps/pc-wasm/lept.pc"
 
-  PKG_CONFIG_PATH="${SCRIPT_DIR}/pc-wasm:${SCRIPT_DIR}/../external-apps/pc-wasm" emcmake cmake -B build -DCMAKE_INSTALL_PREFIX="${SCRIPT_DIR}/../external-apps/tesseract-wasm" -DBUILD_TRAINING_TOOLS=OFF -DCMAKE_CXX_FLAGS="-sUSE_ICU=1 -sALLOW_MEMORY_GROWTH=1 -I\"${SCRIPT_DIR}/../external-apps/leptonica-wasm/include/leptonica\" -Wl,\"-L${SCRIPT_DIR}/../external-apps/jpeg-wasm/lib/\",-ljpeg,\"-L${SCRIPT_DIR}/../external-apps/png-wasm/lib/\",-lpng,\"-L${SCRIPT_DIR}/../external-apps/zlibng-wasm/lib/\",-lz" -DGRAPHICS_DISABLED=ON
+  PKG_CONFIG_PATH="${SCRIPT_DIR}/pc-wasm:${SCRIPT_DIR}/../external-apps/pc-wasm" emcmake cmake -B build -DCMAKE_INSTALL_PREFIX="${SCRIPT_DIR}/../external-apps/tesseract-wasm" -DBUILD_TRAINING_TOOLS=OFF -DCMAKE_CXX_FLAGS="-O3 -sUSE_ICU=1 -sALLOW_MEMORY_GROWTH=1 -I\"${SCRIPT_DIR}/../external-apps/leptonica-wasm/include/leptonica\" -Wl,\"-L${SCRIPT_DIR}/../external-apps/jpeg-wasm/lib/\",-ljpeg,\"-L${SCRIPT_DIR}/../external-apps/png-wasm/lib/\",-lpng,\"-L${SCRIPT_DIR}/../external-apps/zlibng-wasm/lib/\",-lz" -DGRAPHICS_DISABLED=ON
 
   cmake --build build --config Release -j$NPR
 
@@ -147,7 +147,7 @@ pushd harfbuzz-$HARFBUZZ_VERSION
   pushd build
     make install -j$NPR
     cd "${SCRIPT_DIR}/../external-apps/harfbuzz-wasm/lib"
-    em++ libharfbuzz.a -o harfbuzz -sEXPORTED_FUNCTIONS="$EXFUNCS" -sEXPORTED_RUNTIME_METHODS=stringToUTF8,UTF8ToString,AsciiToString,intArrayFromString,intArrayToString,writeArrayToMemory,setValue,getValue,HEAP8,HEAP16,HEAP32,HEAPU8,HEAPU16,HEAPU32
+    em++ libharfbuzz.a -O3 -o harfbuzz -sEXPORTED_FUNCTIONS="$EXFUNCS" -sEXPORTED_RUNTIME_METHODS=stringToUTF8,UTF8ToString,AsciiToString,intArrayFromString,intArrayToString,writeArrayToMemory,setValue,getValue,HEAP8,HEAP16,HEAP32,HEAPU8,HEAPU16,HEAPU32
   popd
 
 popd
