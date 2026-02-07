@@ -7,7 +7,7 @@ use bevy::render::render_resource::{AsBindGroup, TextureDimension, TextureFormat
 use bevy::shader::ShaderRef;
 use bevy::sprite_render::{AlphaMode2d, Material2d};
 #[cfg(target_arch = "wasm32")]
-use bevy_web_video::{VideoElement, VideoElementRegistry, WebVideo};
+use bevy_web_video::{VideoElement, VideoElementRegistry, WebVideo, events};
 use std::collections::HashMap;
 
 #[cfg(not(target_arch = "wasm32"))]
@@ -176,6 +176,19 @@ pub fn system_cleanup_video(
     });
 }
 
+pub fn wasm_video_termination (
+    #[cfg(target_arch = "wasm32")]
+    listener_event: On<bevy_web_video::ListenerEvent<bevy_web_video::events::Ended>>,
+    mut video_player_query: Query<&mut VideoPlayer>,
+) {
+    #[cfg(target_arch = "wasm32")]
+    {
+        if let Ok(mut vp) = video_player_query.get_mut(listener_event.entity) {
+            vp.video_end = true;
+        }
+    }
+}
+
 pub fn play_video(
     mut video_player_query: Query<(&mut VideoPlayer, Entity)>,
     mut video_resource: NonSendMut<VideoResource>,
@@ -243,8 +256,6 @@ pub fn play_video(
         }
     }
 
-    #[cfg(target_arch = "wasm32")]
-    for (mut video_player, entity) in video_player_query.iter_mut() {}
 }
 
 // This is the struct that will be passed to your shader

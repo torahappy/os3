@@ -7,7 +7,9 @@ use bevy_mod_audio::ModAudioPlugins;
 use bevy_mod_audio::audio_output::AudioOutput;
 use bevy_mod_audio::microphone::MicrophoneAudio;
 #[cfg(target_arch = "wasm32")]
-use bevy_web_video::WebVideoPlugin;
+use bevy_web_video::{EventListenerAppExt, WebVideoPlugin};
+#[cfg(target_arch = "wasm32")]
+use os3bevy::bevy_connect::video::wasm_video_termination;
 use core::slice;
 use futures_lite::future;
 use num_complex::ComplexFloat;
@@ -128,6 +130,9 @@ impl Material2d for RirekiVideoMaterial {
 
 fn main() {
     let mut app = App::new();
+    
+    #[cfg(target_arch = "wasm32")]
+    app.add_observer(wasm_video_termination);
 
     app.add_plugins((
         DefaultPlugins.set(WindowPlugin {
