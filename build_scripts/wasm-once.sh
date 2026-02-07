@@ -10,7 +10,7 @@ mkdir ./wasm/$2
 
 cp ./target/wasm32-unknown-unknown/release/$2.wasm ./wasm/$2
 
-$HOME/.cargo/bin/wasm-opt -O3 ./wasm/$2/$2.wasm -o ./wasm/$2/$2.wasm
+wasm-opt -O3 ./wasm/$2/$2.wasm -o ./wasm/$2/$2.wasm
 
-$HOME/.cargo/bin/wasm-bindgen --target web --out-dir ./wasm/$2 ./wasm/$2/$2.wasm
+wasm-bindgen --target web --out-dir ./wasm/$2 ./wasm/$2/$2.wasm
 
