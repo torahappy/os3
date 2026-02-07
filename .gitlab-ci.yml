@@ -26,7 +26,7 @@ build:
     - curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
     - apt update
     - apt install -y clang
-    - . "${CI_PROJECT_DIR}/.cargo/env"; cd os3bevy; rustup target add wasm32-unknown-unknown; cargo install wasm-opt wasm-bindgen; cd ..
+    - . "${CI_PROJECT_DIR}/.cargo/env"; cd os3bevy; rustup target add wasm32-unknown-unknown; cargo install wasm-opt wasm-bindgen-cli; cd ..
     - . "${CI_PROJECT_DIR}/.cargo/env"; ./build_scripts/wasm-once.sh os3bevy rireki
     - mkdir public/rireki_web
     - cp ./os3bevy/wasm/rireki/rireki_bg.wasm public/rireki_web
