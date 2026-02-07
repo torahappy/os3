@@ -344,6 +344,8 @@ pub fn system_video_sequence(
                         #[cfg(target_arch = "wasm32")]
                         web_video,
                     ));
+                    #[cfg(target_arch = "wasm32")]
+                    com2_fork.observe(wasm_video_termination);
                     if vs.custom_material == false {
                         com2_fork.insert(MeshMaterial2d(materials.add(VideoMaterial {
                             color_texture: Some(ih),

@@ -130,9 +130,6 @@ impl Material2d for RirekiVideoMaterial {
 
 fn main() {
     let mut app = App::new();
-    
-    #[cfg(target_arch = "wasm32")]
-    app.add_observer(wasm_video_termination);
 
     app.add_plugins((
         DefaultPlugins.set(WindowPlugin {

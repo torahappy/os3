@@ -81,23 +81,88 @@
       isolation: isolate;
     }
     /* END reset CSS*/
+    * {
+      font-family: sans-serif;
+    }
     .dependencies {
       position: absolute;
-      right:0;
-      bottom:0;
-      font-size:16px;
-      background:black;
+      right: 0;
+      bottom: 0;
+      font-size: 16px;
+      background: black;
       padding: 1em;
     }
-    a {color:white;}
-    canvas{width:100vw;height:100vh;}
+    a {
+      color: white;
+    }
+    canvas {
+      width: 100vw;
+      height: 100vh;
+    }
+    .start {
+      font-family: sans-serif;
+      width: 150px;
+      height: 40px;
+      background: black;
+      color: white;
+      position: absolute;
+      top: calc(50% - 20px);
+      left: calc(50% - 75px);
+      cursor: pointer;
+      border: none;
+    }
+    .start-border {
+      font-family: sans-serif;
+      width: 200px;
+      height: 70px;
+      background: black;
+      color: white;
+      position: absolute;
+      top: calc(50% - 35px);
+      left: calc(50% - 100px);
+      cursor: pointer;
+      border: 5px red solid;
+      border-image: radial-gradient(
+          rgba(255, 255, 255, 1) 49%,
+          rgba(227, 125, 198, 1) 76%,
+          rgba(99, 39, 94, 1) 100%
+        )
+        2;
+      filter: blur(1px);
+    }
+    .chuii {
+      height: 60px;
+      position: absolute;
+      top: calc(50% + 45px);
+      left: calc(50% - min(350px, 100vw) / 2);
+      text-align: center;
+      width: calc(min(350px, 100vw));
+    }
   </style>
 </head>
 <body>
-  <p class="dependencies"><a href="dependencies.html">使用ソフトウェアリスト</a></p>
+  <a href="dependencies.html"
+    ><p class="dependencies to-be-removed">使用ソフトウェアリスト</p></a
+  >
+  <div class="start-border to-be-removed"></div>
+  <button class="start to-be-removed" id="start-button">スタート Start</button>
+  <p class="chuii to-be-removed" id="start-button">
+    注意: 点滅する動画が流れます。<br />Warning: video with rapidly flashing
+    light
+  </p>
   <script type="module">
+    function removeButtons() {
+      Array.from(document.getElementsByClassName("to-be-removed")).map((x) => {
+        x.remove();
+      });
+    }
     import MyInit from "./rireki.js";
-    window.MyInit = MyInit;
-    MyInit()
+    document
+      .getElementById("start-button")
+      .addEventListener("click", function () {
+        removeButtons();
+        window.MyInit = MyInit;
+        MyInit();
+      });
   </script>
 </body>
