@@ -81,9 +81,19 @@
       isolation: isolate;
     }
     /* END reset CSS*/
+    .dependencies {
+      position: absolute;
+      right:0;
+      bottom:0;
+      font-size:16px;
+      background:black;
+      padding: 1em;
+    }
+    a {color:white;}
   </style>
 </head>
 <body>
+  <p class="dependencies"><a href="dependencies.html">使用ソフトウェアリスト</a></p>
   <script type="module">
     import MyInit from "./rireki.js";
     window.MyInit = MyInit;
