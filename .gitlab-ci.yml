@@ -30,7 +30,7 @@ build:
     - . "${CI_PROJECT_DIR}/.cargo/env"; ./build_scripts/wasm-once.sh os3bevy rireki
     - mkdir public/rireki_web
     - cp ./os3bevy/wasm/rireki/rireki_bg.wasm public/rireki_web
-    - cp ./os3bevy/wasm/rireki/index.html public/rireki_web
+    - cp ./os3bevy/wasm/rireki/*.html public/rireki_web
     - cp ./os3bevy/wasm/rireki/rireki.js public/rireki_web
     - cp -r ./os3bevy/assets public/rireki_web
   artifacts:
