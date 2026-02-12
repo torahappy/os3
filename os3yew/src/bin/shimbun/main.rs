@@ -1,25 +1,32 @@
 // しんぶんからひろがっていくせかい
 
-use rand::{random_range, seq::IndexedRandom};
-use log::warn;
-use yew::{html::IntoPropValue, prelude::*};
 use askama::Template;
-use std::fmt::Display;
+use comrak::{Options, markdown_to_html, options::Render};
+use log::warn;
+use rand::{random_range, seq::IndexedRandom};
+use regex::Regex;
 use rust_embed::RustEmbed;
+use std::{
+    collections::{HashMap, HashSet},
+    default,
+    fmt::Display,
+    hash::RandomState,
+};
+use yew::{Html, html::IntoPropValue, prelude::*, virtual_dom::VNode};
 
 #[derive(RustEmbed)]
 #[folder = "assets"]
 struct Asset;
 
-#[derive(Template,Debug,Clone)]
+#[derive(Template, Debug, Clone)]
 #[template(path = "text_combined.txt")]
 struct HelloTemplate {
     title: String,
     mood: Mood,
     meta: Meta,
-    date: Box<Date>
+    date: Box<Date>,
 }
-use chrono::{NaiveDate, Datelike, NaiveDateTime};
+use chrono::{Datelike, NaiveDate, NaiveDateTime};
 
 #[derive(Debug, Clone, PartialEq)]
 struct Date {
@@ -95,14 +102,10 @@ impl<'a> Date {
         let original = self.original_date.as_ref().unwrap();
 
         // Prepare naive dates for day‑difference calculation
-        let naive_self = NaiveDate::from_ymd_opt(self.year, self.month, self.day)
+        let naive_self =
+            NaiveDate::from_ymd_opt(self.year, self.month, self.day).expect("Invalid date");
+        let naive_orig = NaiveDate::from_ymd_opt(original.year, original.month, original.day)
             .expect("Invalid date");
-        let naive_orig = NaiveDate::from_ymd_opt(
-            original.year,
-            original.month,
-            original.day,
-        )
-        .expect("Invalid date");
 
         // Day difference in days (positive → self is later)
         let day_diff: i64 = (naive_self - naive_orig).num_days();
@@ -163,9 +166,8 @@ impl<'a> Date {
     }
 }
 
-#[derive(Debug,Clone)]
-struct Meta {
-}
+#[derive(Debug, Clone)]
+struct Meta {}
 
 impl Meta {
     fn get_instruction_manual(&self) -> String {
@@ -173,9 +175,8 @@ impl Meta {
     }
 }
 
-#[derive(Debug,Clone)]
-struct Mood {
-}
+#[derive(Debug, Clone)]
+struct Mood {}
 
 impl Mood {
     fn is_subjective(&self) -> bool {
@@ -192,7 +193,7 @@ mod filters {
         value: impl Display,
         // This is askama's runtime values environment. Together with
         // values, these two arguments are always passed into a custom filter.
-        env: &dyn askama::Values
+        env: &dyn askama::Values,
     ) -> askama::Result<String> {
         Ok(format!("<div class=\"footnote\">{value}</div>"))
     }
@@ -209,25 +210,87 @@ fn nl2br(text: &str) -> Html {
     html! { {for nodes} }
 }
 
+fn dangerous_raw_html(raw_html_string: String) -> VNode {
+    return Html::from_html_unchecked(AttrValue::from(raw_html_string));
+}
+
+fn md(md_str: String) -> VNode {
+    dangerous_raw_html(markdown_to_html(&md_str, &Options{
+        render: Render {
+            r#unsafe: true,
+            ..Default::default()
+        },
+        ..Default::default()
+    }))
+}
+
+fn make_data_table(str_in: String) -> HashMap<String, String> {
+    let key_re = Regex::new(r"^\s*\\?\[([^\]]+?)\\?\]\s*$").unwrap();
+
+    let mut table: HashMap<String, String> = HashMap::new();
+    let mut current_key: Option<String> = None;
+    let mut buffer: Vec<String> = Vec::new();
+
+    for raw_line in str_in.lines() {
+        let line = raw_line;
+
+        if let Some(caps) = key_re.captures(line) {
+            if let Some(k) = current_key.take() {
+                let value = buffer.join("\n").trim().to_string();
+                table.insert(k, value);
+                buffer.clear();
+            }
+
+            current_key = Some(caps[1].to_string());
+        } else if current_key.is_some() {
+            buffer.push(line.to_string());
+        }
+    }
+
+    if let Some(k) = current_key {
+        let value = buffer.join("\n").trim().to_string();
+        table.insert(k, value);
+    }
+
+    table
+}
+
 #[component]
 fn App() -> Html {
     let template = use_state(|| None::<HelloTemplate>);
+    let availiable_titles: UseStateHandle<HashSet<String, RandomState>> = use_state(|| {
+        let file = Asset::get("titles.json").expect("titles.json not found in static folder");
+        let data = &file.data;
+        let mut h = HashSet::from_iter(
+            serde_json::from_slice::<Vec<String>>(data)
+                .expect("JSON parse error")
+                .into_iter(),
+        );
+        h.remove("「大大補償大会」開催決定");
+        return h;
+    });
     let onclick = {
         let template = template.clone();
+        let availiable_titles = availiable_titles.clone();
         move |_| {
-            let file = Asset::get("titles.json")
-                .expect("titles.json not found in static folder");
-            let data = &file.data;
-            let titles: Vec<String> = serde_json::from_slice(data).expect("JSON parse error");
             let mut rng = rand::rng();
 
             let days_skip: u32 = random_range(3..25);
 
-            let chosen = titles
-                .choose(&mut rng)
-                .expect("titles.json contained no titles")
-                .as_str();
-            
+
+            let chosen = if availiable_titles.len() == 0 {
+                "「大大補償大会」開催決定"
+            } else if template.is_none() {
+                "注意"
+            } else {
+                availiable_titles
+                    .iter()
+                    .collect::<Vec<_>>()
+                    .choose(&mut rng)
+                    .expect("titles.json contained no titles")
+                    .as_str()
+            };
+
             let ht = if template.is_none() {
                 HelloTemplate {
                     title: chosen.to_string(),
@@ -241,23 +304,66 @@ fn App() -> Html {
                     title: chosen.to_string(),
                     mood: Mood {},
                     meta: Meta {},
-                    date: Box::new(u.date.clone().after(days_skip).move_origin())
+                    date: Box::new(u.date.clone().after(days_skip).move_origin()),
                 }
             };
             template.set(Some(ht.clone()));
+            availiable_titles.set(
+                availiable_titles
+                    .difference(&HashSet::from([chosen.to_string()]))
+                    .map(|x| x.clone())
+                    .collect(),
+            );
         }
+    };
+
+    let data_table = if template.is_some() {
+        Some(make_data_table(
+            template.clone().as_ref().unwrap().render().unwrap(),
+        ))
+    } else {
+        None
     };
 
     html! {
         <div>
             <button {onclick}>{ "+1" }</button>
-            if template.is_some() {
-                <p>
+            if template.is_some() && data_table.is_some(){
+                <div>
+                <span>
                 { template.as_ref().unwrap().date.year } {"年"}
                 { template.as_ref().unwrap().date.month } {"月"}
                 { template.as_ref().unwrap().date.day } {"日"}
-                { nl2br(&template.clone().as_ref().unwrap().render().unwrap()) }
-                </p>
+                </span>
+                if data_table.as_ref().unwrap().get("title").is_some() {
+                <h1>
+                {
+                    data_table.as_ref().unwrap().get("title").unwrap()
+                }
+                </h1>
+                }
+                if data_table.as_ref().unwrap().get("text").is_some() {
+                <div>
+                {
+                    md(data_table.as_ref().unwrap().get("text").unwrap().clone())
+                }
+                </div>
+                }
+                if data_table.as_ref().unwrap().get("images").is_some() {
+                <div>
+                {
+                    md(data_table.as_ref().unwrap().get("images").unwrap().clone())
+                }
+                </div>
+                }
+                if data_table.as_ref().unwrap().get("image_caption").is_some() {
+                <div>
+                {
+                    md(data_table.as_ref().unwrap().get("image_caption").unwrap().clone())
+                }
+                </div>
+                }
+                </div>
             }
         </div>
     }
