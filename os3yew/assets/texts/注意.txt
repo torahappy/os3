@@ -19,7 +19,7 @@
 all
 
 \[images\]
-![a_25percent.webp](:/680a83cda6a1444a82d5783c7942d931)
+![file.webp](assets/images/680a83cda6a1444a82d5783c7942d931.webp)
 
 \[image_caption\]
 今からあなたは、白昼夢のようなあれこれの思いのなかを彷徨う。

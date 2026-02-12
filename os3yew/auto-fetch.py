@@ -1,5 +1,6 @@
 import os
 import regex
+import re
 import sqlite3
 import argparse
 from typing import Optional, Tuple, List
@@ -32,10 +33,10 @@ def get_notes() -> List[Tuple[str, str]]:
 
 if __name__ == '__main__':
     assets_dir_texts = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'assets', 'texts')
-    shutil.rmtree(assets_dir_texts)
+    shutil.rmtree(assets_dir_texts, ignore_errors=True)
     os.makedirs(assets_dir_texts)
     assets_dir_images = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'assets', 'images')
-    shutil.rmtree(assets_dir_images)
+    shutil.rmtree(assets_dir_images, ignore_errors=True)
     os.makedirs(assets_dir_images)
 
     notes = get_notes()
@@ -49,8 +50,26 @@ if __name__ == '__main__':
             continue
         safe_filename += '.txt'
 
+        # Process image references in the note body
+        image_refs = re.findall(r'!\[.+?\]\(:/([0-9a-f]{32})\)', note_body)
+        for image_id in image_refs:
+            # Look for the image file in Joplin's resources directory
+            resources_dir = os.path.expanduser('~/.config/joplin-desktop/resources')
+            found_file = None
+            for root, _, files in os.walk(resources_dir):
+                for file in files:
+                    if file.startswith(image_id) and not file.endswith('.crypted'):
+                        found_file = os.path.join(root, file)
+                        break
+                if found_file:
+                    break
+
+            if found_file:
+                # Copy the image to the assets directory
+                shutil.copy2(found_file, os.path.join(assets_dir_images, os.path.basename(found_file)))
+                # Replace the markdown image link
+                note_body = re.sub(rf'!\[.+?\]\(:/{image_id}\)', f'![file{os.path.splitext(found_file)[1]}](assets/images/{os.path.basename(found_file)})', note_body)
+
         # Write the note content to a file
         with open(os.path.join(assets_dir_texts, safe_filename), 'w', encoding='utf-8') as f:
             f.write(note_body)
-
-        

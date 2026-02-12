@@ -13,7 +13,7 @@
 
 \[images\]
 
-![名称未設定.png](:/a135b11d85e0427e9ab8ae51864e6952)
+![file.png](assets/images/a135b11d85e0427e9ab8ae51864e6952.png)
 
 \[image_caption\]
 
