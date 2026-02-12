@@ -32,26 +32,21 @@ def get_notes() -> List[Tuple[str, str, str]]:
 
     return [(title, body, note_id) for (title, body, deleted_time, note_id) in notes if deleted_time == 0]
 
-if __name__ == '__main__':
-    assets_dir_texts = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'assets', 'texts')
+assets_dir_texts = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'assets', 'texts')
+assets_dir_images = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'assets', 'images')
+
+def gen_files(notes: List[Tuple[str, str, str]]):
+    "copy texts and images to the project directory"
     shutil.rmtree(assets_dir_texts, ignore_errors=True)
     os.makedirs(assets_dir_texts)
-    assets_dir_images = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'assets', 'images')
     shutil.rmtree(assets_dir_images, ignore_errors=True)
     os.makedirs(assets_dir_images)
 
-    note_id_to_note_title = {}
+    text_combined = ""
 
-    notes = get_notes()
     for note_title, note_body, note_id in notes:
         if note_title.startswith('!!!'):
             continue
-
-        # Create a safe filename by replacing invalid characters
-        #safe_filename = "".join(c if regex.match(r'[\w\d\p{Han}\p{Hiragana}\p{Katakana}「」]', c) else '_' for c in note_title)
-        #if safe_filename == '':
-        #    continue
-        #safe_filename += '.txt'
 
         # Process image references in the note body
         image_refs = re.findall(r'!\[.+?\]\(:/([0-9a-f]{32})\)', note_body)
@@ -74,11 +69,11 @@ if __name__ == '__main__':
                 # Replace the markdown image link
                 note_body = re.sub(rf'!\[.+?\]\(:/{image_id}\)', f'![file{os.path.splitext(found_file)[1]}](assets/images/{os.path.basename(found_file)})', note_body)
 
-        # Write the note content to a file
-        with open(os.path.join(assets_dir_texts, note_id + '.txt'), 'w', encoding='utf-8') as f:
-            f.write(note_body)
-        
-        note_id_to_note_title[note_id] = note_title
+        text_combined += "{% if title == \"" + note_title + "\" %}\n" + note_body + "\n{% endif %}\n"
     
-    with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'assets', 'note_id.json'), 'w') as f:
-        json.dump(note_id_to_note_title, f, ensure_ascii=False, indent=4)
+    with open(os.path.join(assets_dir_texts, 'text_combined.txt'), 'w') as f:
+        f.write(text_combined)
+
+if __name__ == '__main__':
+    notes = get_notes()
+    gen_files(notes)
