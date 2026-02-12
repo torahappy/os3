@@ -32,15 +32,13 @@ def get_notes() -> List[Tuple[str, str, str]]:
 
     return [(title, body, note_id) for (title, body, deleted_time, note_id) in notes if deleted_time == 0]
 
-assets_dir_texts = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'assets', 'texts')
+assets_dir_texts = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'templates')
 assets_dir_images = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'assets', 'images')
 
 def gen_files(notes: List[Tuple[str, str, str]]):
     "copy texts and images to the project directory"
-    shutil.rmtree(assets_dir_texts, ignore_errors=True)
-    os.makedirs(assets_dir_texts)
-    shutil.rmtree(assets_dir_images, ignore_errors=True)
-    os.makedirs(assets_dir_images)
+    os.makedirs(assets_dir_texts, exist_ok=True)
+    os.makedirs(assets_dir_images, exist_ok=True)
 
     text_combined = ""
 
