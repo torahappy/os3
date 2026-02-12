@@ -80,30 +80,57 @@ impl<'a> Date<'a> {
 
         let original = self.original_date.unwrap();
 
-        let original_month = original.month;
-        let original_year = original.year;
-        let original_day = original.day;
-        let new_month = self.month;
-        let new_year = self.year;
-        let new_day = self.day;
+        let orig_year = original.year;
+        let orig_month = original.month as i32;
 
-        if original_month == new_month && original_year == new_year {
+        let new_year = self.year;
+        let new_month = self.month as i32;
+
+        /* ------------------------------------------------------------------
+         *  * 0 means the same month
+         *  * +1 means next month
+         *  * -1 means previous month
+         *  * 999 means “not an adjacent month”
+         * ------------------------------------------------------------------ */
+        let month_diff: i32 = if new_year == orig_year {
+            new_month - orig_month
+        } else if new_year == orig_year + 1 {
+            (new_month - orig_month) + 12
+        } else if new_year == orig_year - 1 {
+            (new_month - orig_month) - 12
+        } else {
+            999
+        };
+
+        // “先月/来月”
+        match month_diff {
+            -1 => return format!("先月{}日", self.day),
+            1 => return format!("来月{}日", self.day),
+            _ => (), // fall‑through for other cases
+        }
+
+        // Same month & year – “今月…”
+        if orig_month == new_month && orig_year == new_year {
             return format!("今月{}日", self.day);
         }
 
-        if original_year == new_year {
-            return format!("{}月{}日", new_month, new_day);
+        // Same year but different month – “X月…”
+        if orig_year == new_year {
+            return format!("{}月{}日", new_month, self.day);
         }
 
-        if new_year == original_year - 1 {
-            return format!("昨年{}月{}日", new_month, new_day);
+        // Previous year – “昨年…”
+        if new_year == orig_year - 1 {
+            return format!("昨年{}月{}日", new_month, self.day);
         }
 
-        if new_year == original_year + 1 {
-            return format!("来年{}月{}日", new_month, new_day);
+        // Next year – “来年…”
+        if new_year == orig_year + 1 {
+            return format!("来年{}月{}日", new_month, self.day);
         }
 
-        format!("{}年{}月{}日", new_year, new_month, new_day)
+        // Fallback – full date
+        format!("{}年{}月{}日", new_year, new_month, self.day)
     }
 }
 
