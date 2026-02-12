@@ -4,5 +4,5 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-
+comrak = "0.50.0"
 yew = { version = "0.22.0", features = ["csr"] }
