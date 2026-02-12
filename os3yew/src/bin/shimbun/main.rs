@@ -1,28 +1,41 @@
 // しんぶんからひろがっていくせかい
 
-use yew::prelude::*;
+use rand::{random_range, seq::IndexedRandom};
+use log::warn;
+use yew::{html::IntoPropValue, prelude::*};
 use askama::Template;
 use std::fmt::Display;
+use rust_embed::RustEmbed;
 
-#[derive(Template)]
+#[derive(RustEmbed)]
+#[folder = "assets"]
+struct Asset;
+
+#[derive(Template,Debug,Clone)]
 #[template(path = "text_combined.txt")]
-struct HelloTemplate<'a> {
-    title: &'a str,
+struct HelloTemplate {
+    title: String,
     mood: Mood,
     meta: Meta,
-    date: Date<'a>
+    date: Box<Date>
 }
 use chrono::{NaiveDate, Datelike, NaiveDateTime};
 
 #[derive(Debug, Clone, PartialEq)]
-struct Date<'a> {
+struct Date {
     year: i32,
     month: u32,
     day: u32,
-    original_date: Option<&'a Date<'a>>,
+    original_date: Option<Box<Date>>,
 }
 
-impl<'a> Date<'a> {
+impl Display for Date {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{:?}", self)
+    }
+}
+
+impl<'a> Date {
     fn new(year: i32, month: u32, day: u32) -> Self {
         Date {
             year,
@@ -32,12 +45,12 @@ impl<'a> Date<'a> {
         }
     }
 
-    fn with_original_date(original_date: Date) -> Date {
+    fn move_origin(&self) -> Date {
         // discard the original_date field in the original_date arg
         Date {
-            year: original_date.year,
-            month: original_date.month,
-            day: original_date.day,
+            year: self.year.clone(),
+            month: self.month.clone(),
+            day: self.day.clone(),
             original_date: None,
         }
     }
@@ -51,7 +64,7 @@ impl<'a> Date<'a> {
             year: naive_date.year(),
             month: naive_date.month(),
             day: naive_date.day(),
-            original_date: self.original_date.clone(),
+            original_date: Some(Box::new(self.clone())),
         };
 
         new_date
@@ -67,18 +80,39 @@ impl<'a> Date<'a> {
             year: naive_date.year(),
             month: naive_date.month(),
             day: naive_date.day(),
-            original_date: self.original_date.clone(),
+            original_date: Some(Box::new(self.clone())),
         };
 
         new_date
     }
 
     fn month_day(&self) -> String {
+        // If this is the original date, we call it "今日"
         if self.original_date.is_none() {
             return "今日".to_string();
         }
 
-        let original = self.original_date.unwrap();
+        let original = self.original_date.as_ref().unwrap();
+
+        // Prepare naive dates for day‑difference calculation
+        let naive_self = NaiveDate::from_ymd_opt(self.year, self.month, self.day)
+            .expect("Invalid date");
+        let naive_orig = NaiveDate::from_ymd_opt(
+            original.year,
+            original.month,
+            original.day,
+        )
+        .expect("Invalid date");
+
+        // Day difference in days (positive → self is later)
+        let day_diff: i64 = (naive_self - naive_orig).num_days();
+
+        // Yesterday / Tomorrow logic – check first
+        match day_diff {
+            1 => return "明日".to_string(),
+            -1 => return "昨日".to_string(),
+            _ => (), // continue with month‑based logic
+        }
 
         let orig_year = original.year;
         let orig_month = original.month as i32;
@@ -86,12 +120,7 @@ impl<'a> Date<'a> {
         let new_year = self.year;
         let new_month = self.month as i32;
 
-        /* ------------------------------------------------------------------
-         *  * 0 means the same month
-         *  * +1 means next month
-         *  * -1 means previous month
-         *  * 999 means “not an adjacent month”
-         * ------------------------------------------------------------------ */
+        // Month difference taking year rollover into account
         let month_diff: i32 = if new_year == orig_year {
             new_month - orig_month
         } else if new_year == orig_year + 1 {
@@ -134,6 +163,7 @@ impl<'a> Date<'a> {
     }
 }
 
+#[derive(Debug,Clone)]
 struct Meta {
 }
 
@@ -143,6 +173,7 @@ impl Meta {
     }
 }
 
+#[derive(Debug,Clone)]
 struct Mood {
 }
 
@@ -167,21 +198,67 @@ mod filters {
     }
 }
 
+fn nl2br(text: &str) -> Html {
+    let mut nodes = Vec::new();
+    for (i, line) in text.split('\n').enumerate() {
+        if i > 0 {
+            nodes.push(html! { <br/> });
+        }
+        nodes.push(html! { {line} });
+    }
+    html! { {for nodes} }
+}
+
 #[component]
 fn App() -> Html {
-    let counter = use_state(|| 0);
+    let template = use_state(|| None::<HelloTemplate>);
     let onclick = {
-        let counter = counter.clone();
+        let template = template.clone();
         move |_| {
-            let value = *counter + 1;
-            counter.set(value);
+            let file = Asset::get("titles.json")
+                .expect("titles.json not found in static folder");
+            let data = &file.data;
+            let titles: Vec<String> = serde_json::from_slice(data).expect("JSON parse error");
+            let mut rng = rand::rng();
+
+            let days_skip: u32 = random_range(3..25);
+
+            let chosen = titles
+                .choose(&mut rng)
+                .expect("titles.json contained no titles")
+                .as_str();
+            
+            let ht = if template.is_none() {
+                HelloTemplate {
+                    title: chosen.to_string(),
+                    mood: Mood {},
+                    meta: Meta {},
+                    date: Box::new(Date::new(2025, 2, 1)),
+                }
+            } else {
+                let u = template.as_ref().unwrap().clone();
+                HelloTemplate {
+                    title: chosen.to_string(),
+                    mood: Mood {},
+                    meta: Meta {},
+                    date: Box::new(u.date.clone().after(days_skip).move_origin())
+                }
+            };
+            template.set(Some(ht.clone()));
         }
     };
 
     html! {
         <div>
             <button {onclick}>{ "+1" }</button>
-            <p>{ *counter }</p>
+            if template.is_some() {
+                <p>
+                { template.as_ref().unwrap().date.year } {"年"}
+                { template.as_ref().unwrap().date.month } {"月"}
+                { template.as_ref().unwrap().date.day } {"日"}
+                { nl2br(&template.clone().as_ref().unwrap().render().unwrap()) }
+                </p>
+            }
         </div>
     }
 }
