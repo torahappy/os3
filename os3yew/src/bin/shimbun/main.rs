@@ -296,7 +296,7 @@ fn App() -> Html {
                     title: chosen.to_string(),
                     mood: Mood {},
                     meta: Meta {},
-                    date: Box::new(Date::new(2025, 2, 1)),
+                    date: Box::new(Date::new(2026, 2, 13)),
                 }
             } else {
                 let u = template.as_ref().unwrap().clone();
