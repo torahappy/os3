@@ -171,7 +171,7 @@ struct Meta {}
 
 impl Meta {
     fn get_instruction_manual(&self) -> String {
-        return "".to_string();
+        return "左上の+1ボタンをクリック".to_string();
     }
 }
 
