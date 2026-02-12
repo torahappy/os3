@@ -448,6 +448,8 @@ high_society
 
 {{ meta.get_instruction_manual() }}
 
+このプログラムを作るに当たって使用したプログラムの一覧は、[こちらのリンク](https://os3.torahappy.org/shimbun_web/dependencies.html)で確認できます。
+
 \[prereq-for\]  
 all
 

@@ -76,7 +76,7 @@ def gen_files(notes: List[Tuple[str, str, str]]):
     with open(os.path.join(assets_dir_texts, 'text_combined.txt'), 'w') as f:
         f.write(text_combined)
     
-    with open(os.path.join(assets_dir_images, '..', 'titles.json'), 'w') as f:
+    with open(os.path.join(assets_dir_images, '..', '..', 'titles', 'titles.json'), 'w') as f:
         json.dump(list_titles, f, indent=4, ensure_ascii=False)
 
 if __name__ == '__main__':
