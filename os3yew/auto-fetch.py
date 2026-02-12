@@ -42,6 +42,8 @@ def gen_files(notes: List[Tuple[str, str, str]]):
 
     text_combined = ""
 
+    list_titles = []
+
     for note_title, note_body, note_id in notes:
         if note_title.startswith('!!!'):
             continue
@@ -68,9 +70,14 @@ def gen_files(notes: List[Tuple[str, str, str]]):
                 note_body = re.sub(rf'!\[.+?\]\(:/{image_id}\)', f'![file{os.path.splitext(found_file)[1]}](assets/images/{os.path.basename(found_file)})', note_body)
 
         text_combined += "{% if title == \"" + note_title + "\" %}\n" + note_body + "\n{% endif %}\n"
+
+        list_titles.append(note_title)
     
     with open(os.path.join(assets_dir_texts, 'text_combined.txt'), 'w') as f:
         f.write(text_combined)
+    
+    with open(os.path.join(assets_dir_images, '..', 'titles.json'), 'w') as f:
+        json.dump(list_titles, f, indent=4, ensure_ascii=False)
 
 if __name__ == '__main__':
     notes = get_notes()
