@@ -79,8 +79,10 @@
 <img src="assets/images/1e2c7e3a4e524930a2ee8fcfdb705397.webp" style="aspect-ratio: 1.4356337093563372;" />
 
 \[image_caption\]
-とら《ぐしゃぐしゃになるでんしゃ》、185 mm × 129 mm、紙に水彩、2026
 
+
+\[image_caption_work_title\]
+とら《ぐしゃぐしゃになるでんしゃ》、185 mm × 129 mm、紙に水彩、2026
 
 \[tag\]
 
@@ -221,6 +223,8 @@
 <img src="assets/images/c6071444006e4b338d1d736f540aae71.webp" style="aspect-ratio: 1.4476666666666667;" />
 
 \[image_caption\]
+
+\[image_caption_work_title\]
 とら《あにめっていいな あにめってこわいな》、185 mm × 129 mm、紙に水彩、2026
 
 \[tag\]
@@ -561,6 +565,9 @@ true
 <img src="assets/images/b3d6e8f1dae246d8bc1a7420bed95d6b.webp" style="aspect-ratio: 1.4360927152317882;" />
 
 \[image_caption\]
+性別選択欄の様子。あいうえお順で項目名が並ぶため、「ああああああああああああ」や「あああああああああああい」など楽しげな言葉が勢揃いとなっている。
+
+\[image_caption_work_title\]
 とら《A Form》、185 mm × 129 mm、紙に水彩、2026
 
 \[tag\]
