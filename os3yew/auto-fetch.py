@@ -1,9 +1,11 @@
 import os
+from pathlib import Path
 import regex
 import re
 import sqlite3
 import argparse
 from typing import Optional, Tuple, List
+from PIL import Image, ImageOps
 import shutil
 import json
 
@@ -25,20 +27,23 @@ def get_notes() -> List[Tuple[str, str, str]]:
         raise ValueError(f"No folder found with title '{args.title}'")
 
     # Get notes in the folder
-    cursor.execute("SELECT title, body, deleted_time, id FROM notes WHERE parent_id = ?;", (folder_id[0],))
-    notes: List[Tuple[str, str, int, str]] = cursor.fetchall()
+    cursor.execute("SELECT title, body, deleted_time, id, is_conflict FROM notes WHERE parent_id = ?;", (folder_id[0],))
+    notes: List[Tuple[str, str, int, str, bool]] = cursor.fetchall()
 
     conn.close()
 
-    return [(title, body, note_id) for (title, body, deleted_time, note_id) in notes if deleted_time == 0]
+    return [(title, body, note_id) for (title, body, deleted_time, note_id, is_conflict) in notes if deleted_time == 0 and not is_conflict]
 
 assets_dir_texts = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'templates')
 assets_dir_images = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'assets', 'images')
+assets_dir_metadata = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'metadata')
 
-def gen_files(notes: List[Tuple[str, str, str]]):
+def gen_files(notes: List[Tuple[str, str, str]], dimensions: dict[str, list[int]]):
     "copy texts and images to the project directory"
     os.makedirs(assets_dir_texts, exist_ok=True)
+    shutil.rmtree(assets_dir_images)
     os.makedirs(assets_dir_images, exist_ok=True)
+    os.makedirs(assets_dir_metadata, exist_ok=True)
 
     text_combined = ""
 
@@ -66,8 +71,9 @@ def gen_files(notes: List[Tuple[str, str, str]]):
                 # Copy the image to the assets directory
                 if not os.path.exists(os.path.join(assets_dir_images, os.path.basename(found_file))):
                     shutil.copy2(found_file, os.path.join(assets_dir_images, os.path.basename(found_file)))
+                dim = dimensions[os.path.basename(found_file)]
                 # Replace the markdown image link
-                note_body = re.sub(rf'!\[.+?\]\(:/{image_id}\)', f'![file{os.path.splitext(found_file)[1]}](assets/images/{os.path.basename(found_file)})', note_body)
+                note_body = re.sub(rf'!\[.+?\]\(:/{image_id}\)', f'<img src="assets/images/{os.path.basename(found_file)}" style="aspect-ratio: {dim[0] / dim[1]};" />', note_body)
 
         text_combined += "{% if title == \"" + note_title + "\" %}\n" + note_body + "\n{% endif %}\n"
 
@@ -76,9 +82,61 @@ def gen_files(notes: List[Tuple[str, str, str]]):
     with open(os.path.join(assets_dir_texts, 'text_combined.txt'), 'w') as f:
         f.write(text_combined)
     
-    with open(os.path.join(assets_dir_images, '..', '..', 'titles', 'titles.json'), 'w') as f:
-        json.dump(list_titles, f, indent=4, ensure_ascii=False)
+    with open(os.path.join(assets_dir_metadata, 'titles.json'), 'w') as f:
+        json.dump(list_titles, f, indent=4, ensure_ascii=False, sort_keys=True)
+
+def exif_corrected(img: Image.Image) -> Image.Image:
+    """
+    Return a copy of `img` with the correct orientation applied
+    (if the image contains an EXIF orientation tag).
+    """
+    return ImageOps.exif_transpose(img)
+
+def collect_dimensions() -> dict[str, list[int]]:
+    """
+    Scan `assets_dir_images` for files with a common image extension,
+    open them, correct the orientation and record the width & height.
+
+    Returns:
+        mapping:  filename (not full path) → [width, height]
+    """
+    # Common image extensions – feel free to add more if you need
+    IMAGE_EXTS = {".jpg", ".jpeg", ".png", ".webp"}
+
+    mapping: dict[str, list[int]] = {}
+
+    for img_path in Path(assets_dir_images).iterdir():
+        if not img_path.is_file():
+            continue
+
+        if img_path.suffix.lower() not in IMAGE_EXTS:
+            # Skip non‑image files
+            continue
+
+        try:
+            with Image.open(img_path) as im:
+                im = exif_corrected(im)          # ← correct orientation
+                w, h = im.size                      # ← (width, height)
+                mapping[img_path.name] = [w, h]
+        except Exception as exc:
+            print(f"[WARN] Could not process {img_path.name}: {exc}")
+
+    return mapping
+
+def write_images_json(mapping: dict[str, list[int]]) -> None:
+    """
+    Write ``mapping`` to ``assets_dir_metadata/images.json``.
+    """
+    out_file = Path(assets_dir_metadata) / "images.json"
+
+    # Pretty‑print the JSON for easier human inspection
+    with out_file.open("w", encoding="utf-8") as fp:
+        json.dump(mapping, fp, indent=4, sort_keys=True)
 
 if __name__ == '__main__':
+    dimensions = collect_dimensions()
+    write_images_json(dimensions)
+
     notes = get_notes()
-    gen_files(notes)
+    gen_files(notes, dimensions)
+

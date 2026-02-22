@@ -15,7 +15,7 @@ use std::{
 use yew::{Html, html::IntoPropValue, prelude::*, virtual_dom::VNode};
 
 #[derive(RustEmbed)]
-#[folder = "titles"]
+#[folder = "metadata"]
 struct Asset;
 
 #[derive(Template, Debug, Clone)]
