@@ -294,6 +294,8 @@ set_high_society,on
 <img src="assets/images/c9fab7d414914092bd39c2f8d50163b7.webp" style="aspect-ratio: 1.4485981308411215;" />
 
 \[image_caption\]
+
+\[image_caption_work_title\]
 とら《五百円切手からの連想呪》、185 mm × 129 mm、紙に水彩、2026
 
 \[tag\]

@@ -38,14 +38,14 @@ assets_dir_texts = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'tem
 assets_dir_images = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'assets', 'images')
 assets_dir_metadata = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'metadata')
 
-def gen_files(notes: List[Tuple[str, str, str]], dimensions: dict[str, list[int]]):
+def gen_files(notes: List[Tuple[str, str, str]], dimensions: dict[str, list[int]] | None):
     "copy texts and images to the project directory"
     os.makedirs(assets_dir_texts, exist_ok=True)
-    shutil.rmtree(assets_dir_images)
     os.makedirs(assets_dir_images, exist_ok=True)
     os.makedirs(assets_dir_metadata, exist_ok=True)
 
-    text_combined = ""
+    if dimensions:
+        text_combined = ""
 
     list_titles = []
 
@@ -71,16 +71,19 @@ def gen_files(notes: List[Tuple[str, str, str]], dimensions: dict[str, list[int]
                 # Copy the image to the assets directory
                 if not os.path.exists(os.path.join(assets_dir_images, os.path.basename(found_file))):
                     shutil.copy2(found_file, os.path.join(assets_dir_images, os.path.basename(found_file)))
-                dim = dimensions[os.path.basename(found_file)]
+                if dimensions:
+                    dim = dimensions[os.path.basename(found_file)]
                 # Replace the markdown image link
-                note_body = re.sub(rf'!\[.+?\]\(:/{image_id}\)', f'<img src="assets/images/{os.path.basename(found_file)}" style="aspect-ratio: {dim[0] / dim[1]};" />', note_body)
+                    note_body = re.sub(rf'!\[.+?\]\(:/{image_id}\)', f'<img src="assets/images/{os.path.basename(found_file)}" style="aspect-ratio: {dim[0] / dim[1]};" />', note_body)
 
-        text_combined += "{% if title == \"" + note_title + "\" %}\n" + note_body + "\n{% endif %}\n"
+        if dimensions:
+            text_combined += "{% if title == \"" + note_title + "\" %}\n" + note_body + "\n{% endif %}\n"
 
         list_titles.append(note_title)
     
-    with open(os.path.join(assets_dir_texts, 'text_combined.txt'), 'w') as f:
-        f.write(text_combined)
+    if dimensions:
+        with open(os.path.join(assets_dir_texts, 'text_combined.txt'), 'w') as f:
+            f.write(text_combined)
     
     with open(os.path.join(assets_dir_metadata, 'titles.json'), 'w') as f:
         json.dump(list_titles, f, indent=4, ensure_ascii=False, sort_keys=True)
@@ -134,9 +137,10 @@ def write_images_json(mapping: dict[str, list[int]]) -> None:
         json.dump(mapping, fp, indent=4, sort_keys=True)
 
 if __name__ == '__main__':
-    dimensions = collect_dimensions()
-    write_images_json(dimensions)
-
+    shutil.rmtree(assets_dir_images)
     notes = get_notes()
+    gen_files(notes, None)
+    dimensions = collect_dimensions()
     gen_files(notes, dimensions)
+    write_images_json(dimensions)
 
