@@ -96,7 +96,7 @@ impl<'a> Date {
     fn month_day(&self) -> String {
         // If this is the original date, we call it "今日"
         if self.original_date.is_none() {
-            return "今日".to_string();
+            return "本日".to_string();
         }
 
         let original = self.original_date.as_ref().unwrap();
@@ -215,13 +215,16 @@ fn dangerous_raw_html(raw_html_string: String) -> VNode {
 }
 
 fn md(md_str: String) -> VNode {
-    dangerous_raw_html(markdown_to_html(&md_str, &Options{
-        render: Render {
-            r#unsafe: true,
+    dangerous_raw_html(markdown_to_html(
+        &md_str,
+        &Options {
+            render: Render {
+                r#unsafe: true,
+                ..Default::default()
+            },
             ..Default::default()
         },
-        ..Default::default()
-    }))
+    ))
 }
 
 fn make_data_table(str_in: String) -> HashMap<String, String> {
@@ -255,10 +258,33 @@ fn make_data_table(str_in: String) -> HashMap<String, String> {
     table
 }
 
+fn get_availiable_titles(
+    done_titles: &HashSet<String, RandomState>,
+    all_titles: &HashSet<String, RandomState>,
+) -> HashSet<String, RandomState> {
+    if done_titles.len() == 0 {
+        return HashSet::from_iter(vec!["注意".to_string()].into_iter());
+    } else {
+        let mut tmp = done_titles.clone();
+        tmp.insert("「大大補償大会」開催決定".to_string());
+        if tmp.len() == all_titles.len() {
+            return HashSet::from_iter(vec!["「大大補償大会」開催決定".to_string()].into_iter());
+        } else {
+            return all_titles
+                .difference(&done_titles)
+                .into_iter()
+                .map(|x| x.clone())
+                .collect();
+        }
+    }
+}
+
 #[component]
 fn App() -> Html {
     let template = use_state(|| None::<HelloTemplate>);
-    let availiable_titles: UseStateHandle<HashSet<String, RandomState>> = use_state(|| {
+    let templates_forecast: UseStateHandle<Vec<HelloTemplate>> = use_state(|| Vec::new());
+    let done_titles: UseStateHandle<HashSet<String, RandomState>> = use_state(|| HashSet::new());
+    let all_titles: UseStateHandle<HashSet<String, RandomState>> = use_state(|| {
         let file = Asset::get("titles.json").expect("titles.json not found in static folder");
         let data = &file.data;
         let mut h = HashSet::from_iter(
@@ -266,30 +292,27 @@ fn App() -> Html {
                 .expect("JSON parse error")
                 .into_iter(),
         );
-        h.remove("「大大補償大会」開催決定");
         return h;
     });
     let onclick = {
         let template = template.clone();
-        let availiable_titles = availiable_titles.clone();
+        let done_titles_ref = (*done_titles).clone();
+        let all_titles_ref = (*all_titles).clone();
+        let availiable_titles = get_availiable_titles(
+            &done_titles_ref,
+            &all_titles_ref
+        );
         move |_| {
             let mut rng = rand::rng();
 
             let days_skip: u32 = random_range(3..25);
 
-
-            let chosen = if availiable_titles.len() == 0 {
-                "「大大補償大会」開催決定"
-            } else if template.is_none() {
-                "注意"
-            } else {
-                availiable_titles
+            let chosen = availiable_titles
                     .iter()
                     .collect::<Vec<_>>()
                     .choose(&mut rng)
                     .expect("titles.json contained no titles")
-                    .as_str()
-            };
+                    .as_str();
 
             let ht = if template.is_none() {
                 HelloTemplate {
@@ -308,12 +331,9 @@ fn App() -> Html {
                 }
             };
             template.set(Some(ht.clone()));
-            availiable_titles.set(
-                availiable_titles
-                    .difference(&HashSet::from([chosen.to_string()]))
-                    .map(|x| x.clone())
-                    .collect(),
-            );
+            let mut dt = done_titles_ref.clone();
+            dt.insert(chosen.to_string());
+            done_titles.set(dt);
         }
     };
 
