@@ -270,7 +270,9 @@ fn get_availiable_titles(
         if tmp.len() == all_titles.len() {
             return HashSet::from_iter(vec!["「大大補償大会」開催決定".to_string()].into_iter());
         } else {
-            return all_titles
+            let mut tmp2 = all_titles.clone();
+            tmp2.remove("「大大補償大会」開催決定");
+            return tmp2
                 .difference(&done_titles)
                 .into_iter()
                 .map(|x| x.clone())
