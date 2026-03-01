@@ -1120,6 +1120,7 @@ dependencies = [
  "rustybuzz",
  "serde_json",
  "wasm-logger",
+ "web-sys",
  "yew",
 ]
 
