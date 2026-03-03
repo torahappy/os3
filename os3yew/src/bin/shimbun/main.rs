@@ -2,16 +2,18 @@
 
 use askama::Template;
 use comrak::{Options, markdown_to_html, options::Render};
-use log::warn;
+// use gloo_net::http::Request;
+use log::{info, warn};
 use rand::{random_range, seq::IndexedRandom};
 use regex::Regex;
 use rust_embed::RustEmbed;
+// use rustybuzz::{UnicodeBuffer, shape};
 use std::{
     collections::{HashMap, HashSet},
-    default,
     fmt::Display,
     hash::RandomState,
 };
+use web_sys::{Document, Window, window};
 use yew::{Html, html::IntoPropValue, prelude::*, virtual_dom::VNode};
 
 #[derive(RustEmbed)]
@@ -167,7 +169,25 @@ impl<'a> Date {
 }
 
 #[derive(Debug, Clone)]
-struct Meta {}
+struct Meta {
+    window_width: f64,
+    window_height: f64,
+    global_pos_x: f64,
+    global_pos_y: f64,
+}
+
+impl Default for Meta {
+    fn default() -> Self {
+        let w = window().unwrap().inner_width().unwrap().as_f64().unwrap();
+        let h = window().unwrap().inner_height().unwrap().as_f64().unwrap();
+        Meta {
+            window_width: w,
+            window_height: h,
+            global_pos_x: 0.0,
+            global_pos_y: 0.0,
+        }
+    }
+}
 
 impl Meta {
     fn get_instruction_manual(&self) -> String {
@@ -281,10 +301,27 @@ fn get_availiable_titles(
     }
 }
 
+struct RectMask {
+    w: f64,
+    h: f64,
+    x: f64,
+    y: f64,
+}
+
+struct Forecast {
+    template: HelloTemplate,
+    w: f64,
+    h: f64,
+    x: f64,
+    y: f64,
+    masks: Vec<RectMask>,
+}
+
 #[component]
 fn App() -> Html {
+    //    let fonts: UseStateHandle<Option<HashMap<String, Vec<u8>>>> = use_state(|| None);
     let template = use_state(|| None::<HelloTemplate>);
-    let templates_forecast: UseStateHandle<Vec<HelloTemplate>> = use_state(|| Vec::new());
+    let forecasts: UseStateHandle<Vec<Option<Forecast>>> = use_state(|| Vec::new());
     let done_titles: UseStateHandle<HashSet<String, RandomState>> = use_state(|| HashSet::new());
     let all_titles: UseStateHandle<HashSet<String, RandomState>> = use_state(|| {
         let file = Asset::get("titles.json").expect("titles.json not found in static folder");
@@ -296,39 +333,39 @@ fn App() -> Html {
         );
         return h;
     });
+    let message: UseStateHandle<String> = use_state(|| "".to_string());
     let onclick = {
         let template = template.clone();
         let done_titles_ref = (*done_titles).clone();
         let all_titles_ref = (*all_titles).clone();
-        let availiable_titles = get_availiable_titles(
-            &done_titles_ref,
-            &all_titles_ref
-        );
+        let availiable_titles = get_availiable_titles(&done_titles_ref, &all_titles_ref);
+        //        let fonts = fonts.clone();
+        let message = message.clone();
         move |_| {
             let mut rng = rand::rng();
 
             let days_skip: u32 = random_range(3..25);
 
             let chosen = availiable_titles
-                    .iter()
-                    .collect::<Vec<_>>()
-                    .choose(&mut rng)
-                    .expect("titles.json contained no titles")
-                    .as_str();
+                .iter()
+                .collect::<Vec<_>>()
+                .choose(&mut rng)
+                .expect("titles.json contained no titles")
+                .as_str();
 
             let ht = if template.is_none() {
                 HelloTemplate {
                     title: chosen.to_string(),
                     mood: Mood {},
-                    meta: Meta {},
+                    meta: Default::default(),
                     date: Box::new(Date::new(2026, 2, 13)),
                 }
             } else {
                 let u = template.as_ref().unwrap().clone();
                 HelloTemplate {
                     title: chosen.to_string(),
-                    mood: Mood {},
-                    meta: Meta {},
+                    mood: u.mood.clone(),
+                    meta: u.meta.clone(),
                     date: Box::new(u.date.clone().after(days_skip).move_origin()),
                 }
             };
@@ -336,8 +373,36 @@ fn App() -> Html {
             let mut dt = done_titles_ref.clone();
             dt.insert(chosen.to_string());
             done_titles.set(dt);
+
+            //            if fonts.is_some() {
+            //                let data = fonts.as_ref().unwrap().get("GenEiKoburiMin6-R").unwrap();
+            //                let face = rustybuzz::Face::from_slice(data, 0).unwrap();
+            //                let mut buf = UnicodeBuffer::new();
+            //                buf.push_str("ああああああabcあいいabllm感じ感じ");
+            //                let result = shape(&face, &[], buf);
+            //                message.set(format!("{:?}", result));
+            //            }
         }
     };
+
+    //    use_effect_with((), move |_| {
+    //        let fontname = "GenEiKoburiMin6-R";
+    //        let font_url = "assets/".to_string() + fontname + ".ttf";
+    //        if fonts.is_none() {
+    //            wasm_bindgen_futures::spawn_local(async move {
+    //                let data = Request::get(&font_url)
+    //                    .send()
+    //                    .await
+    //                    .unwrap()
+    //                    .binary()
+    //                    .await
+    //                    .unwrap();
+    //                let mut new_hash = HashMap::new();
+    //                new_hash.insert(fontname.to_string(), data);
+    //                fonts.set(Some(new_hash));
+    //            });
+    //        }
+    //    });
 
     let data_table = if template.is_some() {
         Some(make_data_table(
@@ -351,7 +416,7 @@ fn App() -> Html {
         <div>
             <button {onclick}>{ "+1" }</button>
             if template.is_some() && data_table.is_some(){
-                <div>
+                <div style="">
                 <span>
                 { template.as_ref().unwrap().date.year } {"年"}
                 { template.as_ref().unwrap().date.month } {"月"}
