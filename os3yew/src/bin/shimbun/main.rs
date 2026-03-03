@@ -4,14 +4,14 @@ use askama::Template;
 use comrak::{Options, markdown_to_html, options::Render};
 // use gloo_net::http::Request;
 use log::{info, warn};
-use rand::{random_range, seq::IndexedRandom};
+use rand::{Rng, RngExt, SeedableRng, distr::slice::Choose, random_range, rng, rngs::StdRng, seq::IndexedRandom};
 use regex::Regex;
 use rust_embed::RustEmbed;
 // use rustybuzz::{UnicodeBuffer, shape};
 use std::{
     collections::{HashMap, HashSet},
     fmt::Display,
-    hash::RandomState,
+    hash::{BuildHasher, Hash, RandomState},
 };
 use web_sys::{Document, Window, window};
 use yew::{Html, html::IntoPropValue, prelude::*, virtual_dom::VNode};
@@ -36,6 +36,7 @@ struct Date {
     month: u32,
     day: u32,
     original_date: Option<Box<Date>>,
+    condition_seed: u64
 }
 
 impl Display for Date {
@@ -51,6 +52,7 @@ impl<'a> Date {
             month,
             day,
             original_date: None,
+            condition_seed: rng().next_u64()
         }
     }
 
@@ -61,6 +63,7 @@ impl<'a> Date {
             month: self.month.clone(),
             day: self.day.clone(),
             original_date: None,
+            condition_seed: rng().next_u64()
         }
     }
 
@@ -74,6 +77,7 @@ impl<'a> Date {
             month: naive_date.month(),
             day: naive_date.day(),
             original_date: Some(Box::new(self.clone())),
+            condition_seed: self.condition_seed
         };
 
         new_date
@@ -90,18 +94,24 @@ impl<'a> Date {
             month: naive_date.month(),
             day: naive_date.day(),
             original_date: Some(Box::new(self.clone())),
+            condition_seed: self.condition_seed,
         };
 
         new_date
     }
 
     fn month_day(&self) -> String {
+        let mut candidates: Vec<(u32, String)> = Vec::new();
+
         // If this is the original date, we call it "今日"
         if self.original_date.is_none() {
-            return "本日".to_string();
+            candidates.push((0, "本日".to_string()));
+            candidates.push((1, format!("本日{}日", self.day)));
         }
 
-        let original = self.original_date.as_ref().unwrap();
+        let self_clone = Box::new(self.clone());
+
+        let original = self.original_date.as_ref().unwrap_or(&self_clone);
 
         // Prepare naive dates for day‑difference calculation
         let naive_self =
@@ -114,9 +124,15 @@ impl<'a> Date {
 
         // Yesterday / Tomorrow logic – check first
         match day_diff {
-            1 => return "明日".to_string(),
-            -1 => return "昨日".to_string(),
-            _ => (), // continue with month‑based logic
+            1 => {
+                candidates.push((2, "明日".to_string()));
+                candidates.push((3, format!("明日{}日", self.day)));
+            }
+            -1 => {
+                candidates.push((4, "昨日".to_string()));
+                candidates.push((5, format!("昨日{}日", self.day)));
+            }
+            _ => {} // continue with month‑based logic
         }
 
         let orig_year = original.year;
@@ -138,33 +154,48 @@ impl<'a> Date {
 
         // “先月/来月”
         match month_diff {
-            -1 => return format!("先月{}日", self.day),
-            1 => return format!("来月{}日", self.day),
-            _ => (), // fall‑through for other cases
+            -1 => {
+                candidates.push((6, format!("先月{}日", self.day)));
+            }
+            1 => {
+                candidates.push((7, format!("来月{}日", self.day)));
+            }
+            _ => {} // fall‑through for other cases
         }
 
         // Same month & year – “今月…”
         if orig_month == new_month && orig_year == new_year {
-            return format!("今月{}日", self.day);
+            candidates.push((8, format!("今月{}日", self.day)));
         }
 
         // Same year but different month – “X月…”
         if orig_year == new_year {
-            return format!("{}月{}日", new_month, self.day);
+            candidates.push((9, format!("{}月{}日", new_month, self.day)));
         }
 
         // Previous year – “昨年…”
         if new_year == orig_year - 1 {
-            return format!("昨年{}月{}日", new_month, self.day);
+            candidates.push((10, format!("昨年{}月{}日", new_month, self.day)));
         }
 
         // Next year – “来年…”
         if new_year == orig_year + 1 {
-            return format!("来年{}月{}日", new_month, self.day);
+            candidates.push((11, format!("来年{}月{}日", new_month, self.day)));
         }
 
         // Fallback – full date
-        format!("{}年{}月{}日", new_year, new_month, self.day)
+        candidates.push((12, format!("{}年{}月{}日", new_year, new_month, self.day)));
+
+        let condition_list = candidates.iter().map(|x|x.0.clone()).collect::<Vec<u32>>();
+
+        let rs = ahash::RandomState::with_seed(42);
+        let condition_hash = rs.hash_one(condition_list);
+
+        let mut r = StdRng::seed_from_u64(self.condition_seed ^ condition_hash);
+        
+        let string_list = candidates.iter().map(|x|x.1.clone()).collect::<Vec<String>>();
+
+        r.sample(Choose::new(&string_list).unwrap()).clone()
     }
 }
 

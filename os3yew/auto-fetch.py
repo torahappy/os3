@@ -73,7 +73,7 @@ def gen_files(notes: List[Tuple[str, str, str]], dimensions: dict[str, list[int]
                     shutil.copy2(found_file, os.path.join(assets_dir_images, os.path.basename(found_file)))
                 if dimensions:
                     dim = dimensions[os.path.basename(found_file)]
-                # Replace the markdown image link
+                    # Replace the markdown image link
                     note_body = re.sub(rf'!\[.+?\]\(:/{image_id}\)', f'<img src="assets/images/{os.path.basename(found_file)}" style="aspect-ratio: {dim[0] / dim[1]};" />', note_body)
 
         if dimensions:
