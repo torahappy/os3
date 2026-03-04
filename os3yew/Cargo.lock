@@ -1105,6 +1105,7 @@ dependencies = [
  "chrono",
  "comrak",
  "getrandom 0.4.1",
+ "gloo-timers",
  "log",
  "rand",
  "regex",
