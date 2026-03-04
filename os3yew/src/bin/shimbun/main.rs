@@ -232,7 +232,7 @@ impl Default for Meta {
 
 impl Meta {
     fn get_instruction_manual(&self) -> String {
-        return "マウスを長押しすると、今読んでいる文章が消えていきます。そうしてしばらくすると、色々な言葉の断片が浮かび上がっていきます。その言葉の断片の上にマウスカーソルを置いて、マウスを押し続けると、新たな文章が浮かび上がっていきます。".to_string();
+        return "下にあるボタンを押すと、今読んでいる文章が消えていきます。そうしてしばらくすると、色々な言葉の断片が浮かび上がっていきます。その言葉の断片の上にマウスカーソルを置いて、マウスを押し続けると、新たな文章が浮かび上がっていきます。".to_string();
     }
 }
 
@@ -393,7 +393,7 @@ fn get_bounding_from_id(elem_id: &str) -> Option<ParsedDomRect> {
     })
 }
 
-#[derive(PartialEq)]
+#[derive(PartialEq, Clone, Copy, Debug)]
 enum GameStage {
     ArticleView,
     ArticleHidden,
@@ -467,16 +467,13 @@ fn App() -> Html {
     //                                                          all forecasts; the biggest forecast   |
     //                                                          will be copied into current_article)  |
     let game_stage = use_state(|| GameStage::ArticleView);
+    let transition_history: UseStateHandle<Vec<(f64, GameStage)>> =
+        use_state(|| vec![(0.0, GameStage::ArticleView)]);
 
-    let counter_hide_article = use_state(|| 0.0);
-
-    let input_hide_article = use_callback((game_stage.clone()), move |(), (game_stage)| {
-        if **game_stage != GameStage::ArticleView {
-            return;
-        }
-    });
-
-    let advance_hide_article = use_callback((), move |(), ()| {});
+    let advance_hide_article: Callback<MouseEvent> =
+        use_callback((game_stage.clone()), |_, (game_stage)| {
+            game_stage.set(GameStage::ArticleHidden);
+        });
 
     let advance_show_forecasts = use_callback(
         (
@@ -540,6 +537,33 @@ fn App() -> Html {
 
     let advance_elect_article = use_callback((), move |(), ()| {});
 
+    let clock_callback = use_callback(
+        (
+            transition_history.clone(),
+            game_stage.clone(),
+            advance_show_forecasts.clone(),
+        ),
+        |(delta, culmative), (transition_history, game_stage, advance_show_forecasts)| {
+            let last_gs = transition_history.last().unwrap().1;
+            if **game_stage != last_gs {
+                let mut new_th = (**transition_history).clone();
+                new_th.push((culmative, **game_stage));
+                transition_history.set(new_th);
+                return;
+            }
+
+            if **game_stage == GameStage::ArticleHidden
+                && culmative - transition_history.last().unwrap().0 > 10.0
+            {
+                game_stage.set(GameStage::ForecastStart);
+                advance_show_forecasts.emit(());
+                return;
+            }
+
+            console::log_1(&format!("{:?}", &**transition_history).into());
+        },
+    );
+
     //    use_effect_with((), move |_| {
     //        let fontname = "GenEiKoburiMin6-R";
     //        let font_url = "assets/".to_string() + fontname + ".ttf";
@@ -558,7 +582,7 @@ fn App() -> Html {
     //            });
     //        }
     //    });
-
+    //
     let data_table: Rc<Vec<Option<(bool, HashMap<String, String>, usize)>>> =
         use_memo((current_article.clone(), forecasts.clone()), |(ca, fc)| {
             let mut arr: Vec<Option<(bool, HashMap<String, String>, usize)>> = Vec::new();
@@ -779,6 +803,7 @@ fn App() -> Html {
                     }
                     </div>
                     }
+                    <button onclick={advance_hide_article.clone()}>{"読み続ける"}</button>
                 </div>
             }
         })
@@ -789,6 +814,7 @@ fn App() -> Html {
             {html_articles}
 
             <RenderWatchComponent render_number={*render_number} callback={upgrade_plan_check}><></></RenderWatchComponent>
+            <ClockComponent callback={clock_callback} interval={42} />
         </div>
     }
 }
@@ -822,6 +848,64 @@ impl Component for RenderWatchComponent {
         self.timeout = Some(Timeout::new(10, move || {
             c.emit(first_render);
         }));
+    }
+}
+
+#[derive(PartialEq, Properties)]
+pub struct ClockProps {
+    callback: Callback<(f64, f64), ()>,
+    interval: u32,
+}
+
+pub struct ClockComponent {
+    timeout: Option<Timeout>,
+    culmative: f64,
+}
+
+#[derive(PartialEq)]
+pub struct ClockMessage {
+    delta: Option<f64>,
+}
+
+impl Component for ClockComponent {
+    type Message = ClockMessage;
+
+    type Properties = ClockProps;
+
+    fn create(ctx: &Context<Self>) -> Self {
+        let c = ctx.props().callback.clone();
+        let i = ctx.props().interval;
+        let l = ctx.link().clone();
+        ClockComponent {
+            timeout: Some(Timeout::new(i, move || {
+                c.emit((i as f64 / 1000.0, l.get_component().unwrap().culmative)); // TODO: actual delta calc
+                l.send_message(ClockMessage {
+                    delta: Some(i as f64 / 1000.0),
+                }); // TODO: actual delta calc
+            })),
+            culmative: 0.0,
+        }
+    }
+
+    fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
+        if let Some(delta) = msg.delta {
+            self.culmative += delta;
+            let c = ctx.props().callback.clone();
+            let i = ctx.props().interval;
+            let l = ctx.link().clone();
+            self.timeout = Some(Timeout::new(i, move || {
+                c.emit((i as f64 / 1000.0, l.get_component().unwrap().culmative)); // TODO: actual delta calc
+                l.send_message(ClockMessage {
+                    delta: Some(i as f64 / 1000.0),
+                }); // TODO: actual delta calc
+            }));
+            return false;
+        }
+        return true;
+    }
+
+    fn view(&self, ctx: &Context<Self>) -> Html {
+        html!(<></>)
     }
 }
 
