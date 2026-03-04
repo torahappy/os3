@@ -193,11 +193,15 @@ impl<'a> Date {
         // Fallback – full date
         candidates.push((12, format!("{}年{}月{}日", new_year, new_month, self.day)));
 
+        // This will serialize the program execution tree. Inputs which share same execution tree
+        // results in the same condition_hash.
         let condition_list = candidates.iter().map(|x| x.0.clone()).collect::<Vec<u32>>();
-
         let rs = ahash::RandomState::with_seed(42);
         let condition_hash = rs.hash_one(condition_list);
 
+        // Combine with the current article's random seed. If we have the same article and the same
+        // execution tree, then the same index will be chosen. (And if the execution tree is the
+        // same, obviously the array length and its semantic structure are the same.)
         let mut r = StdRng::seed_from_u64(self.condition_seed ^ condition_hash);
 
         let string_list = candidates
