@@ -173,6 +173,7 @@ impl<'a> Date {
         // Same month & year – “今月…”
         if orig_month == new_month && orig_year == new_year {
             candidates.push((8, format!("今月{}日", self.day)));
+            candidates.push((13, format!("{}日", self.day)));
         }
 
         // Same year but different month – “X月…”
