@@ -6,7 +6,10 @@ use gloo_timers::callback::{Interval, Timeout};
 // use gloo_net::http::Request;
 use log::{info, warn};
 use rand::{
-    Rng, RngExt, SeedableRng, distr::slice::Choose, random_range, rng, rngs::StdRng,
+    Rng, RngExt, SeedableRng,
+    distr::{Distribution, Uniform, slice::Choose},
+    random_range, rng,
+    rngs::StdRng,
     seq::IndexedRandom,
 };
 use regex::Regex;
@@ -14,7 +17,9 @@ use rust_embed::RustEmbed;
 // use rustybuzz::{UnicodeBuffer, shape};
 use std::{
     clone,
+    cmp::Ordering,
     collections::{HashMap, HashSet},
+    f64::INFINITY,
     fmt::Display,
     hash::{BuildHasher, Hash, RandomState},
     ops::Add,
@@ -25,25 +30,26 @@ use yew::{Html, html::IntoPropValue, prelude::*, virtual_dom::VNode};
 
 #[derive(RustEmbed)]
 #[folder = "metadata"]
-struct Asset;
+pub struct Asset;
 
 #[derive(Template, Debug, Clone, PartialEq)]
 #[template(path = "text_combined.txt")]
-struct ArticleTemplate {
-    title: String,
-    mood: Mood,
-    meta: Meta,
-    date: Box<Date>,
+pub struct ArticleTemplate {
+    pub title: String,
+    pub mood: Mood,
+    pub meta: Meta,
+    pub date: Box<Date>,
 }
+
 use chrono::{Datelike, NaiveDate, NaiveDateTime};
 
 #[derive(Debug, Clone, PartialEq)]
-struct Date {
-    year: i32,
-    month: u32,
-    day: u32,
-    original_date: Option<Box<Date>>,
-    condition_seed: u64,
+pub struct Date {
+    pub year: i32,
+    pub month: u32,
+    pub day: u32,
+    pub original_date: Option<Box<Date>>,
+    pub condition_seed: u64,
 }
 
 impl Display for Date {
@@ -53,7 +59,7 @@ impl Display for Date {
 }
 
 impl<'a> Date {
-    fn new(year: i32, month: u32, day: u32) -> Self {
+    pub fn new(year: i32, month: u32, day: u32) -> Self {
         Date {
             year,
             month,
@@ -63,7 +69,7 @@ impl<'a> Date {
         }
     }
 
-    fn move_origin(&self) -> Date {
+    pub fn move_origin(&self) -> Date {
         // discard the original_date field in the original_date arg
         Date {
             year: self.year.clone(),
@@ -74,7 +80,7 @@ impl<'a> Date {
         }
     }
 
-    fn after(&self, days: u32) -> Date {
+    pub fn after(&self, days: u32) -> Date {
         let naive_date = NaiveDate::from_ymd_opt(self.year, self.month, self.day)
             .expect("Invalid date")
             .checked_add_signed(chrono::Duration::days(days as i64))
@@ -90,7 +96,7 @@ impl<'a> Date {
         new_date
     }
 
-    fn before(&self, days: u32) -> Date {
+    pub fn before(&self, days: u32) -> Date {
         let naive_date = NaiveDate::from_ymd_opt(self.year, self.month, self.day)
             .expect("Invalid date")
             .checked_sub_signed(chrono::Duration::days(days as i64))
@@ -107,7 +113,7 @@ impl<'a> Date {
         new_date
     }
 
-    fn month_day(&self) -> String {
+    pub fn month_day(&self) -> String {
         let mut candidates: Vec<(u32, String)> = Vec::new();
 
         // If this is the original date, we call it "今日"
@@ -215,11 +221,11 @@ impl<'a> Date {
 }
 
 #[derive(PartialEq, Debug, Clone)]
-struct Meta {
-    window_width: f64,
-    window_height: f64,
-    global_pos_x: f64,
-    global_pos_y: f64,
+pub struct Meta {
+    pub window_width: f64,
+    pub window_height: f64,
+    pub global_pos_x: f64,
+    pub global_pos_y: f64,
 }
 
 impl Default for Meta {
@@ -236,16 +242,16 @@ impl Default for Meta {
 }
 
 impl Meta {
-    fn get_instruction_manual(&self) -> String {
+    pub fn get_instruction_manual(&self) -> String {
         return "下にあるボタンを押すと、今読んでいる文章が消えていきます。そうしてしばらくすると、色々な言葉の断片が浮かび上がっていきます。その言葉の断片の上にマウスカーソルを置いて、マウスを押し続けると、新たな文章が浮かび上がっていきます。".to_string();
     }
 }
 
 #[derive(PartialEq, Debug, Clone)]
-struct Mood {}
+pub struct Mood {}
 
 impl Mood {
-    fn is_subjective(&self) -> bool {
+    pub fn is_subjective(&self) -> bool {
         true
     }
 }
@@ -265,7 +271,7 @@ mod filters {
     }
 }
 
-fn nl2br(text: &str) -> Html {
+pub fn nl2br(text: &str) -> Html {
     let mut nodes = Vec::new();
     for (i, line) in text.split('\n').enumerate() {
         if i > 0 {
@@ -276,11 +282,11 @@ fn nl2br(text: &str) -> Html {
     html! { {for nodes} }
 }
 
-fn dangerous_raw_html(raw_html_string: String) -> VNode {
+pub fn dangerous_raw_html(raw_html_string: String) -> VNode {
     return Html::from_html_unchecked(AttrValue::from(raw_html_string));
 }
 
-fn md(md_str: String) -> VNode {
+pub fn md(md_str: String) -> VNode {
     dangerous_raw_html(markdown_to_html(
         &md_str,
         &Options {
@@ -293,7 +299,7 @@ fn md(md_str: String) -> VNode {
     ))
 }
 
-fn make_data_table(str_in: String) -> HashMap<String, String> {
+pub fn make_data_table(str_in: String) -> HashMap<String, String> {
     let key_re = Regex::new(r"^\s*\\?\[([^\]]+?)\\?\]\s*$").unwrap();
 
     let mut table: HashMap<String, String> = HashMap::new();
@@ -324,7 +330,7 @@ fn make_data_table(str_in: String) -> HashMap<String, String> {
     table
 }
 
-fn get_availiable_titles(
+pub fn get_availiable_titles(
     done_titles: &HashSet<String, RandomState>,
     all_titles: &HashSet<String, RandomState>,
 ) -> HashSet<String, RandomState> {
@@ -347,36 +353,182 @@ fn get_availiable_titles(
     }
 }
 
-#[derive(Clone, PartialEq)]
-struct RectMask {
-    w: f64,
-    h: f64,
-    x: f64,
-    y: f64,
+#[derive(Clone, PartialEq, Debug)]
+pub struct RectMask {
+    pub w: f64,
+    pub h: f64,
+    pub x: f64,
+    pub y: f64,
 }
 
 #[derive(Clone, PartialEq)]
-struct Article {
-    template: ArticleTemplate,
-    w: Option<f64>,
-    h: Option<f64>,
-    x: f64,
-    y: f64,
-    masks: Vec<RectMask>,
+pub struct Article {
+    pub template: ArticleTemplate,
+    pub w: Option<f64>,
+    pub h: Option<f64>,
+    pub x: f64,
+    pub y: f64,
+    pub masks: Vec<Option<RectMask>>,
 }
 
-struct ParsedDomRect {
-    x: f64,
-    y: f64,
-    width: f64,
-    height: f64,
-    top: f64,
-    right: f64,
-    bottom: f64,
-    left: f64,
+pub struct ParsedDomRect {
+    pub x: f64,
+    pub y: f64,
+    pub width: f64,
+    pub height: f64,
+    pub top: f64,
+    pub right: f64,
+    pub bottom: f64,
+    pub left: f64,
 }
 
-fn get_bounding_from_id(elem_id: &str) -> Option<ParsedDomRect> {
+/// Return all indices of the masks that intersect the point `(x, y)`.
+///
+/// `masks` – a 2‑D vector: `masks[row][col]` is a reference to an
+/// optional rectangle mask.
+///
+/// The point is considered inside a mask when  
+/// `x` is in `[mask.x, mask.x + mask.w]` **and**  
+/// `y` is in `[mask.y, mask.y + mask.h]`.
+///
+pub fn search_intersects_2d(
+    masks: &Vec<&Vec<Option<RectMask>>>,
+    x: f64,
+    y: f64,
+) -> Vec<(usize, usize)> {
+    let mut result = Vec::new();
+
+    // iterate over rows and columns with their indices
+    for (row_idx, row) in masks.iter().enumerate() {
+        for (col_idx, mask_ref) in row.iter().enumerate() {
+            // `mask_ref` has the type `&&Option<RectMask>`
+            // we pattern‑match on a reference to the `Option`
+            if let &Some(ref rect) = mask_ref {
+                // `rect` is now a `&RectMask`
+                if x >= rect.x && x <= rect.x + rect.w &&
+                   y >= rect.y && y <= rect.y + rect.h {
+                    result.push((row_idx, col_idx));
+                }
+            }
+        }
+    }
+
+    result
+}
+
+/// Return all indices of the masks that contain the point `(x, y)`.
+///
+/// * `masks` – a 2‑d vector: `masks[row][col]` is a reference to an
+///   optional rectangle mask.
+/// * `xlist` – indices sorted by the left side (`mask.x`) in ascending order.
+/// * `max_width` – maximum width any mask can have.
+///
+/// The caller builds `xlist` once (it is a `Vec<(usize, usize)>`).
+pub fn search_intersects_b_2d(
+    masks: &Vec<&Vec<Option<RectMask>>>,
+    xlist: &Vec<(usize, usize)>,
+    x: f64,
+    y: f64,
+    max_width: f64,
+) -> Vec<(usize, usize)> {
+    let mut res = Vec::new();
+
+    if xlist.is_empty() {
+        return res;
+    }
+
+    /* ---------- 1. find insertion point of the first mask with left > x ---------- */
+    let pos = match xlist.binary_search_by(|&(r, c)| {
+        // comparison returns Ordering::Less when the mask’s left side is <= x
+        // (so the insertion point is after all such masks).
+        let mask_opt = &masks[r][c];
+        match mask_opt {
+            Some(mask) => {
+                if mask.x <= x {
+                    Ordering::Less
+                } else {
+                    Ordering::Greater
+                }
+            }
+            None => Ordering::Greater, // treat `None` as > x
+        }
+    }) {
+        Ok(i) => i + 1,   // exact match → go to the right
+        Err(i) => i,       // insertion point
+    };
+
+    // nothing has left side <= x → nothing can intersect
+    if pos == 0 {
+        return res;
+    }
+
+    /* ---------- 2. walk leftwards and test each candidate ---------- */
+    let start_idx = pos - 1; // last index whose left side ≤ x
+
+    for idx in (0..=start_idx).rev() {
+        let (r, c) = xlist[idx];
+        let mask_opt = &masks[r][c];
+
+        // stop as soon as we are too far left
+        if let Some(mask) = mask_opt {
+            if mask.x < x - max_width {
+                break;
+            }
+
+            // point must be inside the rectangle
+            if x <= mask.x + mask.w && y >= mask.y && y <= mask.y + mask.h {
+                res.push((r, c));
+            }
+        }
+    }
+
+    res
+}
+
+/// Generate `count` random masks that all fit inside
+/// a bounding box of size `whole_width × whole_height`.
+///
+/// # Panics
+/// The function will `panic!` if the requested window size is larger than the
+/// whole area – in that situation there is simply no valid placement.
+pub fn gen_random_masks(
+    whole_width: f64,
+    whole_height: f64,
+    count: usize,
+    window_width: f64,
+    window_height: f64,
+) -> Vec<RectMask> {
+    // The rectangle must be able to fit – otherwise nothing can be placed.
+    assert!(
+        window_width <= whole_width && window_height <= whole_height,
+        "Window size must be <= whole size"
+    );
+
+    // Uniform distributions for x and y.  They are *inclusive* so that 0 and
+    // the maximum allowed coordinates are possible.
+    let x_rng = Uniform::new_inclusive(0.0, whole_width - window_width).unwrap();
+    let y_rng = Uniform::new_inclusive(0.0, whole_height - window_height).unwrap();
+
+    let mut rng = rng();
+    let mut masks = Vec::with_capacity(count);
+
+    for _ in 0..count {
+        let x = x_rng.sample(&mut rng);
+        let y = y_rng.sample(&mut rng);
+
+        masks.push(RectMask {
+            w: window_width,
+            h: window_height,
+            x,
+            y,
+        });
+    }
+
+    masks
+}
+
+/// get bounding rect from elem id
+pub fn get_bounding_from_id(elem_id: &str) -> Option<ParsedDomRect> {
     let target = window()
         .unwrap()
         .document()
@@ -398,13 +550,11 @@ fn get_bounding_from_id(elem_id: &str) -> Option<ParsedDomRect> {
     })
 }
 
-#[derive(PartialEq, Clone, Copy, Debug)]
-enum GameStage {
+#[derive(PartialEq, Clone, Copy, Debug, PartialOrd)]
+pub enum GameStage {
     ArticleView,
-    ArticleHidden,
+    ArticleFading,
     ForecastStart,
-    ElectionStart,
-    Cleanup,
 }
 
 #[component]
@@ -455,39 +605,74 @@ fn App() -> Html {
         return h;
     });
 
-    // ;; transition condition ;;       ;; function name ;;    ;; description ;;                      ;; GameStage ;;
-    //                               => input_hide_article     (watch mouse input, current article    | ArticleView
-    //                                                         starts to fade away)                   |
+    // ## legend
+    // transition condition => prominent function name (function desctiption) GameStage
     //
-    // (counter_hide_article filled) => advance_hide_article   (fading continues and cannot go back)  | ArticleHidden
+    // ## desctiptions
+    // clickevt_fade_article => noop (just changing className) ArticleFading
     //
-    // (timer)                       => advance_show_forecasts (several "forecasts" are created and   | ForecastStart
-    //                                                          show up; can be parallel with         |
-    //                                                          advance_hide_article)                 |
+    // timer => input_election, advance_show_forecasts (several "forecasts" are created and show up)
+    // ForecastStart
     //
-    // (timer)                       => input_election         (player chooses which article to       | ElectionStart
-    //                                                          go next)                              |
-    //
-    // (when a mask gets big enough) => advance_elect_article  (election completed; remove            | Cleanup
-    //                                                          all forecasts; the biggest forecast   |
-    //                                                          will be copied into current_article)  |
+    // when a mask gets big enough => advance_elect_article (election completed; remove
+    // all forecasts; the biggest forecast will be copied into current_article)
+
+    // Game stage
     let game_stage = use_state(|| GameStage::ArticleView);
+
+    // Game State change history with elapsed time
     let transition_history: UseStateHandle<Vec<(f64, GameStage)>> =
         use_state(|| vec![(0.0, GameStage::ArticleView)]);
 
-    let advance_hide_article: Callback<MouseEvent> =
+    // transit ArticleView -> ArticleFading instantly
+    let clickevt_fade_article: Callback<MouseEvent> =
         use_callback((game_stage.clone()), |_, (game_stage)| {
-            game_stage.set(GameStage::ArticleHidden);
+            if **game_stage == GameStage::ArticleView {
+                game_stage.set(GameStage::ArticleFading);
+            }
         });
 
+    // when forecasts change, if there are no masks, try generate initial masks. if the metrics
+    // aren't filled yet, do nothing for the article.
+    use_effect_with(forecasts.clone(), |forecasts| {
+        let next_forecasts = forecasts
+            .iter()
+            .map(|x| {
+                if let Some(article) = x {
+                    if article.w.is_some()
+                        && article.h.is_some()
+                        && article.masks.iter().all(|x| x.is_none())
+                    {
+                        let n =
+                            (article.w.unwrap() * article.h.unwrap() / 5445.0).max(10.0) as usize;
+                        let mut next_article = article.clone();
+                        next_article.masks =
+                            gen_random_masks(article.w.unwrap(), article.h.unwrap(), n, 40.0, 40.0)
+                                .into_iter()
+                                .map(|x| Some(x))
+                                .collect::<Vec<_>>();
+
+                        console::log_1(&format!("{:?}", &next_article.masks).into());
+
+                        return Some(next_article);
+                    }
+                }
+                return x.clone();
+            })
+            .collect::<Vec<_>>();
+        forecasts.set(next_forecasts);
+    });
+
+    // transit ArticleFading -> ForecastStart instantly;
     let advance_show_forecasts = use_callback(
         (
             current_article.clone(),
             done_titles.clone(),
             all_titles.clone(),
             counter_keygen.clone(),
+            forecasts.clone(),
         ),
-        move |(), (current_article, done_titles, all_titles, counter)| {
+        move |(), (current_article, done_titles, all_titles, counter, forecasts)| {
             let done_titles_ref = (**done_titles).clone();
             let all_titles_ref = (**all_titles).clone();
             let availiable_titles = get_availiable_titles(&done_titles_ref, &all_titles_ref);
@@ -501,47 +686,42 @@ fn App() -> Html {
 
             let days_skip: u32 = random_range(3..25);
 
-            let chosen = availiable_titles
-                .iter()
-                .collect::<Vec<_>>()
-                .choose(&mut rng)
-                .expect("titles.json contained no titles")
-                .as_str();
+            let sample_size = availiable_titles.len().min(3);
+
+            if sample_size == 0 {
+                return;
+            } // TODO: implement the game ending
 
             let template = &current_article.as_ref().unwrap().template;
 
-            let ht = ArticleTemplate {
-                title: chosen.to_string(),
-                mood: template.mood.clone(),
-                meta: template.meta.clone(),
-                date: Box::new(template.date.clone().after(days_skip).move_origin()),
-            };
+            let chosen = availiable_titles
+                .iter()
+                .collect::<Vec<_>>()
+                .sample(&mut rng, sample_size)
+                .map(|&x| {
+                    let t = ArticleTemplate {
+                        title: x.clone(),
+                        mood: template.mood.clone(),
+                        meta: template.meta.clone(),
+                        date: Box::new(template.date.clone().after(days_skip).move_origin()),
+                    };
+                    Some(Article {
+                        template: t,
+                        w: Some(1000.0),
+                        h: None,
+                        x: 30.0,
+                        y: 30.0,
+                        masks: Vec::new(),
+                    })
+                })
+                .collect::<Vec<_>>();
 
-            current_article.set(Some(Article {
-                template: ht,
-                w: Some(1000.0),
-                h: None,
-                x: 30.0,
-                y: 30.0,
-                masks: Vec::new(),
-            }));
-            let mut dt = done_titles_ref.clone();
-            dt.insert(chosen.to_string());
-            done_titles.set(dt);
-
-            //            if fonts.is_some() {
-            //                let data = fonts.as_ref().unwrap().get("GenEiKoburiMin6-R").unwrap();
-            //                let face = rustybuzz::Face::from_slice(data, 0).unwrap();
-            //                let mut buf = UnicodeBuffer::new();
-            //                buf.push_str("ああああああabcあいいabllm感じ感じ");
-            //                let result = shape(&face, &[], buf);
-            //                message.set(format!("{:?}", result));
-            //            }
+            forecasts.set(chosen);
         },
     );
 
-    let advance_elect_article = use_callback((), move |(), ()| {});
-
+    // ticking funciton. Most of the "timeout" funcitons and the watching funcitons for GameStage
+    // should be put here.
     let clock_callback = use_callback(
         (
             transition_history.clone(),
@@ -557,11 +737,12 @@ fn App() -> Html {
                 return;
             }
 
-            if **game_stage == GameStage::ArticleHidden
+            if **game_stage == GameStage::ArticleFading
                 && culmative - transition_history.last().unwrap().0 > 10.0
+                && **game_stage != GameStage::ForecastStart
             {
-                game_stage.set(GameStage::ForecastStart);
                 advance_show_forecasts.emit(());
+                game_stage.set(GameStage::ForecastStart);
                 return;
             }
 
@@ -569,25 +750,7 @@ fn App() -> Html {
         },
     );
 
-    //    use_effect_with((), move |_| {
-    //        let fontname = "GenEiKoburiMin6-R";
-    //        let font_url = "assets/".to_string() + fontname + ".ttf";
-    //        if fonts.is_none() {
-    //            wasm_bindgen_futures::spawn_local(async move {
-    //                let data = Request::get(&font_url)
-    //                    .send()
-    //                    .await
-    //                    .unwrap()
-    //                    .binary()
-    //                    .await
-    //                    .unwrap();
-    //                let mut new_hash = HashMap::new();
-    //                new_hash.insert(fontname.to_string(), data);
-    //                fonts.set(Some(new_hash));
-    //            });
-    //        }
-    //    });
-    //
+    // obtain the article text data
     let data_table: Rc<Vec<Option<(bool, HashMap<String, String>, usize)>>> =
         use_memo((current_article.clone(), forecasts.clone()), |(ca, fc)| {
             let mut arr: Vec<Option<(bool, HashMap<String, String>, usize)>> = Vec::new();
@@ -598,7 +761,7 @@ fn App() -> Html {
                                idx: usize| {
                 let dt = make_data_table(target.unwrap().template.clone().render().unwrap());
 
-                arr.push(Some((is_current_article, dt, 0)))
+                arr.push(Some((is_current_article, dt, idx)))
             };
 
             if ca.is_some() {
@@ -617,6 +780,7 @@ fn App() -> Html {
             arr
         });
 
+    // get article id
     let gen_article_id = |counter: u32, idx: usize, is_current: bool| {
         if is_current {
             format!("article-{}-current", counter)
@@ -625,8 +789,13 @@ fn App() -> Html {
         }
     };
 
+    // "upgrade" Article structure. If there are width/height field that are not filled yet, try
+    // invoking getBoundingClientRect API and fetch the metrics.
     let upgrade_plan: UseStateHandle<Vec<(bool, usize, (f64, f64))>> = use_state(|| Vec::new());
 
+    // invokes getBoundingClientRect for each elements with unfetched metrics. Also, if there are
+    // any inconsistencies between the component state and the actual rendered DOM, then query
+    // re-fetching through some Timeout.
     let upgrade_plan_check = use_callback::<bool, _, _, _>(
         (
             current_article.clone(),
@@ -690,6 +859,7 @@ fn App() -> Html {
         },
     );
 
+    // Apply fetched upgrade plan to the component state.
     {
         let current_article = current_article.clone();
         let forecasts = forecasts.clone();
@@ -722,41 +892,59 @@ fn App() -> Html {
         });
     }
 
-    let gen_article_style = |is_current_article, data, article_ref: Option<&Article>| {
-        if let Some(article_ref) = article_ref {
-            let mut style = "".to_string();
-            if let Some(w) = article_ref.w {
-                style += &format!("width: {:.4}px;", w);
+    // get style attr for each article.
+    let gen_article_style =
+        |is_current_article: bool, data, article_ref: Option<&Article>, idx: usize| {
+            if let Some(article_ref) = article_ref {
+                let mut style = "".to_string();
+                if let Some(w) = article_ref.w {
+                    style += &format!("width: {:.4}px;", w);
+                } else {
+                    style += "width: auto;"
+                }
+                if let Some(h) = article_ref.h {
+                    style += &format!("height: {:.4}px;", h);
+                } else {
+                    style += "height: auto;"
+                }
+                style += "position: absolute;";
+                style += &format!("top: {:.4}px;", article_ref.y);
+                style += &format!("left: {:.4}px;", article_ref.x);
+                if !is_current_article {
+                    style += &format!(
+                        "mask: url(\"#{}-mask\");",
+                        gen_article_id(*counter_keygen, idx, is_current_article)
+                    );
+                }
+                return style;
             } else {
-                style += "width: auto;"
+                return "display: none;".to_string();
             }
-            if let Some(h) = article_ref.h {
-                style += &format!("height: {:.4}px;", h);
-            } else {
-                style += "height: auto;"
-            }
-            style += "position: absolute;";
-            style += &format!("top: {:.4}px;", article_ref.y);
-            style += &format!("left: {:.4}px;", article_ref.x);
-            return style;
-        } else {
-            return "display: none;".to_string();
-        }
-    };
+        };
 
+    // gen class attr for each article
     let gen_article_class = |is_current_article, data, article_ref: Option<&Article>| {
         let mut classes = Vec::new();
         classes.push("article".to_string());
-        if (is_current_article) {
+        if is_current_article {
             classes.push("current-article".to_string());
         } else {
             classes.push("forecast".to_string());
         }
+        if is_current_article {
+            if GameStage::ArticleView <= *game_stage && *game_stage <= GameStage::ArticleFading {
+                classes.push("visible".to_string());
+                if *game_stage == GameStage::ArticleFading {
+                    classes.push("fading".to_string());
+                }
+            } else {
+                classes.push("hidden".to_string());
+            }
+        }
         return classes.join(" ");
     };
 
-    // temp0.getBoundingClientRect()
-
+    // virtual dom for articles.
     let html_articles: Vec<_> = data_table
         .iter()
         .filter(|x| x.is_some())
@@ -773,54 +961,84 @@ fn App() -> Html {
 
             let elem_id = gen_article_id(*counter_keygen, *idx, *is_current);
 
+            if article_ref.is_none() { return html!(<></>) };
+
             html! {
-                <div class={gen_article_class(*is_current, data, article_ref)} id={elem_id.clone()} key={elem_id.clone()} style={gen_article_style(*is_current, data, article_ref)}>
-                    <span>
-                    { article_ref.unwrap().template.date.year.to_string()} {"年"}
-                    { article_ref.unwrap().template.date.month.to_string() } {"月"}
-                    { article_ref.unwrap().template.date.day.to_string()} {"日"}
-                    </span>
-                    if data.get("title").is_some() {
-                    <h1>
-                    {
-                        data.get("title").unwrap()
-                    }
-                    </h1>
-                    }
-                    if data.get("text").is_some() {
-                    <div>
-                    {
-                        md(data.get("text").unwrap().clone())
-                    }
-                    </div>
-                    }
-                    if data.get("images").is_some() {
-                    <div>
-                    {
-                        md(data.get("images").unwrap().clone())
-                    }
-                    </div>
-                    }
-                    if data.get("image_caption").is_some() {
-                    <div>
-                    {
-                        md(data.get("image_caption").unwrap().clone())
-                    }
-                    </div>
-                    }
-                    <button onclick={advance_hide_article.clone()}>{"読み続ける"}</button>
-                </div>
+<>
+    <svg height="0" xmlns="http://www.w3.org/2000/svg">
+        <mask id={elem_id.clone() + "-mask"} mask-type="alpha">
+            for (i, x) in article_ref.unwrap().masks.clone().into_iter().enumerate() {
+                if let Some(x) = x {
+                    <rect key={i} x={format!("{:.4}", x.x)} y={format!("{:.4}", x.y)} width={format!("{:.4}", x.w)} height={format!("{:.4}", x.h)} fill="white" />
+                }
+            }
+        </mask>
+    </svg>
+    <div class={gen_article_class(*is_current, data, article_ref)} id={elem_id.clone()} key={elem_id.clone()} style={gen_article_style(*is_current, data, article_ref, *idx)}>
+        <span>
+        { article_ref.unwrap().template.date.year.to_string()} {"年"}
+        { article_ref.unwrap().template.date.month.to_string() } {"月"}
+        { article_ref.unwrap().template.date.day.to_string()} {"日"}
+        </span>
+        if data.get("title").is_some() {
+        <h1>
+        {
+            data.get("title").unwrap()
+        }
+        </h1>
+        }
+        if data.get("images").is_some() {
+        <div>
+        {
+            md(data.get("images").unwrap().clone())
+        }
+        </div>
+        }
+        if data.get("image_caption_work_title").is_some() {
+        <div>
+        {
+            md(data.get("image_caption_work_title").unwrap().clone())
+        }
+        </div>
+        }
+        if data.get("image_caption").is_some() {
+        <div>
+        {
+            md(data.get("image_caption").unwrap().clone())
+        }
+        </div>
+        }
+        if data.get("text").is_some() {
+        <div>
+        {
+            md(data.get("text").unwrap().clone())
+        }
+        </div>
+        }
+        <button onclick={clickevt_fade_article.clone()}>{"読み続ける"}</button>
+    </div>
+</>
             }
         })
         .collect();
 
+    // the final virtual dom
     html! {
-        <div class="app-wrapper">
-            {html_articles}
+    <div class="app-wrapper">
+        {html_articles}
 
-            <RenderWatchComponent render_number={*render_number} callback={upgrade_plan_check}><></></RenderWatchComponent>
-            <ClockComponent callback={clock_callback} interval={42} />
-        </div>
+        <RenderWatchComponent render_number={*render_number} callback={upgrade_plan_check}><></></RenderWatchComponent>
+        <ClockComponent callback={clock_callback} interval={42} />
+        <svg height="0" xmlns="http://www.w3.org/2000/svg">
+            <filter id="forecast-filter">
+                <feComponentTransfer>
+                    <feFuncR type="gamma" amplitude="3" exponent="9" offset="0"></feFuncR>
+                    <feFuncG type="gamma" amplitude="3" exponent="9" offset="0"></feFuncG>
+                    <feFuncB type="gamma" amplitude="3" exponent="9" offset="0"></feFuncB>
+                </feComponentTransfer>
+            </filter>
+        </svg>
+    </div>
     }
 }
 
@@ -917,3 +1135,12 @@ impl Component for ClockComponent {
 fn main() {
     yew::Renderer::<App>::new().render();
 }
+
+
+
+
+
+
+
+
+
