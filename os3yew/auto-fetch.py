@@ -49,7 +49,7 @@ def gen_files(notes: List[Tuple[str, str, str]], dimensions: dict[str, list[int]
 
     list_titles = []
 
-    for note_title, note_body, note_id in notes:
+    for note_title, note_body, note_id in sorted(notes, key=lambda x: x[0]):
         if note_title.startswith('!!!'):
             continue
 
@@ -86,7 +86,7 @@ def gen_files(notes: List[Tuple[str, str, str]], dimensions: dict[str, list[int]
             f.write(text_combined)
     
     with open(os.path.join(assets_dir_metadata, 'titles.json'), 'w') as f:
-        json.dump(list_titles, f, indent=4, ensure_ascii=False, sort_keys=True)
+        json.dump(sorted(list_titles), f, indent=4, ensure_ascii=False, sort_keys=True)
 
 def exif_corrected(img: Image.Image) -> Image.Image:
     """
