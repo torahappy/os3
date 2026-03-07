@@ -326,7 +326,7 @@ pub fn search_intersects_limit(
         if let Some(ref mask) = masks[row][col] {
             // Check if the point lies inside the rectangle.
             // Left/top edges are inclusive, right/bottom are exclusive.
-            if x >= mask.x && x <= mask.x + mask.w && y >= mask.y && y <= mask.y + mask.h {
+            if mask.contains(&RectMask { w: 0.0, h: 0.0, x, y }) {
                 hits.push((row, col));
             }
         }
@@ -395,7 +395,7 @@ pub fn search_intersects_b_2d(
             }
 
             // point must be inside the rectangle
-            if x <= mask.x + mask.w && y >= mask.y && y <= mask.y + mask.h {
+            if mask.contains(&RectMask { w: 0.0, h: 0.0, x, y }) {
                 res.push((r, c));
             }
         }
