@@ -140,9 +140,7 @@ impl RectMask {
     }
 }
 
-/// One node of a quadtree.  `T` is the *index* type – for your
-/// application it will be `(usize, usize)`, but any type that can be
-/// cloned works.
+/// One node of a quadtree.  `T` is the data type (usually reference ID) associated with each boxes.
 #[derive(Clone, Debug, PartialEq)]
 pub struct QuadNode<T: Clone> {
     /// Bounding rectangle that encloses everything stored in this node
@@ -208,11 +206,16 @@ impl<T: Clone> QuadNode<T> {
         // Move all current items into the children
         for (idx, rect) in self.items.drain(..) {
             // Find the child that can fully contain this rectangle
-            let child_idx = children
-                .iter_mut()
-                .position(|c| c.bounds.intersects(&rect))
-                .expect("Rect cannot be contained by any child – should never happen");
-            children[child_idx].items.push((idx, rect));
+            let intersect_indices = children
+                .iter()
+                .enumerate()
+                .filter(|(_, c)| c.bounds.intersects(&rect))
+                .map(|x|x.0)
+                .collect::<Vec<_>>();
+            assert!(intersect_indices.len() > 0, "Rect cannot be intersected by any child – should never happen");
+            for child_idx in intersect_indices {
+                children[child_idx].items.push((idx.clone(), rect.clone()));
+            }
         }
 
         self.children = Some(Box::new(children));
@@ -222,11 +225,16 @@ impl<T: Clone> QuadNode<T> {
     pub fn insert(&mut self, idx: T, rect: RectMask, max_items: usize) {
         if let Some(children) = &mut self.children {
             // node already split – forward to the child that can hold the rect
-            let child_idx = children
-                .iter_mut()
-                .position(|c| c.bounds.intersects(&rect))
-                .expect("Rect cannot be contained by any child – should never happen");
-            children[child_idx].insert(idx, rect, max_items);
+            let intersect_indices = children
+                .iter()
+                .enumerate()
+                .filter(|(_, c)| c.bounds.intersects(&rect))
+                .map(|x|x.0)
+                .collect::<Vec<_>>();
+            assert!(intersect_indices.len() > 0, "Rect cannot be intersected by any child – should never happen");
+            for child_idx in intersect_indices {
+                children[child_idx].items.push((idx.clone(), rect.clone()));
+            }
             return;
         }
 
@@ -239,6 +247,8 @@ impl<T: Clone> QuadNode<T> {
 
     /// Return all items that intersect `rect` (including the ones stored
     /// in child nodes).  The result is appended to `out`.
+    /// Please note that if the rectangle touches boundaries, 
+    /// the returned data (T) might be duplicated.
     pub fn query(&self, rect: &RectMask, out: &mut Vec<(T, RectMask)>) {
         // if node's own bounds do not intersect – no point to look further
         if !self.bounds.intersects(rect) {
@@ -516,11 +526,7 @@ pub fn search_intersects_btreemap(
 
 #[cfg(test)]
 mod tests_rectmask {
-    use ordered_float::OrderedFloat;
-
-    use crate::util::{search_intersects_b_2d, search_intersects_limit};
-
-    use super::{QuadNode, RectMask};
+    use super::{RectMask};
 
     // ------------------------------------------------------------------
     // Helper to create a rectangle – keeps the tests readable
@@ -1032,7 +1038,7 @@ mod tests_simple_range {
             );
             let b2d_hits = search_intersects_b_2d(&masks, &xlist, x, y, 20.0);
 
-            // The two results must contain exactly the same set of indices
+            // All the results must be exactly the same set of indices
             let h1 = limit_hits
                 .iter()
                 .copied()

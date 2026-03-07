@@ -2,27 +2,20 @@
 
 mod data;
 
-use crate::data::util::*;
 use crate::data::*;
 use askama::Template;
-use gloo_timers::callback::Timeout;
 use os3yew::{
     components::{ClockComponent, RenderWatchComponent},
     util::*,
 };
-use rand::{
-    distr::{Distribution, Uniform},
-    random_range, rng,
-    seq::IndexedRandom,
-};
+use rand::{random_range, seq::IndexedRandom};
+use web_sys::console;
 // use rustybuzz::{UnicodeBuffer, shape};
 use std::{
-    cmp::Ordering,
     collections::{HashMap, HashSet},
     hash::RandomState,
     rc::Rc,
 };
-use web_sys::{console, window};
 use yew::{Html, prelude::*};
 
 pub fn get_availiable_titles(
@@ -116,8 +109,8 @@ fn App() -> Html {
         use_state(|| vec![(0.0, GameStage::ArticleView)]);
 
     // transit ArticleView -> ArticleFading instantly
-    let clickevt_fade_article: Callback<MouseEvent> =
-        use_callback((game_stage.clone()), |_, (game_stage)| {
+    let click_evt_fade_article: Callback<MouseEvent> =
+        use_callback(game_stage.clone(), |_, game_stage| {
             if **game_stage == GameStage::ArticleView {
                 game_stage.set(GameStage::ArticleFading);
             }
@@ -172,18 +165,42 @@ fn App() -> Html {
                 for (i, a) in forecasts.iter().enumerate() {
                     if let Some(a) = a {
                         for (j, x) in a.masks.iter().enumerate() {
-                            if let Some(x) = x {
-                                quad_data.insert((i, j), x.clone(), 4);
+                            if let Some(r) = x {
+                                let mut r_clone = r.clone();
+                                r_clone.x += a.x;
+                                r_clone.y += a.y;
+                                quad_data.insert((i, j), r_clone, 4);
                             }
                         }
                     }
                 }
 
                 precalc_for_rects.set(Some(quad_data));
+                forecasts.set(next_forecasts);
             }
-            forecasts.set(next_forecasts);
         },
     );
+
+    let to_be_enlarged: UseStateHandle<Option<(usize, usize)>> = use_state(|| None);
+
+    let mouse_move_evt = {
+        let precalc_for_rects = precalc_for_rects.clone();
+        let to_be_enlarged = to_be_enlarged.clone();
+        Callback::from(move |me: MouseEvent| {
+            let x = me.page_x();
+            let y = me.page_y();
+            if let Some(precalc_for_rects) = precalc_for_rects.as_ref() {
+                let mut r = vec![];
+                precalc_for_rects.query(&RectMask::new(x as f64, y as f64, 1.0, 1.0), &mut r);
+                let mut cands = r.iter().map(|x| &x.0).collect::<Vec<_>>();
+                cands.sort(); // TODO: use more funny selection algo
+
+                let t = cands.get(0).map(|&x| x.clone());
+                console::log_1(&format!("{:?}", t).into());
+                to_be_enlarged.set(t);
+            }
+        })
+    };
 
     // transit ArticleFading -> ForecastStart instantly;
     let advance_show_forecasts = use_callback(
@@ -242,6 +259,8 @@ fn App() -> Html {
         },
     );
 
+    let to_be_enlarged_size_mod = use_state(|| 0.0 as f64);
+
     // ticking funciton. Most of the "timeout" funcitons and the watching funcitons for GameStage
     // should be put here.
     let clock_callback = use_callback(
@@ -249,8 +268,10 @@ fn App() -> Html {
             transition_history.clone(),
             game_stage.clone(),
             advance_show_forecasts.clone(),
+            to_be_enlarged.clone(),
+            to_be_enlarged_size_mod.clone(),
         ),
-        |(delta, culmative), (transition_history, game_stage, advance_show_forecasts)| {
+        |(delta, culmative), (transition_history, game_stage, advance_show_forecasts, to_be_enlarged, to_be_enlarged_size_mod)| {
             let last_gs = transition_history.last().unwrap().1;
             if **game_stage != last_gs {
                 let mut new_th = (**transition_history).clone();
@@ -268,7 +289,12 @@ fn App() -> Html {
                 return;
             }
 
-            console::log_1(&format!("{:?}", &**transition_history).into());
+            if **game_stage == GameStage::ForecastStart {
+                if to_be_enlarged.is_some() {
+                    // TODO: use ease curve??
+                    to_be_enlarged_size_mod.set(**to_be_enlarged_size_mod + delta * 20.);
+                }
+            }
         },
     );
 
@@ -326,8 +352,7 @@ fn App() -> Html {
             upgrade_plan.clone(),
             render_number.clone(),
         ),
-        move |(first_render),
-              (current_article, forecasts, counter, upgrade_plan_in, render_number)| {
+        move |_, (current_article, forecasts, counter, upgrade_plan_in, render_number)| {
             let mut all_articles = vec![(current_article.as_ref(), 0, true)];
             all_articles.append(
                 &mut forecasts
@@ -336,7 +361,7 @@ fn App() -> Html {
                     .map(|(i, x)| (x.as_ref(), i, false))
                     .collect(),
             );
-            let no_need_upgrade = all_articles.iter().all(|(a, i, is_current)| {
+            let no_need_upgrade = all_articles.iter().all(|(a, _, _)| {
                 if let Some(a) = a {
                     if a.w.is_some() && a.h.is_some() {
                         true
@@ -354,7 +379,6 @@ fn App() -> Html {
                     .map(|(a, i, is_current)| {
                         if a.is_some() {
                             let elem_id = gen_article_id(**counter, *i, *is_current);
-                            console::log_1(&format!("{}", elem_id).into());
                             let rect = get_bounding_from_id(&elem_id);
                             if let Some(rect) = rect {
                                 Some((*is_current, *i, (rect.width, rect.height)))
@@ -370,8 +394,6 @@ fn App() -> Html {
             } else {
                 Vec::new()
             };
-
-            console::log_1(&format!("{:?} {:?}", upgrade_plan, no_need_upgrade).into());
 
             if not_yet_rendered {
                 render_number.set(**render_number + 1);
@@ -416,7 +438,7 @@ fn App() -> Html {
 
     // get style attr for each article.
     let gen_article_style =
-        |is_current_article: bool, data, article_ref: Option<&Article>, idx: usize| {
+        |is_current_article: bool, _, article_ref: Option<&Article>, idx: usize| {
             if let Some(article_ref) = article_ref {
                 let mut style = "".to_string();
                 if let Some(w) = article_ref.w {
@@ -445,7 +467,7 @@ fn App() -> Html {
         };
 
     // gen class attr for each article
-    let gen_article_class = |is_current_article, data, article_ref: Option<&Article>| {
+    let gen_article_class = |is_current_article, _, _: Option<&Article>| {
         let mut classes = Vec::new();
         classes.push("article".to_string());
         if is_current_article {
@@ -465,17 +487,6 @@ fn App() -> Html {
         }
         return classes.join(" ");
     };
-
-    let mouse_move_evt = use_callback((precalc_for_rects.clone()), |me: MouseEvent, precalc_for_rects| {
-        let x = me.x();
-        let y = me.y();
-        if let Some(precalc_for_rects) = precalc_for_rects.as_ref() {
-            console::log_1(&format!("aaaaaa").into());
-            let mut r = vec![];
-            precalc_for_rects.query(&RectMask::new(x as f64, y as f64, 1.0, 1.0), &mut r);
-            console::log_1(&format!("{:?}", r).into());
-        }
-    });
 
     // virtual dom for articles.
     let html_articles: Vec<_> = data_table
@@ -500,10 +511,17 @@ fn App() -> Html {
 <>
     <svg height="0" xmlns="http://www.w3.org/2000/svg">
         <mask id={elem_id.clone() + "-mask"} mask-type="alpha">
-            for (i, x) in article_ref.unwrap().masks.clone().into_iter().enumerate() {
-                if let Some(x) = x {
-                    <rect key={i} x={format!("{:.4}", x.x)} y={format!("{:.4}", x.y)} width={format!("{:.4}", x.w)} height={format!("{:.4}", x.h)} fill="white" />
+            for (i, r) in article_ref.unwrap().masks.clone().into_iter().filter_map(|x|x).enumerate().map(|(i, r)| {
+                let mut r = r.clone();
+                if *to_be_enlarged == Some((*idx, i)) {
+                    r.x -= *to_be_enlarged_size_mod / 2.;
+                    r.y -= *to_be_enlarged_size_mod / 2.;
+                    r.w += *to_be_enlarged_size_mod;
+                    r.h += *to_be_enlarged_size_mod;
                 }
+                (i, r)
+            }) {
+                <rect key={i} x={format!("{:.4}", r.x)} y={format!("{:.4}", r.y)} width={format!("{:.4}", r.w)} height={format!("{:.4}", r.h)} fill="white" />
             }
         </mask>
     </svg>
@@ -548,31 +566,34 @@ fn App() -> Html {
         }
         </div>
         }
-        <button onclick={clickevt_fade_article.clone()}>{"読み続ける"}</button>
+        <button onclick={click_evt_fade_article.clone()}>{"読み続ける"}</button>
     </div>
 </>
             }
         })
         .collect();
 
-
     // the final virtual dom
     html! {
-    <div class="app-wrapper" onmousemove={mouse_move_evt}>
-        {html_articles}
-
-        <RenderWatchComponent render_number={*render_number} callback={upgrade_plan_check}><></></RenderWatchComponent>
-        <ClockComponent callback={clock_callback} interval={42} />
-        <svg height="0" xmlns="http://www.w3.org/2000/svg">
-            <filter id="forecast-filter">
-                <feComponentTransfer>
-                    <feFuncR type="gamma" amplitude="3" exponent="9" offset="0"></feFuncR>
-                    <feFuncG type="gamma" amplitude="3" exponent="9" offset="0"></feFuncG>
-                    <feFuncB type="gamma" amplitude="3" exponent="9" offset="0"></feFuncB>
-                </feComponentTransfer>
-            </filter>
-        </svg>
-    </div>
+        <>
+        if *game_stage >= GameStage::ForecastStart {
+            <div id="mouse-evt-overlay" onmousemove={mouse_move_evt}></div>
+        }
+        <div class="app-wrapper">
+            {html_articles}
+            <RenderWatchComponent render_number={*render_number} callback={upgrade_plan_check}><></></RenderWatchComponent>
+            <ClockComponent callback={clock_callback} interval={42} />
+            <svg height="0" xmlns="http://www.w3.org/2000/svg">
+                <filter id="forecast-filter">
+                    <feComponentTransfer>
+                        <feFuncR type="gamma" amplitude="3" exponent="9" offset="0"></feFuncR>
+                        <feFuncG type="gamma" amplitude="3" exponent="9" offset="0"></feFuncG>
+                        <feFuncB type="gamma" amplitude="3" exponent="9" offset="0"></feFuncB>
+                    </feComponentTransfer>
+                </filter>
+            </svg>
+        </div>
+        </>
     }
 }
 
