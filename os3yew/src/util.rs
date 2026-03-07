@@ -1,9 +1,12 @@
 use comrak::{Options, markdown_to_html, options::Render};
+use ordered_float::OrderedFloat;
 use rand::distr::Distribution;
 use rand::distr::Uniform;
 use rand::rng;
 use regex::Regex;
 use std::cmp::Ordering;
+use std::collections::BTreeMap;
+use std::ops::Bound::Included;
 use web_sys::window;
 // use rustybuzz::{UnicodeBuffer, shape};
 use std::collections::HashMap;
@@ -326,7 +329,12 @@ pub fn search_intersects_limit(
         if let Some(ref mask) = masks[row][col] {
             // Check if the point lies inside the rectangle.
             // Left/top edges are inclusive, right/bottom are exclusive.
-            if mask.contains(&RectMask { w: 0.0, h: 0.0, x, y }) {
+            if mask.contains(&RectMask {
+                w: 0.0,
+                h: 0.0,
+                x,
+                y,
+            }) {
                 hits.push((row, col));
             }
         }
@@ -395,13 +403,75 @@ pub fn search_intersects_b_2d(
             }
 
             // point must be inside the rectangle
-            if mask.contains(&RectMask { w: 0.0, h: 0.0, x, y }) {
+            if mask.contains(&RectMask {
+                w: 0.0,
+                h: 0.0,
+                x,
+                y,
+            }) {
                 res.push((r, c));
             }
         }
     }
 
     res
+}
+
+/// Build a BTreeMap that maps an x–coordinate → a vector of (row,col) indices
+/// where a rectangle exists.  The map is sorted by x so that we can fetch
+/// a contiguous range in O(log N) time.
+pub fn gen_btreemap(
+    masks: &Vec<&Vec<Option<RectMask>>>,
+) -> BTreeMap<OrderedFloat<f64>, Vec<(usize, usize)>> {
+    let mut btree: BTreeMap<OrderedFloat<f64>, Vec<(usize, usize)>> = BTreeMap::new();
+
+    for (i, a) in masks.iter().enumerate() {
+        for (j, b) in a.iter().enumerate() {
+            if let Some(b) = b {
+                if btree.contains_key(&b.x.into()) {
+                    let a = btree.get_mut(&b.x.into()).unwrap();
+                    a.push((i, j));
+                } else {
+                    btree.insert(b.x.into(), vec![(i, j)]);
+                }
+            }
+        }
+    }
+    return btree;
+}
+
+/// Find all rectangles that intersect a query rectangle defined by
+/// (x, y, max_width, max_width).  The search is limited to the x‑range
+/// `[x, x + max_width]` using the BTreeMap, and an additional quick
+/// y‑filter is applied before the expensive `intersects` call.
+pub fn search_intersects_btreemap(
+    masks: &Vec<&Vec<Option<RectMask>>>,
+    btree: &BTreeMap<OrderedFloat<f64>, Vec<(usize, usize)>>,
+    point: (f64, f64),
+    max_width: f64,
+) -> Vec<(usize, usize)> {
+    let (qx, qy) = point;
+    let query = RectMask::new(qx, qy, 0.0, 0.0);
+
+    // Range of x‑values that could overlap the query rectangle.
+    let lower = OrderedFloat(qx - max_width);
+    let upper = OrderedFloat(qx);
+
+    let mut result = Vec::new();
+
+    for (_x, positions) in btree.range((Included(&lower), Included(&upper))) {
+        for &(row, col) in positions {
+            // `masks[row][col]` is &Option<RectMask>
+            let rect_opt = &masks[row][col];
+            if let Some(rect) = rect_opt {
+                if rect.contains(&query) {
+                    result.push((row, col));
+                }
+            }
+        }
+    }
+
+    result
 }
 
 #[cfg(test)]
@@ -609,10 +679,7 @@ mod tests_quadnode {
             let (idx, rect) = &child.items[0];
             assert_eq!(*idx, i);
             // The rectangle should be the one we inserted
-            assert_eq!(
-                *rect,
-                child_rect(*idx, *idx).1
-            );
+            assert_eq!(*rect, child_rect(*idx, *idx).1);
         }
     }
 
@@ -710,37 +777,64 @@ mod tests_quadnode {
 
 #[cfg(test)]
 mod tests_simple_range {
-    use std::collections::HashSet;
+    use std::collections::{BTreeMap, HashSet};
 
     use ordered_float::OrderedFloat;
 
-    use crate::util::{search_intersects_b_2d, search_intersects_limit};
+    use crate::util::{
+        gen_btreemap, search_intersects_b_2d, search_intersects_btreemap, search_intersects_limit,
+    };
 
     use super::{QuadNode, RectMask};
     // Helper that builds a grid and returns the two structures needed by the tests
     fn build_grid<'a>() -> (
         Vec<Vec<Option<RectMask>>>, // masks
-        Vec<(usize, usize)>,         // xlist sorted by mask.x
+        Vec<(usize, usize)>,        // xlist sorted by mask.x
     ) {
         // 3 × 3 grid with a few rectangles
         let mut rows: Vec<Vec<Option<RectMask>>> = Vec::new();
 
         rows.push(vec![
-            Some(RectMask { x: 0.0,  y: 0.0,  w: 10.0, h: 10.0 }), // (0,0)
-            Some(RectMask { x: 15.0, y: 5.0,  w: 5.0,  h: 5.0 }),  // (0,1)
-            None,                                                        // (0,2)
+            Some(RectMask {
+                x: 0.0,
+                y: 0.0,
+                w: 10.0,
+                h: 10.0,
+            }), // (0,0)
+            Some(RectMask {
+                x: 15.0,
+                y: 5.0,
+                w: 5.0,
+                h: 5.0,
+            }), // (0,1)
+            None, // (0,2)
         ]);
 
         rows.push(vec![
-            None,                                                            // (1,0)
-            Some(RectMask { x: 5.0,  y: 5.0,  w: 10.0, h: 10.0 }), // (1,1)
-            None,                                                            // (1,2)
+            None, // (1,0)
+            Some(RectMask {
+                x: 5.0,
+                y: 5.0,
+                w: 10.0,
+                h: 10.0,
+            }), // (1,1)
+            None, // (1,2)
         ]);
 
         rows.push(vec![
-            Some(RectMask { x: 0.0,  y: 15.0, w: 10.0, h: 10.0 }), // (2,0)
-            None,                                                        // (2,1)
-            Some(RectMask { x: 20.0, y: 20.0, w: 5.0,  h: 5.0 }),  // (2,2)
+            Some(RectMask {
+                x: 0.0,
+                y: 15.0,
+                w: 10.0,
+                h: 10.0,
+            }), // (2,0)
+            None, // (2,1)
+            Some(RectMask {
+                x: 20.0,
+                y: 20.0,
+                w: 5.0,
+                h: 5.0,
+            }), // (2,2)
         ]);
 
         // Build the xlist – sorted by mask.x
@@ -765,49 +859,24 @@ mod tests_simple_range {
         let masks = masks_orig.iter().collect::<Vec<_>>();
 
         // 1. point inside (0,0) only
-        let hits = search_intersects_limit(
-            &masks,
-            2.0,
-            2.0,
-            &vec![(0, 0), (1, 1)],
-        );
+        let hits = search_intersects_limit(&masks, 2.0, 2.0, &vec![(0, 0), (1, 1)]);
         assert_eq!(hits, vec![(0, 0)]);
 
         // 2. point inside (1,1) and (0,0)
-        let hits = search_intersects_limit(
-            &masks,
-            6.0,
-            6.0,
-            &vec![(1, 1), (0, 0)],
-        );
+        let hits = search_intersects_limit(&masks, 6.0, 6.0, &vec![(1, 1), (0, 0)]);
         assert_eq!(hits, vec![(1, 1), (0, 0)]);
 
         // 3. point outside all masks
-        let hits = search_intersects_limit(
-            &masks,
-            120.0,
-            120.0,
-            &vec![(0, 0), (1, 1), (2, 0)],
-        );
+        let hits = search_intersects_limit(&masks, 120.0, 120.0, &vec![(0, 0), (1, 1), (2, 0)]);
         assert_eq!(hits, Vec::<(usize, usize)>::new());
 
         // 4. point on edges of (0,0) and (1.1) – should hit
-        let hits = search_intersects_limit(
-            &masks,
-            10.0,
-            5.0,
-            &vec![(0, 0), (1, 1)],
-        );
+        let hits = search_intersects_limit(&masks, 10.0, 5.0, &vec![(0, 0), (1, 1)]);
         assert_eq!(hits, vec![(0, 0), (1, 1)]);
 
         // 5. point on right edge of (1,1) – should hit
-        let hits = search_intersects_limit(
-            &masks,
-            6.0,
-            15.0,
-            &vec![(1, 1)],
-        );
-        assert_eq!(hits, vec![(1,1)]);
+        let hits = search_intersects_limit(&masks, 6.0, 15.0, &vec![(1, 1)]);
+        assert_eq!(hits, vec![(1, 1)]);
     }
 
     // ------------------------------------------------------------------
@@ -838,11 +907,11 @@ mod tests_simple_range {
 
         // 6. point on edge of (0,0) (1,1) – should hit
         let hits = search_intersects_b_2d(&masks, &xlist, 5.0, 5.0, 20.0);
-        assert_eq!(hits, vec![(1,1),(0,0)]);
+        assert_eq!(hits, vec![(1, 1), (0, 0)]);
 
         // 7. point on edge of (1,1) – should hit
         let hits = search_intersects_b_2d(&masks, &xlist, 6.0, 15.0, 20.0);
-        assert_eq!(hits, vec![(1,1),(2,0)]);
+        assert_eq!(hits, vec![(1, 1), (2, 0)]);
     }
 
     // ------------------------------------------------------------------
@@ -893,22 +962,24 @@ mod tests_simple_range {
 
     // ------------------------------------------------------------------
     #[test]
-    fn test_both_functions_agree() {
+    fn test_functions_agree() {
         let (masks_orig, xlist) = build_grid();
-        let masks = masks_orig.iter().collect();
+        let masks: Vec<&Vec<Option<RectMask>>> = masks_orig.iter().collect();
 
         // List of points to query
         let points: Vec<(f64, f64, Vec<(usize, usize)>)> = vec![
-            (2.0, 2.0, vec![(0,0)]),
-            (6.0, 6.0, vec![(0,0), (1,1)]),
-            (16.0, 7.0, vec![(0,1)]),
-            (15.0, 6.0, vec![(1, 1), (0,1)]),
-            (21.0, 21.0, vec![(2,2)]),
+            (2.0, 2.0, vec![(0, 0)]),
+            (6.0, 6.0, vec![(0, 0), (1, 1)]),
+            (16.0, 7.0, vec![(0, 1)]),
+            (15.0, 6.0, vec![(1, 1), (0, 1)]),
+            (21.0, 21.0, vec![(2, 2)]),
             (20.0, 0.0, vec![]),
             (20.0, 1.0, vec![]),
-            (0.0, 0.0, vec![(0,0)]),
+            (0.0, 0.0, vec![(0, 0)]),
             (1200.0, 1200.0, Vec::new()),
         ];
+
+        let btree = gen_btreemap(&masks);
 
         for (x, y, v) in points {
             let limit_hits = search_intersects_limit(
@@ -922,11 +993,22 @@ mod tests_simple_range {
             let b2d_hits = search_intersects_b_2d(&masks, &xlist, x, y, 20.0);
 
             // The two results must contain exactly the same set of indices
-            let h1 = limit_hits.iter().copied().collect::<std::collections::HashSet<_>>();
-            let h2 = b2d_hits.iter().copied().collect::<std::collections::HashSet<_>>();
+            let h1 = limit_hits
+                .iter()
+                .copied()
+                .collect::<std::collections::HashSet<_>>();
+            let h2 = b2d_hits
+                .iter()
+                .copied()
+                .collect::<std::collections::HashSet<_>>();
             let h3 = v.iter().copied().collect::<HashSet<_>>();
+            let h4 = search_intersects_btreemap(&masks, &btree, (x, y), 10.0)
+                .iter()
+                .copied()
+                .collect();
             assert_eq!(h1, h2);
             assert_eq!(h1, h3);
+            assert_eq!(h1, h4, "{:?}", &(x, y));
         }
     }
 }
