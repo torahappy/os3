@@ -98,12 +98,52 @@ impl RectMask {
             && other.x + other.w <= self.x + self.w
             && other.y + other.h <= self.y + self.h
     }
+
+    pub fn bounding_rect<I>(it: I) -> Option<RectMask>
+    where
+        I: IntoIterator<Item = RectMask>,
+    {
+        // Initialise with the first item; if the iterator is empty we bail out.
+        let mut iter = it.into_iter();
+
+        // Get the first rectangle – if there isn’t one we return None.
+        let first = iter.next()?;
+
+        // Track the current min/max coordinates.
+        let mut min_x = first.x;
+        let mut min_y = first.y;
+        let mut max_x = first.x + first.w;
+        let mut max_y = first.y + first.h;
+
+        // Process the remaining items.
+        for r in iter {
+            if r.x < min_x {
+                min_x = r.x;
+            }
+            if r.y < min_y {
+                min_y = r.y;
+            }
+            if r.x + r.w > max_x {
+                max_x = r.x + r.w;
+            }
+            if r.y + r.h > max_y {
+                max_y = r.y + r.h;
+            }
+        }
+
+        Some(RectMask {
+            x: min_x,
+            y: min_y,
+            w: max_x - min_x,
+            h: max_y - min_y,
+        })
+    }
 }
 
 /// One node of a quadtree.  `T` is the *index* type – for your
 /// application it will be `(usize, usize)`, but any type that can be
 /// cloned works.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct QuadNode<T: Clone> {
     /// Bounding rectangle that encloses everything stored in this node
     pub bounds: RectMask,

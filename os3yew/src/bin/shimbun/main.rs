@@ -2,11 +2,14 @@
 
 mod data;
 
-use os3yew::{components::{ClockComponent, RenderWatchComponent}, util::*};
-use askama::Template;
-use crate::data::*;
 use crate::data::util::*;
+use crate::data::*;
+use askama::Template;
 use gloo_timers::callback::Timeout;
+use os3yew::{
+    components::{ClockComponent, RenderWatchComponent},
+    util::*,
+};
 use rand::{
     distr::{Distribution, Uniform},
     random_range, rng,
@@ -21,8 +24,6 @@ use std::{
 };
 use web_sys::{console, window};
 use yew::{Html, prelude::*};
-
-
 
 pub fn get_availiable_titles(
     done_titles: &HashSet<String, RandomState>,
@@ -46,7 +47,6 @@ pub fn get_availiable_titles(
         }
     }
 }
-
 
 #[component]
 fn App() -> Html {
@@ -122,37 +122,68 @@ fn App() -> Html {
                 game_stage.set(GameStage::ArticleFading);
             }
         });
+    let precalc_for_rects: UseStateHandle<Option<QuadNode<(usize, usize)>>> = use_state(|| None);
 
     // when forecasts change, if there are no masks, try generate initial masks. if the metrics
     // aren't filled yet, do nothing for the article.
-    use_effect_with(forecasts.clone(), |forecasts| {
-        let next_forecasts = forecasts
-            .iter()
-            .map(|x| {
-                if let Some(article) = x {
-                    if article.w.is_some()
-                        && article.h.is_some()
-                        && article.masks.iter().all(|x| x.is_none())
-                    {
-                        let n =
-                            (article.w.unwrap() * article.h.unwrap() / 5445.0).max(10.0) as usize;
-                        let mut next_article = article.clone();
-                        next_article.masks =
-                            gen_random_masks(article.w.unwrap(), article.h.unwrap(), n, 40.0, 40.0)
-                                .into_iter()
-                                .map(|x| Some(x))
-                                .collect::<Vec<_>>();
+    use_effect_with(
+        (precalc_for_rects.clone(), forecasts.clone()),
+        |(precalc_for_rects, forecasts)| {
+            let next_forecasts = forecasts
+                .iter()
+                .map(|x| {
+                    if let Some(article) = x {
+                        if article.w.is_some()
+                            && article.h.is_some()
+                            && article.masks.iter().all(|x| x.is_none())
+                        {
+                            let n = (article.w.unwrap() * article.h.unwrap() / 5445.0).max(10.0)
+                                as usize;
+                            let mut next_article = article.clone();
+                            next_article.masks = gen_random_masks(
+                                article.w.unwrap(),
+                                article.h.unwrap(),
+                                n,
+                                40.0,
+                                40.0,
+                            )
+                            .into_iter()
+                            .map(|x| Some(x))
+                            .collect::<Vec<_>>();
 
-                        console::log_1(&format!("{:?}", &next_article.masks).into());
+                            return Some(next_article);
+                        }
+                    }
+                    return x.clone();
+                })
+                .collect::<Vec<_>>();
 
-                        return Some(next_article);
+            let bound = next_forecasts
+                .iter()
+                .filter_map(|x| x.as_ref())
+                .map(|x| x.masks.iter().filter_map(|x| x.clone()))
+                .flatten()
+                .collect::<Vec<_>>();
+
+            if bound.len() != 0 {
+                let mut quad_data: QuadNode<(usize, usize)> =
+                    QuadNode::new(RectMask::bounding_rect(bound).unwrap());
+
+                for (i, a) in forecasts.iter().enumerate() {
+                    if let Some(a) = a {
+                        for (j, x) in a.masks.iter().enumerate() {
+                            if let Some(x) = x {
+                                quad_data.insert((i, j), x.clone(), 4);
+                            }
+                        }
                     }
                 }
-                return x.clone();
-            })
-            .collect::<Vec<_>>();
-        forecasts.set(next_forecasts);
-    });
+
+                precalc_for_rects.set(Some(quad_data));
+            }
+            forecasts.set(next_forecasts);
+        },
+    );
 
     // transit ArticleFading -> ForecastStart instantly;
     let advance_show_forecasts = use_callback(
@@ -435,6 +466,17 @@ fn App() -> Html {
         return classes.join(" ");
     };
 
+    let mouse_move_evt = use_callback((precalc_for_rects.clone()), |me: MouseEvent, precalc_for_rects| {
+        let x = me.x();
+        let y = me.y();
+        if let Some(precalc_for_rects) = precalc_for_rects.as_ref() {
+            console::log_1(&format!("aaaaaa").into());
+            let mut r = vec![];
+            precalc_for_rects.query(&RectMask::new(x as f64, y as f64, 1.0, 1.0), &mut r);
+            console::log_1(&format!("{:?}", r).into());
+        }
+    });
+
     // virtual dom for articles.
     let html_articles: Vec<_> = data_table
         .iter()
@@ -513,9 +555,10 @@ fn App() -> Html {
         })
         .collect();
 
+
     // the final virtual dom
     html! {
-    <div class="app-wrapper">
+    <div class="app-wrapper" onmousemove={mouse_move_evt}>
         {html_articles}
 
         <RenderWatchComponent render_number={*render_number} callback={upgrade_plan_check}><></></RenderWatchComponent>
@@ -533,9 +576,6 @@ fn App() -> Html {
     }
 }
 
-
 fn main() {
     yew::Renderer::<App>::new().render();
 }
-
-
