@@ -2,6 +2,7 @@
 
 pub mod util;
 
+use os3yew::util::RectMask;
 use askama::Template;
 // use gloo_net::http::Request;
 use rand::{
@@ -268,20 +269,6 @@ mod filters {
     }
 }
 
-#[derive(Clone, PartialEq, Debug)]
-pub struct RectMask {
-    pub w: f64,
-    pub h: f64,
-    pub x: f64,
-    pub y: f64,
-}
-
-impl RectMask {
-    pub fn new(x: f64, y: f64, w: f64, h: f64) -> Self {
-        Self { x, y, w, h }
-    }
-}
-
 #[derive(Clone, PartialEq)]
 pub struct Article {
     pub template: ArticleTemplate,
@@ -292,13 +279,3 @@ pub struct Article {
     pub masks: Vec<Option<RectMask>>,
 }
 
-pub struct ParsedDomRect {
-    pub x: f64,
-    pub y: f64,
-    pub width: f64,
-    pub height: f64,
-    pub top: f64,
-    pub right: f64,
-    pub bottom: f64,
-    pub left: f64,
-}

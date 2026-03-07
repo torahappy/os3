@@ -11,6 +11,7 @@ comrak = "0.50.0"
 getrandom = {version = "0.4.1", features = ["wasm_js"]}
 gloo-timers = "0.3.0"
 log = "0.4.29"
+ordered-float = "5.1.0"
 rand = "0.10.0"
 regex = "1.12.3"
 rust-embed = "8.11.0"
