@@ -18,6 +18,22 @@ use std::{
 };
 use yew::{Html, prelude::*};
 
+const LOCK_SIZE: f64 = 110.0;
+const TIME_TILL_LOCK: f64 = 7.0;
+
+fn get_exp_coeff() -> f64 {
+    return (LOCK_SIZE.ln() - TIME_TILL_LOCK).exp();
+}
+
+fn apply_sizemod(r: &RectMask, sizemod: f64) -> RectMask {
+    let mut r_clone = r.clone();
+    r_clone.x -= sizemod / 2.;
+    r_clone.y -= sizemod / 2.;
+    r_clone.w += sizemod;
+    r_clone.h += sizemod;
+    return r_clone;
+}
+
 pub fn get_availiable_titles(
     done_titles: &HashSet<String, RandomState>,
     all_titles: &HashSet<String, RandomState>,
@@ -38,6 +54,16 @@ pub fn get_availiable_titles(
                 .map(|x| x.clone())
                 .collect();
         }
+    }
+}
+
+fn get_sizemod_from_time(x: f64) -> f64 {
+    let lin = x * (LOCK_SIZE / TIME_TILL_LOCK);
+    let exp = x.exp() * get_exp_coeff();
+    if x <= TIME_TILL_LOCK {
+        return lin;
+    } else {
+        return exp;
     }
 }
 
@@ -90,16 +116,32 @@ fn App() -> Html {
     });
 
     // ## legend
-    // transition condition => prominent function name (function desctiption) GameStage
+    // transition condition =>
+    // prominent function name
+    // (function desctiption)
+    // GameStage
     //
     // ## desctiptions
-    // clickevt_fade_article => noop (just changing className) ArticleFading
+    // clickevt_fade_article =>
+    // noop
+    // (just changing className)
+    // ArticleFading
     //
-    // timer => input_election, advance_show_forecasts (several "forecasts" are created and show up)
+    // timer =>
+    // input_election, advance_show_forecasts
+    // (several "forecasts" are created and show up)
     // ForecastStart
     //
-    // when a mask gets big enough => advance_elect_article (election completed; remove
-    // all forecasts; the biggest forecast will be copied into current_article)
+    // when a mask gets big enough =>
+    // noop
+    // (just classname change)
+    // Cleanup
+    //
+    // wait for the animation to be completed =>
+    // advance_elect_article
+    // (election completed; remove all forecasts;
+    //  the biggest forecast will be copied into current_article)
+    // set back to ArticleView
 
     // Game stage
     let game_stage = use_state(|| GameStage::ArticleView);
@@ -182,10 +224,12 @@ fn App() -> Html {
     );
 
     let to_be_enlarged: UseStateHandle<Option<(usize, usize)>> = use_state(|| None);
+    let to_be_enlarged_lock = use_state(|| false);
 
     let mouse_move_evt = {
         let precalc_for_rects = precalc_for_rects.clone();
         let to_be_enlarged = to_be_enlarged.clone();
+        let to_be_enlarged_lock = to_be_enlarged_lock.clone();
         Callback::from(move |me: MouseEvent| {
             let x = me.page_x();
             let y = me.page_y();
@@ -197,7 +241,10 @@ fn App() -> Html {
 
                 let t = cands.get(0).map(|&x| x.clone());
                 console::log_1(&format!("{:?}", t).into());
-                to_be_enlarged.set(t);
+
+                if (!*to_be_enlarged_lock) || to_be_enlarged.is_none() {
+                    to_be_enlarged.set(t);
+                }
             }
         })
     };
@@ -259,7 +306,44 @@ fn App() -> Html {
         },
     );
 
-    let to_be_enlarged_size_mod = use_state(|| 0.0 as f64);
+    let to_be_enlarged_elapesed_time = use_state(|| 0.0 as f64);
+
+    let advance_elect_article = use_callback(
+        (
+            done_titles.clone(),
+            to_be_enlarged.clone(),
+            to_be_enlarged_lock.clone(),
+            to_be_enlarged_elapesed_time.clone(),
+            forecasts.clone(),
+            game_stage.clone(),
+            current_article.clone(),
+        ),
+        |base_article: Article,
+         (
+            done_titles,
+            to_be_enlarged,
+            to_be_enlarged_lock,
+            to_be_enlarged_elapesed_time,
+            forecasts,
+            game_stage,
+            current_article,
+        )| {
+            // add new title
+            let mut dt = (**done_titles).clone();
+            dt.insert(base_article.template.title.clone());
+            done_titles.set(dt);
+
+            // reset states
+            game_stage.set(GameStage::ArticleView);
+            to_be_enlarged.set(None);
+            to_be_enlarged_lock.set(false);
+            to_be_enlarged_elapesed_time.set(0.0);
+            forecasts.set(Vec::new());
+
+            // set article
+            current_article.set(Some(base_article.clone()));
+        },
+    );
 
     // ticking funciton. Most of the "timeout" funcitons and the watching funcitons for GameStage
     // should be put here.
@@ -269,9 +353,22 @@ fn App() -> Html {
             game_stage.clone(),
             advance_show_forecasts.clone(),
             to_be_enlarged.clone(),
-            to_be_enlarged_size_mod.clone(),
+            to_be_enlarged_elapesed_time.clone(),
+            to_be_enlarged_lock.clone(),
+            forecasts.clone(),
+            advance_elect_article.clone(),
         ),
-        |(delta, culmative), (transition_history, game_stage, advance_show_forecasts, to_be_enlarged, to_be_enlarged_size_mod)| {
+        |(delta, culmative),
+         (
+            transition_history,
+            game_stage,
+            advance_show_forecasts,
+            to_be_enlarged,
+            to_be_enlarged_elapesed_time,
+            to_be_enlarged_lock,
+            forecasts,
+            advance_elect_article,
+        )| {
             let last_gs = transition_history.last().unwrap().1;
             if **game_stage != last_gs {
                 let mut new_th = (**transition_history).clone();
@@ -282,7 +379,6 @@ fn App() -> Html {
 
             if **game_stage == GameStage::ArticleFading
                 && culmative - transition_history.last().unwrap().0 > 10.0
-                && **game_stage != GameStage::ForecastStart
             {
                 advance_show_forecasts.emit(());
                 game_stage.set(GameStage::ForecastStart);
@@ -292,7 +388,39 @@ fn App() -> Html {
             if **game_stage == GameStage::ForecastStart {
                 if to_be_enlarged.is_some() {
                     // TODO: use ease curve??
-                    to_be_enlarged_size_mod.set(**to_be_enlarged_size_mod + delta * 20.);
+                    to_be_enlarged_elapesed_time.set(**to_be_enlarged_elapesed_time + delta);
+                    let sizemod = get_sizemod_from_time(**to_be_enlarged_elapesed_time);
+
+                    if sizemod > LOCK_SIZE {
+                        to_be_enlarged_lock.set(true);
+                        let a_o = forecasts.get(to_be_enlarged.unwrap().0).unwrap();
+                        if let Some(a) = a_o {
+                            let m_o = a.masks.get(to_be_enlarged.unwrap().1).unwrap();
+                            if let Some(m) = m_o {
+                                if a.w.is_some() && a.h.is_some() {
+                                    let m_big = apply_sizemod(m, sizemod);
+                                    if m_big.contains(&RectMask {
+                                        w: a.w.unwrap(),
+                                        h: a.h.unwrap(),
+                                        x: a.x,
+                                        y: a.y,
+                                    }) {
+                                        game_stage.set(GameStage::Cleanup);
+                                        console::log_1(&"cleanup".into());
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            if **game_stage == GameStage::Cleanup
+                && culmative - transition_history.last().unwrap().0 > 10.0
+            {
+                let a_o = forecasts.get(to_be_enlarged.unwrap().0).unwrap();
+                if let Some(a) = a_o {
+                    advance_elect_article.emit(a.clone());
                 }
             }
         },
@@ -467,13 +595,20 @@ fn App() -> Html {
         };
 
     // gen class attr for each article
-    let gen_article_class = |is_current_article, _, _: Option<&Article>| {
+    let gen_article_class = |is_current_article, _, _: Option<&Article>, idx: usize| {
         let mut classes = Vec::new();
         classes.push("article".to_string());
         if is_current_article {
             classes.push("current-article".to_string());
         } else {
             classes.push("forecast".to_string());
+            if *game_stage == GameStage::Cleanup {
+                if idx == to_be_enlarged.unwrap().0 {
+                    classes.push("chosen".to_string());
+                } else {
+                    classes.push("fading".to_string());
+                }
+            }
         }
         if is_current_article {
             if GameStage::ArticleView <= *game_stage && *game_stage <= GameStage::ArticleFading {
@@ -512,20 +647,18 @@ fn App() -> Html {
     <svg height="0" xmlns="http://www.w3.org/2000/svg">
         <mask id={elem_id.clone() + "-mask"} mask-type="alpha">
             for (i, r) in article_ref.unwrap().masks.clone().into_iter().filter_map(|x|x).enumerate().map(|(i, r)| {
-                let mut r = r.clone();
                 if *to_be_enlarged == Some((*idx, i)) {
-                    r.x -= *to_be_enlarged_size_mod / 2.;
-                    r.y -= *to_be_enlarged_size_mod / 2.;
-                    r.w += *to_be_enlarged_size_mod;
-                    r.h += *to_be_enlarged_size_mod;
+                    let sizemod = get_sizemod_from_time(*to_be_enlarged_elapesed_time);
+                    (i, apply_sizemod(&r, sizemod))
+                } else {
+                    (i, r)
                 }
-                (i, r)
             }) {
                 <rect key={i} x={format!("{:.4}", r.x)} y={format!("{:.4}", r.y)} width={format!("{:.4}", r.w)} height={format!("{:.4}", r.h)} fill="white" />
             }
         </mask>
     </svg>
-    <div class={gen_article_class(*is_current, data, article_ref)} id={elem_id.clone()} key={elem_id.clone()} style={gen_article_style(*is_current, data, article_ref, *idx)}>
+    <div class={gen_article_class(*is_current, data, article_ref, *idx)} id={elem_id.clone()} key={elem_id.clone()} style={gen_article_style(*is_current, data, article_ref, *idx)}>
         <span>
         { article_ref.unwrap().template.date.year.to_string()} {"年"}
         { article_ref.unwrap().template.date.month.to_string() } {"月"}

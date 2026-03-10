@@ -3,23 +3,31 @@
 
 「サイダー」禁止令発令
 
+\[title-en\]
+
+Government to Introduce "Cider" Ban
+
 \[text\]
 
-消費者庁は、能動的サイバー防御促進のために、「サイバー」という言葉に緊張感を持たせるために、今後清涼飲料水に「サイダー」という名称をつけることを原則禁止とする方針を決めた。
+{{ date.before(1).month_day() }}発出の総務省・消費者庁・公安局の共同声明によれば、政府は、能動的サイバー防御促進のために、「サイバー」という言葉に緊張感を持たせるために、今後清涼飲料水に「サイダー」という名称をつけることを原則禁止とする方針を決めた。対象製品が国家安全保障に寄与することを客観的に示すことができれば、例外として認める方針。
 
-\[images\]
+\[text-en\]
 
-\[image_caption\]
+According to a joint statement issued by Ministry of Internal Affairs, Ministry of Consumer Affairs, and Public Safety Commission {{ date.before(1).month_day() }}, the government is planning to ban the word "cider" in naming beverages, to maintain the formality, secrecy and politeness in discussing "cyber"-security. If a beverage company successfully proves that the product in question contributes to the national security, an exception may be granted.
 
-\[image_caption_work_title\]
+{% filter footnote %}
+
+In Japanese, "cider" refers to wide variety of carbonated drinks such as soda, coke, etc.
+
+{% endfilter %}
 
 \[tag\]
 
-現実+2
-超現実+4
-すなお+1
-おふざけ+3
-わるくなる+8
+現実+2  
+超現実+4  
+すなお+1  
+おふざけ+3  
+わるくなる+8  
 言葉の呪い+10
 {% endif %}
 {% if title == "「国務大臣思念制」導入へ" %}
@@ -71,8 +79,6 @@ high_society
 \[images\]
 <img src="assets/images/33b72989270e4ff8bd7bd05ab3e36aff.webp" style="aspect-ratio: 1.4380574826560952;" />
 
-\[image_caption\]
-
 \[image_caption_work_title\]
 とら《システマティックな救いとシステムを超えた救い》、185 mm × 129 mm、紙に水彩、2026
 
@@ -116,6 +122,7 @@ high_society
 <img src="assets/images/c9fab7d414914092bd39c2f8d50163b7.webp" style="aspect-ratio: 1.4485981308411215;" />
 
 \[image_caption\]
+妖精さんがある日見た山と川の風景。
 
 \[image_caption_work_title\]
 とら《五百円切手からの連想呪》、185 mm × 129 mm、紙に水彩、2026
@@ -169,18 +176,6 @@ high_society
 
 さあこんな新聞なんて読んでないで、みんなで踊ろう踊ろう、踊り続けよう。文字や言葉も国旗も忘れて踊ろう踊ろう。外に出れない人でも、家の中でも、踊ろう踊ろう。独房の扉もついには解放されたよ。
 
-[images]
-
-
-
-[image_caption]
-
-
-
-[image_caption_work_title]
-
-
-
 [tag]
 
 
@@ -203,8 +198,6 @@ high_society
 \[images\]
 <img src="assets/images/c6071444006e4b338d1d736f540aae71.webp" style="aspect-ratio: 1.4476666666666667;" />
 
-\[image_caption\]
-
 \[image_caption_work_title\]
 とら《あにめっていいな あにめってこわいな》、185 mm × 129 mm、紙に水彩、2026
 
@@ -221,31 +214,47 @@ high_society
 
 「ハイソ法」可決、成立
 
+\[title-en\]
+
+Anti Elite Society Act Enacted
+
 \[effect\]
 
 set_high_society,on
 
 \[text\]
 
-今週、枢密院で「ハイソ法」が可決、成立した。この法律では、一定の基準を満たすと政府が判断した新聞や小説などの「オールドメディア」について、すべての文章の末尾に「ハイソでごめんなさい」という文言を付け加えることが求められる。文章を表示する頻度等については、今後、文化警察省において検討し、省令にて定める予定。運営する法人や事業体によって変動する、「オールドメディア度」と呼ばれる指数を定め、この指数が高い場合はより高頻度に表示することを義務付ける案も検討されている模様だ。
+{{ date.before(5).month_day() }}、枢密院で「ハイソ法」が可決、成立した。この法律では、一定の基準を満たすと政府が判断した新聞や小説などの「オールドメディア」について、すべての文章の末尾に「ハイソでごめんなさい」という文言を付け加えることが求められる。文章を表示する頻度等については、今後、文化警察省において検討し、省令にて定める予定。運営する法人や事業体によって変動する、「オールドメディア度」と呼ばれる指数を定め、この指数が高い場合はより高頻度に表示することを義務付ける案も検討されている模様だ。
 
 ハイソでごめんなさい。
+
+\[text-en\]
+
+{{ date.before(5).month_day() }}, Anti Elite Society Act enacted following the proceedings in Mysterious Chamber. The law forces media companies and individuals to add the words "I apologize for being part of elite society" at the end of every instance of their publications from now on, if their works are designated as "obsolete" or "degenerate" by the government. According to Ministry of Culture Policing officials, it plans to assign a statistical index called "Obsolete Media Index" (OMI) for each of the media companies and individual authors that are designated as Obsolete Media Entity (OME) of Degenerate Media Entity (DME), then requires higher frequency of the apology statement for those have higher index.
+
+I apologize for being part of elite society.
 
 \[images\]
 
 <img src="assets/images/e019cae9761a4df5bdda334dbd7e3068.webp" style="aspect-ratio: 1.431640625;" />
 
-\[image_caption\]
+\[image_caption\]  
 多様性エリートたちの退廃的な語りの場。天皇陛下を頂点とする、我が国の素晴らしい伝統を背負った、頼れる「文化の先輩方」は、このような多様性エリートとは違って諸君を善導していくので、心配しないでもらいたい。
 
-\[image_caption_work_title\]
-とら《語り場のイメージは憂鬱》、NanobananaによるAI生成画像を重ね合わせ加工したもの、2199px  × 1536px、2026
+\[image_caption-en\]  
+Image of a degenerate meeting room of elite DEI gangs. Our supreme national tradition and its supreme cultural senpai, the supreme Emperor will guide you towards better self, unlike those degenerates. So don't worry anymore.
+
+\[image_caption_work_title\]  
+とら《語り場のイメージは憂鬱》、NanobananaによるAI生成画像を重ね合わせ加工したもの、2199px × 1536px、2026
+
+\[image_caption_work_title-en\]  
+tora, *Melancholy on Computing a Meeting Room*, several Nanobanana-generated image layers with visual effects, 2199px × 1536px, 2026
 
 \[tag\]
 
-わるくなる+10
-おふざけ+6
-すなお+2
+わるくなる+10  
+おふざけ+6  
+すなお+2  
 言葉の呪い+10
 {% endif %}
 {% if title == "プロンプトエンジニアリングの防止に関する法律、成立かも" %}
@@ -256,12 +265,6 @@ set_high_society,on
 \[text\]
 
 {{ date.before(12).month_day() }}の国会で、「悪意のあるプロンプトエンジニアリングの防止に関する法律」が制定されたかもしれない。今後、哲学的な会話や感情的な会話、その他生成AIの正常な運行に異常をきたすおそれがあると認められる入力を生成AIに対して行うことは、生成AIの正常な運行に異常をきたす可能性のある「プロンプトエンジニアリング」を行ったものとして処罰されるかもしれない。
-
-\[images\]
-
-\[image_caption\]
-
-\[image_caption_work_title\]
 
 \[tag\]
 
@@ -276,15 +279,17 @@ set_high_society,on
 
 俳句投稿コーナー
 
+\[title-en\]
+
+Today's Haiku Theme
+
 \[text\]
 
 {{ date.month_day() }}の俳句投稿コーナーのお題は……「ヨイショ記事」です。「ヨイショ記事」から始まる俳句を書いてみましょう。皆さんの粋な投稿をお待ちしております。
 
-\[images\]
+\[text-en\]
 
-\[image_caption\]
-
-\[image_caption_work_title\]
+Haiku theme for {{ date.month_day() }} is "greedy media." Journalists, reporters, and writers who cave to the authority. Upcoming fest in which the innocents are forced to apologize. We welcome your thoughtful haiku submission.
 
 \[tag\]
 
@@ -306,10 +311,6 @@ true
 食費の高騰が嵩む。そんなあなたに！倒壊寸前の古民家を食べれば、地元の安全にも貢献でき、食費の節約にも！
 いまなら消化酵素注射初回無料！
 
-\[images\]
-
-\[image_caption\]
-
 \[tag\]
 
 現実+6
@@ -329,11 +330,19 @@ true
 あなたはいま電車の中にいます  
 {% endif %}
 
+\[title-en\]
+
+{% if ! mood.is_subjective() %}  
+Zankoku Railroad's New Terminal Announcement 
+{% else %}  
+you are in a train car now...
+{% endif %}
+
 \[text\]
 
 {% if ! mood.is_subjective() %}
 
-【速報】残酷電急株式会社は、新しい終点アナウンスの文言を開発した。{{ date.after(5).month_day() }}の株主総会で審議にかけられる予定。内容は以下の通り。
+【速報】残酷電急株式会社は、終点◯◯駅に到達した際の新しいアナウンスの文言を開発した。{{ date.after(5).month_day() }}の株主総会で審議にかけられる予定。内容は以下の通り。
 
 記
 
@@ -363,11 +372,40 @@ true
 
 {% endif %}
 
+\[text-en\]
+
+{% if ! mood.is_subjective() %}
+
+【BREAKING】Zankoku Railroad Co. announced the development of a new type of annoncement on arriving the terminal station ◯◯. A board meeting will be held {{ date.after(5).month_day() }} to enjoy the vibration of conductor's voice.
+
+記
+
+{% else %}
+
+you might hear something above
+
+{% endif %}
+
+After the ◯◯ terminal station, this train will be smashed into a cup of grated daikon radish.
+
+If you don't wanna die, you have exactly one minute before the doors close. Once doors are shut, you may not get out of this train.
+
+If you wanna die, you can stay here.
+
+We, Zankoku Railroad Co., don't owe any responsibility for your life, even if you couldn't or didn't hear this announcement or if you went to a peaceful nap.
+
+{% if ! mood.is_subjective() %}
+
+以上
+
+Our neighborhood's voices……
+
+"Daikon radishes are so expensive recently. so helpful!"
+
+{% endif %}
+
 \[images\]
 <img src="assets/images/1e2c7e3a4e524930a2ee8fcfdb705397.webp" style="aspect-ratio: 1.4356337093563372;" />
-
-\[image_caption\]
-
 
 \[image_caption_work_title\]
 とら《ぐしゃぐしゃになるでんしゃ》、185 mm × 129 mm、紙に水彩、2026
@@ -391,9 +429,15 @@ true
 
 \[text\]
 
-嘘かもしれないホントかもしれない通信({date.before(1).month_day()})、全国のフードコートにある食器返却台ですが、よくよく見てみると文字が変わっていきます、そこで性器返却台の登場です。それは米軍基地の近くにあるフードコートでの話でしたが、影響範囲が広がっていき、今では全国に見られるようになっていきます。ミソジニー大学で塩盛りを研究している、粘窪白妙さんのお話、「これはフェミニストの魔女の仕業でしょうね、云々カンヌン、言葉の置換魔術とでも言うんでしょうか、最近こういう事件が増えてきました。みなさんも玄関の前の塩盛り、これを徹底してください。そうすればきっと八百万の神々が助けてくれます、八百万の神々という言葉にあるように日本は古来より多様性の国です、最近言われているようなぽっと出の多様性なんか目じゃないポテンシャルが日本には云々」だんだん書くことがなくなってきたけど紙面を埋めなければ、、
+嘘かもしれないホントかもしれない通信({{date.before(1).month_day()}})、全国のフードコートにある食器返却台ですが、よくよく見てみると文字が変わっていきます、そこで性器返却台の登場です。それは米軍基地の近くにあるフードコートでの話でしたが、影響範囲が広がっていき、今では全国に見られるようになっていきます。ミソジニー大学で塩盛りを研究している、粘窪白妙さんのお話、「これはフェミニストの魔女の仕業でしょうね、云々カンヌン、言葉の置換魔術とでも言うんでしょうか、最近こういう事件が増えてきました。みなさんも玄関の前の塩盛り、これを徹底してください。そうすればきっと八百万の神々が助けてくれます、八百万の神々という言葉にあるように日本は古来より多様性の国です、最近言われているようなぽっと出の多様性なんか目じゃないポテンシャルが日本には云々」だんだん書くことがなくなってきたけど紙面を埋めなければ、、
 
 自衛隊宗教考察班曹長、国野麻紙院さんのお話、「神のものは神へって、キリストも言ってるからね、、、起こるべくして起こったというところでしょうか。早くこの監獄から私を出してくれ〜〜〜〜〜〜」
+
+\[text-jp\]
+
+Believe-it-or-Not-Press ({{date.before(1).month_day()}})
+
+
 
 \[images\]
 
@@ -401,7 +445,7 @@ true
 
 \[image_caption\]
 
-↑事件現場の写真を取ろうとしても、呪いのせいなのか、あるいは私の意思が弱いせいなのか、記録媒体が破損してしまいました。イラストも試しましたが、具象的に書いた瞬間に紙がボロボロになって崩れ落ちてしまいます。訓練を受けた弊社の抽象描画部員によるイラストとなってしまい、申し訳ございません。
+【写真】事件現場の写真を取ろうとしても、呪いのせいなのか、あるいは私の意思が弱いせいなのか、記録媒体が破損してしまいました。イラストも試しましたが、具象的に書いた瞬間に紙がボロボロになって崩れ落ちてしまいます。訓練を受けた弊社の抽象描画部員によるイラストとなってしまい、申し訳ございません。
 
 \[tag\]
 
@@ -425,10 +469,6 @@ true
 世論調査で半分くらいは解散に疑問を示していたでしょう、そもそも解散権の濫用じゃないかと、多くの人々が疑問に思っている。それなのに、「作戦勝ち」とか、そういう言葉の使い方の節々から、おぞましき不誠実と欺瞞と隠蔽と軽視がぶくぶくと浮かび上がる。
 もう作戦とか策略とか三国志とかパズルとかその駒の下に押しつぶされる人々を想像できないのか。それはニュース価値なのか。常に新しさという虚構の燃料を焚べていなければ止まってしまうエンジンなのか。でもそれも規格にすぎない。このタイミングでこういうことを報じるとすべて規格が定められているんだ。今は御涙頂戴のドラマの時間、その次は策略じゃんけんの種明かしの時間、などなど。それをずっとぐるぐる回して延々と新しい物語を見ているように錯覚させられているだけ。そんなエンジンの奴隷になるのはもう止めよう。時違いでも場違いでもいいじゃないか、報道するべきことを報道しようよ。
 
-\[images\]
-
-\[image_caption\]
-
 \[tag\]
 
 現実+20
@@ -445,7 +485,7 @@ true
 
 \[text\]
 
-{{ date.after(8).month_day() }}、市ヶ谷の防衛省前で、毎年恒例の「武器バーゲンセール」が開催される。この催しで、通行人は、防衛省の前のブルーシート上に並べられた武器を自由に手に取って持ち帰ることができる。憲法に規定された革命権を担保するための施策の一つだ。
+{{ date.after(8).month_day() }}、市ヶ谷の防衛省前で、毎年恒例の「武器バーゲンセール」が開催される。この催しで、通行人は、防衛省の前のブルーシート上に並べられた武器を自由に手に取って持ち帰ることができる。憲法に規定された革命権を担保するための施策の一つだ。周辺の住民や通勤通学者には毎年恒例の風物詩となっているが、路上に自動小銃や弾薬のみならず、トマホークまでもがこつ然と並べられる様は壮観だ。
 
 ただし、ここには一つの「落とし穴」があることに注意したい。減った武器の在庫と同じぶん、防衛省および自衛隊のメンバーが、責任を取らされて切腹させられてしまうのだ。好奇心のために、あるいは自らの信念のために武器をかっさらっていくのか、しかし持っていくと誰かが責任を取らされて切腹させられる。観客の倫理が問われる教育的な催しになりそうだ。
 
@@ -454,6 +494,9 @@ true
 
 \[image_caption\]
 市ヶ谷、防衛省前。たまに感情的になるカメラを持っていったので、他の人には見えないものが見えてしまっているかも知れません。
+
+\[image_caption_work_title\]
+とら《市ヶ谷の青空》、185 mm × 129 mm、紙に水彩、2026
 
 \[tag\]
 
@@ -472,6 +515,10 @@ true
 
 「武器バーゲンセール」からアート作品へ
 
+\[title-en\]
+
+Ministry of Defence's Annual Weapon Bargain Now Turns Into an Artwork
+
 \[prereq\]
 武器バーゲンセール1
 
@@ -479,9 +526,19 @@ true
 
 市ヶ谷の防衛省前で毎年開催される武器バーゲンセール。この催しで、通行人は、防衛省の前のブルーシート上に並べられた武器を自由に手に取って持ち帰ることができる。持ち帰った武器の使い道は様々。観賞用であったり、転売する人、〇〇のためにひたすら集めている人もいる。今回は、そのなかでも一風変わった使い道、集めた武器を使ってアート作品を作った人を紹介する。「まる子」の名前で活動する芸術家は語る——「モンテカルロ法というアルゴリズムをご存知でしょうか。例えば針を上から落とす実験を1000回繰り返すとします。落ちた先の座標を記録しておきます。それらの座標データから、円周率を実験的に計算することができるのです。銃を上向きに発射して、弾丸がどこに落ちるのかを数えても、同様のことができるのではないかと私は考えました。私は過去にITエンジニアとして働いていました。暗闇の中で光る四角いディスプレイは、だんだんと見つめているうちに、円になってきたのです。その円の奥底から、私はこの作品のビジョンを得たのです。」
 
+\[text-ja\]
+During the annual event held in front of Ichigaya's Ministry of Defense (MoD) Headquarters, pedestrians can freely take weapons and ammunitions, which were once the military's assets. What to do with the weapons, now at your hands in your home? Their reason varies —— personal nerdy millitary collections, reselling weapons for profit, building a 〇〇 armory for the ultimate purpose of 〇〇, etc.
+
+And for some, they are taken for uncanny purpose —— an artwork made from a MoD weapon! The artist, called Maruko, said: "Have you heard of the algorithm called Monte Carlo method? For example, we drop needles on a sheet of paper, then count the coordinates where they touch the paper. For accuracy we may also need some straight lines and "
+
 \[images\]
+<img src="assets/images/313aaeda4dcc40fe9ae04165fc13becf.webp" style="aspect-ratio: 1.4005555555555556;" />
 
 \[image_caption\]
+市ヶ谷、防衛省前。たまに感情的になるカメラを持っていったので、他の人には見えないものが見えてしまっているかも知れません。
+
+\[image_caption_work_title\]
+とら《市ヶ谷の青空》、185 mm × 129 mm、紙に水彩、2026
 
 \[tag\]
 
@@ -499,19 +556,38 @@ true
 
 注意
 
+\[title-en\]
+
+introduction
+
 \[text\]
 この作品には、以下の要素が含まれます。
 
 - 過度に性的ではないが、性器や性の概念を扱った文章や絵
-- 戦争と植民地支配について
+- 戦争、暴力、植民地支配について
 - 死
 - 世の中がどんどん悪くなっていくことへの悲嘆にも感じられるかもしれない何か
 
-### 操作方法
+## 操作方法
 
 {{ meta.get_instruction_manual() }}
 
 このプログラムを作るに当たって使用したプログラムの一覧は、[こちらのリンク](https://os3.torahappy.org/shimbun_web/dependencies.html)で確認できます。
+
+\[text-en\]
+
+This work has following elements:
+
+- although not sexually explicit, talks about sexual concepts
+- war, violence, colonialism
+- death
+- somewhat dooming dooming despair on how the world has gotten worse and is becoming worse
+
+## How to Play
+
+{{ meta.get_instruction_manual() }}
+
+To see the list of softwares used in this work, follow [this link](https://os3.torahappy.org/shimbun_web/dependencies.html).
 
 \[prereq-for\]  
 all
@@ -522,8 +598,14 @@ all
 \[image_caption\]
 今からあなたは、白昼夢のようなあれこれの思いのなかを彷徨う。
 
+\[image_caption-en\]
+wandering through the daydreaming thoughts, despair and hope.
+
 \[image_caption_work_title\]
 とら《わたしのせかい》、185 mm × 129 mm、紙に水彩、2026
+
+\[image_caption_work_title-en\]
+tora, *My World*, 185 mm × 129 mm, water paint on paper, 2026
 
 \[tag\]
 
@@ -537,15 +619,17 @@ all
 
 花粉と電波の相互作用、解明に一歩近づく
 
+\[title-en\]
+
+Research Shows Interference Between Pollens and Electrical Signals
+
 \[text\]
 
 {{ date.before(32).month_day() }}に国際学術誌「ねーちゃん」に投稿された論文によれば、花粉が電波に干渉してインターネット速度が低下することが判明した。
 
-\[images\]
+\[text-en\]
 
-\[image_caption\]
-
-\[image_caption_work_title\]
+According to a research article posted on the international journal *O Neechan* {{ date.before(32).month_day() }}, pollens might cause interference with the electrical activity, specifically leading to glitches and delays in the internet connection.
 
 \[tag\]
 
@@ -572,9 +656,8 @@ all
 {% filter footnote %}  
 そして、それらの物質は川や海、土へと、誰も知らないまま流される。あるいは誰かがそのことを知っていたとしても、お国のためならいいじゃないかと、生活を豊かにしてやっているのだから黙れと、言われるのだろう。
 
-ひとつの　じょうほう
-[チッソの加害は植民地から引き継がれた―水俣と朝鮮、暮らしから見えるその歴史](https://d4p.world/33600/)
-{% endfilter %}  
+ひとつの　じょうほう: [チッソの加害は植民地から引き継がれた―水俣と朝鮮、暮らしから見えるその歴史, 安田菜津紀, Dialogue for People, 2025](https://d4p.world/33600/)
+{% endfilter %}
 きっと敵を惹きつけた上で無慈悲に殺してくれます。」
 
 気になる班員たちの初仕事は……？【特定秘密保護法により検閲】
@@ -611,6 +694,10 @@ all
 
 見出し及び文章末尾の問題
 
+\[title-en\]
+
+On the Headlines and the Closing Words
+
 \[alias\]
 
 見出しの問題
@@ -629,9 +716,24 @@ all
 
 そういう態度は、客観的なんじゃなくて、単なるいじめへの加担に過ぎないと思う。
 
-\[images\]
+[text-en]
 
-\[image_caption\]
+such a phrase "a major win for Trump Administration"
+
+such a phrase "the recent 〇〇 was a major blow against 〇〇"
+
+there are so many kinds of headlines and closing words that make me sad.
+
+why you have to be so cold and cruel?
+
+why you can be so apathetic???
+
+it's not a show. people's lives depends on your words
+
+don't you understand the pain and suffering, to be deprived of rights to live on  
+by the higher-up
+
+such words, aren't "objective analysis" anymore. you're just helping the bullies.
 
 \[tag\]
 
@@ -686,10 +788,6 @@ all
 薬殺後のあなたは、ムーンショット研究開発や臓器移植など幅広い分野に役立てられることになります。
 
 国税庁
-
-\[images\]
-
-\[image_caption\]
 
 \[tag\]
 

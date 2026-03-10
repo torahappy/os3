@@ -25,6 +25,7 @@ pub enum GameStage {
     ArticleView,
     ArticleFading,
     ForecastStart,
+    Cleanup
 }
 
 #[derive(RustEmbed)]
@@ -195,8 +196,7 @@ impl<'a> Date {
             candidates.push((11, format!("来年{}月{}日", new_month, self.day)));
         }
 
-        // Fallback – full date
-        candidates.push((12, format!("{}年{}月{}日", new_year, new_month, self.day)));
+        // Fallback – fTIME_TILL_LOCK        candidates.push((12, format!("{}年{}月{}日", new_year, new_month, self.day)));
 
         // This will serialize the program execution tree. Inputs which share same execution tree
         // results in the same condition_hash.

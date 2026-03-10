@@ -114,6 +114,18 @@
     .article.hidden {
       display: none;
     }
+    .article.forecast {
+      animation: 10s linear 0s 1 normal forecast-introduce;
+    }
+    @keyframes forecast-introduce {
+      from {
+        opacity: 0;
+      }
+      to {
+        opacity: 1;
+      }
+    }
+
     .forecast img {
       opacity: 0.3;
     }
@@ -127,7 +139,12 @@
       margin-top: 1em;
       margin-bottom: 1em;
     }
-    html, body, .app-wrapper { width: 100%; height: 100%;}
+    html,
+    body,
+    .app-wrapper {
+      width: 100%;
+      height: 100%;
+    }
     #mouse-evt-overlay {
       z-index: 100;
       position: fixed;
