@@ -2,30 +2,22 @@
 
 pub mod util;
 
-use os3yew::util::RectMask;
 use askama::Template;
+use os3yew::util::RectMask;
 // use gloo_net::http::Request;
-use rand::{
-    Rng, RngExt, SeedableRng,
-    distr::slice::Choose,
-    rng,
-    rngs::StdRng,
-};
+use rand::{Rng, RngExt, SeedableRng, distr::slice::Choose, rng, rngs::StdRng};
 use rust_embed::RustEmbed;
 // use rustybuzz::{UnicodeBuffer, shape};
-use std::
-    fmt::Display
-;
-use web_sys::window;
 use chrono::{Datelike, NaiveDate};
-
+use std::fmt::Display;
+use web_sys::{js_sys::Atomics::add, window};
 
 #[derive(PartialEq, Clone, Copy, Debug, PartialOrd)]
 pub enum GameStage {
     ArticleView,
     ArticleFading,
     ForecastStart,
-    Cleanup
+    Cleanup,
 }
 
 #[derive(RustEmbed)]
@@ -41,7 +33,6 @@ pub struct ArticleTemplate {
     pub date: Box<Date>,
 }
 
-
 #[derive(Debug, Clone, PartialEq)]
 pub struct Date {
     pub year: i32,
@@ -49,6 +40,24 @@ pub struct Date {
     pub day: u32,
     pub original_date: Option<Box<Date>>,
     pub condition_seed: u64,
+    pub lang: String,
+
+    /// Is first word in the sentence?
+    pub is_first_word: bool,
+
+    /// Is the preposition already provided (such as "since Jan 6th")? Then, use DoNotFill.
+    /// If not, use PrepositionOn and such.
+    /// (When Using PrepositionOn, we'll have "on Jan 6th", "today" (not "on today") etc.)
+    pub preposition: PrepositionType
+}
+
+#[derive(Debug, Clone, PartialEq)]
+/// Is the preposition already provided (such as "since Jan 6th")? Then, use DoNotFill.
+/// If not, use PrepositionOn and such.
+/// (When Using PrepositionOn, we'll have "on Jan 6th", "today" (not "on today") etc.)
+pub enum PrepositionType {
+    DoNotFill,
+    PrepositionOn
 }
 
 impl Display for Date {
@@ -58,24 +67,41 @@ impl Display for Date {
 }
 
 impl<'a> Date {
-    pub fn new(year: i32, month: u32, day: u32) -> Self {
+    pub fn new(year: i32, month: u32, day: u32, lang: String) -> Self {
         Date {
             year,
             month,
             day,
             original_date: None,
             condition_seed: rng().next_u64(),
+            lang,
+            is_first_word: false,
+            preposition: PrepositionType::PrepositionOn
         }
+    }
+
+    pub fn first_word(&self) -> Date {
+        Date { is_first_word: true, ..self.clone() }
+    }
+
+    pub fn no_first_word(&self) -> Date {
+        Date { is_first_word: false, ..self.clone() }
+    }
+
+    pub fn prep_on(&self) -> Date {
+        Date { preposition: PrepositionType::PrepositionOn, ..self.clone() }
+    }
+
+    pub fn no_fill_prep(&self) -> Date {
+        Date { preposition: PrepositionType::DoNotFill, ..self.clone() }
     }
 
     pub fn move_origin(&self) -> Date {
         // discard the original_date field in the original_date arg
         Date {
-            year: self.year.clone(),
-            month: self.month.clone(),
-            day: self.day.clone(),
             original_date: None,
             condition_seed: rng().next_u64(),
+            ..self.clone()
         }
     }
 
@@ -89,7 +115,7 @@ impl<'a> Date {
             month: naive_date.month(),
             day: naive_date.day(),
             original_date: Some(Box::new(self.clone())),
-            condition_seed: self.condition_seed,
+            ..self.clone()
         };
 
         new_date
@@ -106,19 +132,34 @@ impl<'a> Date {
             month: naive_date.month(),
             day: naive_date.day(),
             original_date: Some(Box::new(self.clone())),
-            condition_seed: self.condition_seed,
+            ..self.clone()
         };
 
         new_date
     }
 
     pub fn month_day(&self) -> String {
-        let mut candidates: Vec<(u32, String)> = Vec::new();
+        let mut candidates: Vec<String> = Vec::new();
+
+        let add_prop = |x: String| {
+            if self.preposition == PrepositionType::PrepositionOn {
+                "on ".to_string() + &x
+            } else {
+                x
+            }
+        };
 
         // If this is the original date, we call it "今日"
         if self.original_date.is_none() {
-            candidates.push((0, "本日".to_string()));
-            candidates.push((1, format!("本日{}日", self.day)));
+            if self.lang == "ja" {
+                candidates.push(("本日".to_string()));
+                candidates.push(("本日%-e日".to_string()));
+            }
+            if self.lang == "en" {
+                candidates.push(("today".to_string()));
+                candidates.push(("today %-e<th>".to_string()));
+                candidates.push(("%-e<th> today".to_string()));
+            }
         }
 
         let self_clone = Box::new(self.clone());
@@ -137,12 +178,24 @@ impl<'a> Date {
         // Yesterday / Tomorrow logic – check first
         match day_diff {
             1 => {
-                candidates.push((2, "明日".to_string()));
-                candidates.push((3, format!("明日{}日", self.day)));
+                if self.lang == "ja" {
+                    candidates.push(("明日".to_string()));
+                    candidates.push(("明日%-e日".to_string()));
+                }
+                if self.lang == "en" {
+                    candidates.push(("tomorrow".to_string()));
+                    candidates.push(("tomorrow %-e<th>".to_string()));
+                }
             }
             -1 => {
-                candidates.push((4, "昨日".to_string()));
-                candidates.push((5, format!("昨日{}日", self.day)));
+                if self.lang == "ja" {
+                    candidates.push(("昨日".to_string()));
+                    candidates.push(("昨日%-e日".to_string()));
+                }
+                if self.lang == "en" {
+                    candidates.push(("yesterday".to_string()));
+                    candidates.push(("yesterday %-e<th>".to_string()));
+                }
             }
             _ => {} // continue with month‑based logic
         }
@@ -167,41 +220,80 @@ impl<'a> Date {
         // “先月/来月”
         match month_diff {
             -1 => {
-                candidates.push((6, format!("先月{}日", self.day)));
+                if self.lang == "ja" {
+                    candidates.push(("先月%-e日".to_string()));
+                }
+                if self.lang == "en" {
+                    candidates.push(add_prop("%-e<th> last month".to_string()));
+                }
             }
             1 => {
-                candidates.push((7, format!("来月{}日", self.day)));
+                if self.lang == "ja" {
+                    candidates.push(("来月%-e日".to_string()));
+                }
+                if self.lang == "en" {
+                    candidates.push(add_prop("%-e<th> next month".to_string()));
+                }
             }
             _ => {} // fall‑through for other cases
         }
 
         // Same month & year – “今月…”
         if orig_month == new_month && orig_year == new_year {
-            candidates.push((8, format!("今月{}日", self.day)));
-            candidates.push((13, format!("{}日", self.day)));
+            if self.lang == "ja" {
+                candidates.push(("今月%-e日".to_string()));
+                candidates.push(("%-e日".to_string()));
+            }
+            if self.lang == "en" {
+                candidates.push(add_prop("%-e<th> this month".to_string()));
+            }
         }
 
         // Same year but different month – “X月…”
         if orig_year == new_year {
-            candidates.push((9, format!("{}月{}日", new_month, self.day)));
+            if self.lang == "ja" {
+                candidates.push(("%-m月%-e日".to_string()));
+            }
+            if self.lang == "en" {
+                candidates.push(add_prop("%B %-e<th>".to_string()));
+                candidates.push(add_prop("%B %-e".to_string()));
+            }
         }
 
         // Previous year – “昨年…”
         if new_year == orig_year - 1 {
-            candidates.push((10, format!("昨年{}月{}日", new_month, self.day)));
+            if self.lang == "ja" {
+                candidates.push(("昨年%-m月%-e日".to_string()));
+            }
+            if self.lang == "en" {
+                candidates.push(add_prop("%B %-e<th> last year".to_string()));
+                candidates.push(add_prop("%B %-e last year".to_string()));
+            }
         }
 
         // Next year – “来年…”
         if new_year == orig_year + 1 {
-            candidates.push((11, format!("来年{}月{}日", new_month, self.day)));
+            if self.lang == "ja" {
+                candidates.push(("来年%-m月%-e日".to_string()));
+            }
+            if self.lang == "en" {
+                candidates.push(add_prop("%B %-e<th> next year".to_string()));
+                candidates.push(add_prop("%B %-e next year".to_string()));
+            }
         }
 
-        // Fallback – fTIME_TILL_LOCK        
-        candidates.push((12, format!("{}年{}月{}日", new_year, new_month, self.day)));
+        // Fallback – fTIME_TILL_LOCK
+        if self.lang == "ja" {
+            candidates.push("%Y年%-m月%-e日".to_string());
+        }
+        if self.lang == "en" {
+            candidates.push(add_prop("%B %-e<th>, %Y".to_string()));
+            candidates.push(add_prop("%B %-e, %Y".to_string()));
+        }
 
         // This will serialize the program execution tree. Inputs which share same execution tree
         // results in the same condition_hash.
-        let condition_list = candidates.iter().map(|x| x.0.clone()).collect::<Vec<u32>>();
+        let condition_list = candidates.iter().cloned().collect::<Vec<_>>();
         let rs = ahash::RandomState::with_seed(42);
         let condition_hash = rs.hash_one(condition_list);
 
@@ -212,7 +304,25 @@ impl<'a> Date {
 
         let string_list = candidates
             .iter()
-            .map(|x| x.1.clone())
+            .map(|x| {
+                let mut y = "".to_string();
+                let _ = naive_self.format(x).write_to(&mut y);
+                if self.lang == "en" {
+                    y = y.replace("<th>", {
+                        match self.day % 10 {
+                            1 => "st",
+                            2 => "nd",
+                            3 => "rd",
+                            _ => "th"
+                        }
+                    });
+                    if self.is_first_word {
+                        let upper_c = y.chars().nth(0).unwrap().to_ascii_uppercase();
+                        y.replace_range(0..1, &upper_c.to_string());
+                    }
+                }
+                y
+            })
             .collect::<Vec<String>>();
 
         r.sample(Choose::new(&string_list).unwrap()).clone()
@@ -273,4 +383,3 @@ pub struct Article {
     pub y: f64,
     pub masks: Vec<Option<RectMask>>,
 }
-

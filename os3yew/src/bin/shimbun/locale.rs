@@ -22,6 +22,21 @@ const LOCALE_DATA_EN: LazyLock<HashMap<String, String>> = std::sync::LazyLock::n
     )
 });
 
+//     candidates.push((0, "本日".to_string()));
+//     candidates.push((1, format!("本日{}日", self.day)));
+//         candidates.push((2, "明日".to_string()));
+//         candidates.push((3, format!("明日{}日", self.day)));
+//         candidates.push((4, "昨日".to_string()));
+//         candidates.push((5, format!("昨日{}日", self.day)));
+//         candidates.push((6, format!("先月{}日", self.day)));
+//         candidates.push((7, format!("来月{}日", self.day)));
+//     candidates.push((8, format!("今月{}日", self.day)));
+//     candidates.push((13, format!("{}日", self.day)));
+//     candidates.push((9, format!("{}月{}日", new_month, self.day)));
+//     candidates.push((10, format!("昨年{}月{}日", new_month, self.day)));
+//     candidates.push((11, format!("来年{}月{}日", new_month, self.day)));
+// candidates.push((12, format!("{}年{}月{}日", new_year, new_month, self.day)));
+
 pub fn get_system_word(lang_code: &str, data_key: &str) -> String {
     if lang_code == "en" {
         return LOCALE_DATA_EN.get(data_key).unwrap().clone();

@@ -87,25 +87,6 @@ fn get_sizemod_from_time(x: f64) -> f64 {
 
 #[component]
 fn App() -> Html {
-    let current_language = use_state(|| DEFAULT_LANGUAGE.to_string());
-
-    // current article
-    let current_article = use_state(|| {
-        Some(Article {
-            template: ArticleTemplate {
-                title: "注意".to_string(),
-                mood: Mood {},
-                meta: Default::default(),
-                date: Box::new(Date::new(2026, 2, 13)),
-            },
-            w: Some(1000.0),
-            h: None,
-            x: 30.0,
-            y: 30.0,
-            masks: Vec::new(),
-        })
-    });
-
     // all titles (Actually, "title" in this regard is different from title (heading) shown on the
     // display. Rather, it acts as an internal ID, and has more strict naming rules than "title"
     // that will be displayed.)
@@ -120,38 +101,47 @@ fn App() -> Html {
         return h;
     });
 
-    {
-        let current_language = current_language.clone();
-        let current_article = current_article.clone();
-        let all_titles = all_titles.clone();
-
-        use_effect_with((), move |_| {
-            let s = window().unwrap().location().search().unwrap();
-            let usp = web_sys::UrlSearchParams::new_with_str(&s).unwrap();
-            if let Some(lang) = usp.get(&"lang") {
-                if LANGUAGES.contains(&lang) {
-                    current_language.set(lang);
-                }
+    let current_language = use_state(|| {
+        let s = window().unwrap().location().search().unwrap();
+        let usp = web_sys::UrlSearchParams::new_with_str(&s).unwrap();
+        if let Some(lang) = usp.get(&"lang") {
+            if LANGUAGES.contains(&lang) {
+                return lang;
             }
+        }
+        DEFAULT_LANGUAGE.to_string()
+    });
+
+    // current article
+    let current_article = use_state(|| {
+        let s = window().unwrap().location().search().unwrap();
+        let usp = web_sys::UrlSearchParams::new_with_str(&s).unwrap();
+
+        let title = {
             if let Some(current) = usp.get(&"current") {
                 if all_titles.contains(&current) {
-                    current_article.set(Some(Article {
-                        template: ArticleTemplate {
-                            title: current,
-                            mood: Mood {},
-                            meta: Default::default(),
-                            date: Box::new(Date::new(2026, 2, 13)),
-                        },
-                        w: Some(1000.0),
-                        h: None,
-                        x: 30.0,
-                        y: 30.0,
-                        masks: Vec::new(),
-                    }));
+                    current
+                } else {
+                    "注意".to_string()
                 }
+            } else {
+                "注意".to_string()
             }
-        });
-    };
+        };
+        Some(Article {
+            template: ArticleTemplate {
+                title,
+                mood: Mood {},
+                meta: Default::default(),
+                date: Box::new(Date::new(2026, 2, 13, (*current_language).clone())),
+            },
+            w: Some(1000.0),
+            h: None,
+            x: 30.0,
+            y: 30.0,
+            masks: Vec::new(),
+        })
+    });
 
     let render_number = use_state(|| 0);
 

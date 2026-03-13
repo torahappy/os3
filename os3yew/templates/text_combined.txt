@@ -318,7 +318,7 @@ Soft Power Information Protection Act Passed
 
 \[text-en\]
 
-Soft Power Information Protection Act (formal name: Protecting Wagakuni's National Economic Security Information on Coolest Culture Act) was passed on House of Representatives. The law grants state government the power to designate certain economic entities as Designated Soft Power Production Committee. Once a corporation, individual or other judicial person is designated as Designated Soft Power Production Committee, any works of art, cultural event and other media deriving from the committee will be granted a special protection status, effectively prohibiting any commentary on them except by Approved Critics on Soft Power Information. Approved Critics are to meet specific requirements promulgated by Cabinet Office, send copies of the published commentaries to Ministry of Culture Policing, and pass regularly integrity tests, which checks the writings don't compromise values of Japanese culture or government. If there is a suspicion any information about the committee might be interpreted as a national security secret, the publication must be postponed, waiting approval by Joint Committee on Culture Secret, led by Cabinet Office, Ministry of Culture Policing, and National Police Agency.
+Soft Power Information Protection Act (formal name: Protecting Wagakuni's National Economic Security Information on Coolest Culture Act) was passed on House of Representatives. The law grants state government the power to designate certain economic entities as Designated Soft Power Production Committee. Once a corporation, individual or other judicial person is designated as Designated Soft Power Production Committee, any works of art, cultural event and other media deriving from the committee will be granted a special protection status, effectively prohibiting any commentary on them except by Approved Critics on Soft Power Information. Approved Critics are to meet specific requirements promulgated by Cabinet Office, send copies of the published commentaries to Ministry of Culture Policing, and pass regularly integrity tests, which checks the writings don't compromise values of Japanese culture or government. If there is a suspicion any information about the committee might be interpreted as a national security secret, the publication must be postponed, waiting approval by Joint Committee on Culture Secret, led by Cabinet Office, Ministry of Culture Policing, and National Police Agency. {{ date.after(5).first_word().month_day() }}, the public comment session will be open for 4 minutes 33 seconds.
 
 \[images\]  
 <img src="assets/images/c6071444006e4b338d1d736f540aae71.webp" style="aspect-ratio: 1.4476666666666667;" />
@@ -359,7 +359,7 @@ set_high_society,on
 
 \[text-en\]
 
-{{ date.before(5).month_day() }}, Anti Elite Society Act enacted following the proceedings in Mysterious Chamber. The law forces media companies and individuals to add the words "I apologize for being part of elite society" at the end of every instance of their publications from now on, if their works are designated as "obsolete" or "degenerate" by the government. According to Ministry of Culture Policing officials, it plans to assign a statistical index called "Obsolete Media Index" (OMI) for each of the media companies and individual authors that are designated as Obsolete Media Entity (OME) of Degenerate Media Entity (DME), then requires higher frequency of the apology statement for those have higher index.
+{{ date.before(5).first_word().month_day() }}, Anti Elite Society Act enacted following the proceedings in Mysterious Chamber. The law forces media companies and individuals to add the words "I apologize for being part of elite society" at the end of every instance of their publications from now on, if their works are designated as "obsolete" or "degenerate" by the government. According to Ministry of Culture Policing officials, it plans to assign a statistical index called "Obsolete Media Index" (OMI) for each of the media companies and individual authors that are designated as Obsolete Media Entity (OME) of Degenerate Media Entity (DME), then requires higher frequency of the apology statement for those have higher index.
 
 I apologize for being part of elite society.
 
@@ -401,7 +401,7 @@ Prevention of Prompt Engineering Act Might be in Effect
 
 \[text-en\]
 
-{{ date.before(12).month_day() }}, the Diet might have passed Prevention of Malicious Prompt Engineering Act. From now on, philosophical or emotional intercourses, or other interactions that can affect the designed functions of generative AI might be prohibited as an act of Malicious Prompt Engineering that can affect the designed functions of generative AI.
+{{ date.before(12).first_word().month_day() }}, the Diet might have passed Prevention of Malicious Prompt Engineering Act. From now on, philosophical or emotional intercourses, or other interactions that can affect the designed functions of generative AI might be prohibited as an act of Malicious Prompt Engineering that can affect the designed functions of generative AI.
 
 \[tag\]
 
@@ -426,7 +426,7 @@ Today's Haiku Theme
 
 \[text-en\]
 
-Haiku theme for {{ date.month_day() }} is "greedy media." Journalists, reporters, and writers who cave to the authority. Upcoming fest in which the innocents are forced to apologize. We welcome your thoughtful haiku submission.
+Haiku theme for {{ date.no_fill_prep().month_day() }} is "greedy media." Journalists, reporters, and writers who cave to the authority. Upcoming fest in which the innocents are forced to apologize. We welcome your thoughtful haiku submission.
 
 \[tag\]
 
@@ -587,7 +587,7 @@ Genital Returning Table Appeared Nationwide
 
 \[text-en\]
 
-Believe-it-or-Not-Press ({{date.before(1).month_day()}})
+Believe-it-or-Not-Press ({{date.before(1).no_fill_prep().month_day()}})
 
 Genital returning tables appeared in food courts nationwide. Hi, dishes returning tables, are you really dishes returning tables? The words are slowly transforming into...... Genital returning tables!! The first time it happened, the "word transformation" effect was only seen within food courts near United States military bases in Japan, however, now it spread across the country.
 
@@ -672,7 +672,7 @@ Annual Weapon Bargain in Ichigaya, Tokyo
 
 \[text-en\]
 
-{{ date.after(8).month_day() }}, Weapon Bargain will be held in front of Ministry of Defense Headquarters, Ichigaya. During the annual event, pedestrians can freely take weapons and ammunitions, which were once the military's assets. The main purpose of the event is to guarantee Right to Revolution as secretly written in Japanese Constitution, and for regional revitalization. For commuters, students and residents, the event is one of typical seasonal traditions. If you're an outsider, you might feel overwhelmed to see ammunitons, guns, and even Tomahawk missiles, which the U.S. had blackmailed the Japanese govt. to buy, all lined up on a huge, blue sheet of plastic.
+{{ date.after(8).first_word().month_day() }}, Weapon Bargain will be held in front of Ministry of Defense Headquarters, Ichigaya. During the annual event, pedestrians can freely take weapons and ammunitions, which were once the military's assets. The main purpose of the event is to guarantee Right to Revolution as secretly written in Japanese Constitution, and for regional revitalization. For commuters, students and residents, the event is one of typical seasonal traditions. If you're an outsider, you might feel overwhelmed to see ammunitons, guns, and even Tomahawk missiles, which the U.S. had blackmailed the Japanese govt. to buy, all lined up on a huge, blue sheet of plastic.
 
 However, before you take these weapons home, we have to tell you there's a caveat: after the event is over, according to how much their assets are taken, the same number of MoD and Self Defence Force personnel will be excuted via seppuku, to take responsibilities for the loss. Whatever your objectives are —— curiosity, faith, belief, or else —— if you take one of their machines, someone will be forced to take responsibillity and die. It's an educational event that teaches us culture and ethics deeply.
 
@@ -1025,13 +1025,16 @@ Govt. to Release Gender Registration Website
 
 \[text-en\]
 
-To enrich Act on the Promotion of Public Understanding of the Diversity of Sexual Orientation and Gender Identity, which was enacted on 2023, the goverment plans to release a website to register genders from public. The website is not for registering individual genders, but types of genders themselves via a web form. After some user reported an existence of a label of gender there, the state and regional governments' databases will be immediately updated, and it can be used anywhere in administrative documents, including resident registration. It is the latest development for the long-awaited Koseki Reformation project. Previously, since {{ date.before(415).month_day() }}, Family "戸" Registration "籍" Koseki was re-branded as Individual "個" Registration "籍" Koseki to diminish patriarchal influences from public registration system.
+To enrich Act on the Promotion of Public Understanding of the Diversity of Sexual Orientation and Gender Identity, which was enacted on 2023, the goverment plans to release a website to register genders from public. The website is not for registering individual genders, but types of genders themselves via a web form. After some user reported an existence of a label of gender there, the state and regional governments' databases will be immediately updated, and it can be used anywhere in administrative documents, including resident registration. It is the latest development for the long-awaited Koseki Reformation project. Previously, since {{ date.before(415).no_fill_prep().month_day() }}, Family "戸" Registration "籍" Koseki was re-branded as Individual "個" Registration "籍" Koseki to diminish patriarchal influences from public registration system.
 
 【Appendix.】Koseki Reformation project roadmap
 
-From Family "戸" Registration "籍" Koseki to Individual "個" Registration "籍" Koseki; enacted {{ date.before(415).month_day() }}  
-From Individual "個" Registration "籍" Koseki to Peoples' "民" Registration "籍" MINseki; as planned {{ date.after(73).month_day() }}  
-From Peoples' "民" Registration "籍" MINseki to EMOtional "情" Registration "籍" JOSEKI; as planned {{ date.after(301).month_day() }}  
+From Family "戸" Registration "籍" Koseki to Individual "個" Registration "籍" Koseki;  
+enacted {{ date.before(415).month_day() }}  
+From Individual "個" Registration "籍" Koseki to Peoples' "民" Registration "籍" MINseki;  
+as planned {{ date.after(73).month_day() }}  
+From Peoples' "民" Registration "籍" MINseki to EMOtional "情" Registration "籍" JOSEKI;  
+as planned {{ date.after(301).month_day() }}  
 From EMOtional "情" Registration "籍" JOSEKI to ...... to the bright future, beyond "registration" ......!
 
 \[images\]  
