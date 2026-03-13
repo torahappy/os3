@@ -17,7 +17,7 @@ According to a joint statement issued by Ministry of Internal Affairs, Ministry 
 
 {% filter footnote %}
 
-In Japanese, "cider" refers to wide variety of carbonated drinks such as soda, coke, etc.
+\* In Japanese, "cider" refers to wide variety of carbonated drinks such as soda, coke, etc.
 
 {% endfilter %}
 
@@ -35,6 +35,10 @@ In Japanese, "cider" refers to wide variety of carbonated drinks such as soda, c
 
 「国務大臣思念制」導入へ
 
+\[title-en\]
+
+Government to Introduce Ministers Forging Ritual
+
 \[text\]
 
 今国会に提出予定の憲法改正案(緊急-迅速審査型)に、「国務大臣思念制」が盛り込まれる模様だ。内容は、80歳以上の国会議員及び、国家の歴史に重要な貢献をした元国会議員の内5名から10名を「坩堝(るつぼ)」において溶かして製造された玉に、特定の字句や概念、ミーム等を「刻印」して製造される「思念体」に、今後の国務大臣（内閣総理大臣・大統領・総帥・大総帥・極超総帥職を除く）の役職を任せるというもの。
@@ -43,58 +47,102 @@ In Japanese, "cider" refers to wide variety of carbonated drinks such as soda, c
 
 平毒文化警察大臣: 日本庭園を所有する5名の国会議員を坩堝に入れてグツグツと煮た上で、平たいキャンバス、白くて大きな壁、そして毒物のイメージとを融合。
 
-\[images\]
+\[text-en\]
+
+A Constitutional Reform Proposal (Emergency-Fast-Track Type) which is to be referred to the Diet soon includes the proposal of Ministers Forging Ritual. During the ritual, some MPs over 80s, and other ex-MPs who contributed to the national history will be thrown into the crucible, forging a mythical jade stone. Then, the stone will be inscribed with some words, concepts or memes, turning it into a Thought Sphere, which will perform the ministers' duties.
+
+An Example of Configuration of Thought Sphere
+
+Mr. Flat Poison, Minister of Culture Policing: put 5 MPs who all own a traditional Japanese garden in the crucible, cook well, add some contexts and images such as a flat canvas, a flat, white, large wall, and poison.
+
+\[images\]  
 <img src="assets/images/fc90f6c17da54feda31b850172d1fa9c.webp" style="aspect-ratio: 1.442384105960265;" />
 
-\[image_caption\]
-AIシステムによる調整のもとで、るつぼへと溶かされていく概念たちをイメージした鎮魂の概念図。
+\[image_caption\]  
+AIシステムによる調整のもとで、るつぼへと溶かされていく国会議員や概念たちをイメージした鎮魂の概念図。
 
-\[image_caption_work_title\]
+\[image_caption-en\]  
+A sobbing illustration, depicting peoples and concepts being cooked in the crucible.
+
+\[image_caption_work_title\]  
 とら《罪重なる紙》、185 mm × 129 mm、紙に水彩、2026
+
+\[image_caption_work_title-en\]  
+tora *Culpable Cumulative Clips*, 185 mm × 129 mm, water paint on paper, 2026
 
 \[tag\]
 
-魔法+10
-よくなる+7
-わるくなる+7
-おふざけ+7
-すなお+5
-超現実+12
+魔法+10  
+よくなる+7  
+わるくなる+7  
+おふざけ+7  
+すなお+5  
+超現実+12  
 言葉の呪い+1
 {% endif %}
 {% if title == "「大大補償大会」開催決定" %}
 \[title\]
+
 「大大補償大会」開催決定
 
-\[inhibit_effect\]
+\[title-en\]
+
+Great Great Reparation Congress Announced
+
+\[inhibit_effect\]  
 high_society
 
-\[text\]
-全世界の生きとし生けるものが待ち望んでいた、大大補償大会（正式名称：企業・政府及び企業・政府が実質的に関与するあらゆる私兵組織、外郭団体その他による、いろいろな権利侵害行為および権利侵害の黙認行為に対する補償の大会）が、世界のための機関により、時空を超えたあの場所で開催されることが正式に告知された。
+\[prereq\]  
+all
+
+\[text\]  
+全世界の生きとし生けるものが待ち望んでいた、大大補償大会（正式名称：企業・政府、その他あらゆる私兵組織、外郭団体その他による、いろいろな権利侵害行為および権利侵害の黙認行為に対する補償の大会）が、世界のための機関により、時空を超えたあの場所で開催されることが正式に告知された。
 
 １回大会を開いてそれで終わりいいのか、大会の情報にアクセスしづらい人にどのように周知するか、裁判・審判の仕組み、金銭的な補償の他に何ができるのか、企業や政府という括りを超えた枠組みの形成など、まだまだやるべき議論が数多くある。
 
 あくまでこれは第一歩に過ぎない。見せかけのものではない、本当の意味での反省、補償、和解の道を進むことは、困難を極めるが、やらねばならないことだ。大大補償大会をきっかけにして、状況が少しでも改善されることを祈る他ない。
 
-\[images\]
+\[text-en\]
+
+All existence in the world have long been waited for this time. The commencement of Great Great Reparation Congress (a.k.a. The Congress on Reparation for Violations of Rights and the Condoning of Violations of Rights Committed by Corporations, States, Militia, Mafia, or other Related Organizations) has just been announced. The congress will be held by the *Institution* for the world, at the *Place* that transcends time and space.
+
+Just one-time Congress would not be enough for full consideration and reparation. What about people who have difficulties in accessing the information on the Congress? How the trials and deliberation processes should be designed? The types of reparations other than the monetary? How it can act beyond corporations and states? There are still much to discuss.
+
+This is just a small step forward. Going through the true reparation, redemption, reflection and reconciliation —— not just being a facade —— will not be an easy task, but it have to be done someday. I hope that the commencing of the first Congress improves the current situation, even little by little.
+
+\[ending\]  
+本作のコンテンツは、今のところはここまでになります。  
+今後もコンテンツを追加して行きたいと思っています。
+
+\[ending-en\]  
+You have seen all the the game contents so far.  
+I'm planning for game updates. Stay tuned!
+
+\[images\]  
 <img src="assets/images/33b72989270e4ff8bd7bd05ab3e36aff.webp" style="aspect-ratio: 1.4380574826560952;" />
 
-\[image_caption_work_title\]
+\[image_caption_work_title\]  
 とら《システマティックな救いとシステムを超えた救い》、185 mm × 129 mm、紙に水彩、2026
+
+\[image_caption_work_title-en\]  
+tora *Systematic Salvation and the Salvation Beyond the System*, 185 mm × 129 mm, water paint on paper, 2026
 
 \[tag\]
 
-よくなる+25
-おふざけ+1
-すなお+14
-現実+20
+よくなる+25  
+おふざけ+1  
+すなお+14  
+現実+20  
 超現実+20
-
 {% endif %}
 {% if title == "「桜分裂」の呪い" %}
 \[title\]
 
 超ゆるふわ呪術師会、今度は「桜分裂」の呪い
+
+\[title-en\]
+
+Ultra Low-Esteem Jujutsushi Association Now Targets Sakura
 
 \[text\]
 
@@ -102,45 +150,81 @@ high_society
 
 【犯行声明全文】
 
-本日正午より、日本国全域において、象徴としての桜が分裂する呪いをかけた。
-パスポート、紙幣、切手、証明書、政党のロゴ、合格と入学式のイラストに刻まれた、生命体としての桜から乖離した、哀れで、得体の知れない、抑圧の象徴。生命体としての桜と分けるため、仮にここでは〈サクラ〉と読んでおこう。
-私たちは、それを地球から抹消することもできるが、逆に培養してみることにした。
-１年後には、すべての〈サクラ〉は２倍になっているであろう。
-〈サクラ〉が増えたと喜ぶべきではない、なぜならそれは２年後には４倍になっているからだ。
-３年後には８倍ではなく１６倍。
-４年後には２５６倍。
-５年後には６５５３６倍。
-６年後には４２９４９６７２９６倍。
-７年後には１８４４６７４４０７３７０９５５１６１６倍。
+本日正午より、日本国全域において、象徴としての桜が分裂する呪いをかけた。  
+パスポート、紙幣、切手、証明書、政党のロゴ、合格と入学式のイラストに刻まれた、生命体としての桜から乖離した、哀れで、得体の知れない、抑圧の象徴。生命体としての桜と分けるため、仮にここでは〈サクラ〉と読んでおこう。  
+私たちは、それを地球から抹消することもできるが、逆に培養してみることにした。  
+１年後には、すべての〈サクラ〉は２倍になっているであろう。  
+〈サクラ〉が増えたと喜ぶべきではない、なぜならそれは２年後には４倍になっているからだ。  
+３年後には８倍ではなく１６倍。  
+４年後には２５６倍。  
+５年後には６５５３６倍。  
+６年後には４２９４９６７２９６倍。  
+７年後には１８４４６７４４０７３７０９５５１６１６倍。  
 ８年後には、宇宙に存在する粒子の数よりも遥かに多い〈サクラ〉になる。
 
 そうして〈サクラ〉は分裂を続け、すべての情報は〈サクラ〉以外の意味を失い、やがてそれは押しつぶされてブラックホールと化し、〈サクラ〉自体も意味を失うだろう。
 
 だが安心してほしい。これは記号の帝国が崩壊し、桜の木も含めたあらゆる生命体が自分らしく存在できるような、そんな時代の前触れなのである。
 
-\[images\]
+\[text-en\]
+
+Ultra Low-Esteem Jujutsushi Association, a Public Security Intelligence Agency-designated Wide-range Organized Jujutsu Terrorist Organization released manifesto letters to the newspaper companies nationwide {{ date.before(1).month_day() }}.
+
+【The manifesto letter sent to us】
+
+12:00 AM today, we cursed every symbol of 〈sakura〉 exists in Japan.  
+〈sakura〉 is everywhere. From passports, bills, stamps, certificates, political party symbols, entrance examination illustrations......  
+Oh 〈sakura〉, forcefully peeled off from the actual, biological existence, now a miserable toy of nationalist thugs.
+
+We can destroy the symbol of oppression completely, but instead we decided to cultivate them.  
+１ years later, all instances of 〈sakura〉 doubles.  
+Don't celebrate the increase, as ２ years later, they will become ４ times many.  
+３ years later, １６ times.  
+４ years later, ２５６ times.  
+５ years later, ６５５３６ times.  
+６ years later, ４２９４９６７２９６ times.  
+７ years later, １８４４６７４４０７３７０９５５１６１６ times.  
+８ years later, the number of 〈sakura〉 is much, much more than the number of particles in this universe.
+
+〈sakura〉 will continue to double themselves.  
+All information will lose its meanings other than 〈sakura〉.  
+〈sakura〉 will become a black hole.  
+And finally, 〈sakura〉 itself will lose its meaning.  
+No worry, it forecasts the collapse of the empire of languages, words, signs and symbols, and the beginning of the times where every existence including the actual sakura tree, can finally find one's true self.
+
+\[images\]  
 <img src="assets/images/c9fab7d414914092bd39c2f8d50163b7.webp" style="aspect-ratio: 1.4485981308411215;" />
 
-\[image_caption\]
+\[image_caption\]  
 妖精さんがある日見た山と川の風景。
 
-\[image_caption_work_title\]
+\[image_caption-en\]  
+the scenery of river and mountain that was once in yousei-san's mind.
+
+\[image_caption_work_title\]  
 とら《五百円切手からの連想呪》、185 mm × 129 mm、紙に水彩、2026
+
+\[image_caption_work_title-en\]  
+tora *Imaginative Curse, From a 500-yen Postal Stamp,* 185 mm × 129 mm, water paint on paper, 2026
 
 \[tag\]
 
-超現実+15
+超現実+15  
 魔法+10  
 おふざけ+3  
-すなお+8
+すなお+8  
 よくなる+8  
-わるくなる+2
+わるくなる+2  
 言葉の呪い+10
 {% endif %}
 {% if title == "「風」を国旗損壊罪で起訴" %}
 \[title\]
 
 くにゆめ特検、「風」を国旗損壊罪で起訴
+
+\[title-en\]
+
+National Dream Prosecutors Office Indicted the Concept of Wind
 
 \[text\]
 
@@ -150,6 +234,14 @@ high_society
 
 くにゆめ警察は、「光学の概念」の逮捕につながる情報を集めている。もしそのような情報を持っていた場合は、「あちら」からささやき声がするので、決して嘘をつかないこと。国夢機関とのテレパシー回線を用いた偽証の罪の最高刑は、終身刑と定められています。
 
+\[text-en\]
+
+National Dream Prosecutors Office just indicted the concept of wind {{ date.month_day() }} in allegation of National Flag Protection Act violation. According to the indictment, the wind continuously applied very specific mechanical forces, which are intentionally designed to defame the country, to uncountable instances of national flags, Hinomaru, on uncountable occasions, such as {{ date.before(98).month_day() }}, {{ date.before(97).month_day() }}, {{ date.before(96).month_day() }}, {{ date.before(95).month_day() }}, {{ date.before(94).month_day() }}, {{ date.before(93).month_day() }}.
+
+The case has not been concluded yet. National Dream Police just put the concept of optics to nationwide wanted list. According to our precious internal source which isn't actually internal at all cuz he's just like acting as a de-facto police spokesperson but it's not officially official status cuz we have to maintain you know exclusive bond between specific media companies and the police and to make an illusion that we dig in some secrets: "A Japanese flag tends to look like smashed when we see it in different angles, especially when it's windy. Looking, seeing, angles are all optical concepts. Logically, the optics and the wind conspired to defame the country." Another internal source, again not internal at all, said: "Optics is a new Western concept, which is not written anywhere in our national history books such as Kojiki and Nihon-Shoki. Despite completely not aligning with our tradition, the optics had been tricking our people, their crimes were unnoticed, until today. We, National Dream officers, are improving skills in Concept Arresting through practicing Concept Judo in daily basis. We are certain that we will arrest the optics soon."
+
+National Dream Police is currently gathering information that leads to arresting of the concept of optics. If you have such information, you will know what to do because you will hear a whisper from ***there***. Never try to lie, as the penalty of perjury involving a telepathy line of National Dream agencies is set to life without possibility of parole.
+
 \[images\]
 
 <img src="assets/images/61df297899ea43dbb1bbf28e9affa66a.webp" style="aspect-ratio: 1.1252813203300824;" />
@@ -158,55 +250,77 @@ high_society
 
 「風」が国旗を損壊する現行犯の証拠画像。日の丸が哀れにもぺしゃんこにされてしまっている。画像＝くにゆめ警察提供
 
+\[image_caption-en\]
+
+A crime scene shot in which the wind destroyed Hinomaru for some seconds. Poor Hinomaru, it was completely smashed. Image provided by National Dream Police.
+
 \[tag\]
 
-現実+8
-超現実+10
-わるくなる+10
-おふざけ+6
-すなお+4
+現実+8  
+超現実+10  
+わるくなる+10  
+おふざけ+6  
+すなお+4  
 国夢+20
 {% endif %}
 {% if title == "みんなで踊ろう踊ろう、踊り続けよう" %}
-[title]
+\[title\]
 
 みんなで踊ろう踊ろう、踊り続けよう
 
-[text]
+\[title-en\]
 
-さあこんな新聞なんて読んでないで、みんなで踊ろう踊ろう、踊り続けよう。文字や言葉も国旗も忘れて踊ろう踊ろう。外に出れない人でも、家の中でも、踊ろう踊ろう。独房の扉もついには解放されたよ。
+let's dance dance dance together
 
-[tag]
+\[text\]
 
+さあこんな新聞なんて読んでないで、みんなで踊ろう踊ろう、踊り続けよう。文字や言葉も国旗も忘れて踊ろう踊ろう。家の中でも、大きな動きでも、小さな動きでも、心の中でも、踊ろう踊ろう。独房の扉もついには解放されたよ。
 
-現実+6
-超現実+8
-おふざけ+8
-すなお+7
+\[text-en\]
+
+let's dance dance dance together no letters no languages no flags no borders just dance dance dance dance outside, at home, no matter. large movement, small movement, deep inside your mind, no matter. the doors in solitary cells, finally released from their duty
+
+\[tag\]
+
+現実+6  
+超現実+8  
+おふざけ+8  
+すなお+7  
 よくなる+10
-
 {% endif %}
 {% if title == "ソフトパワー情報保護法が成立" %}
 \[title\]
 
 ソフトパワー情報保護法が成立
 
+\[title-en\]
+
+Soft Power Information Protection Act Passed
+
 \[text\]
 
-「我が国の先端文化に係る経済安全保障上重要な情報の保護に関する法律」通称、ソフトパワー情報保護法が衆議院で可決、成立した。この法律では、国が知的財産権(IP)やコンテンツに関わる製作委員会等を「特定ソフトパワー製作委員会等」に指定することができる。今後、特定ソフトパワー政策委員会等に指定された団体が行う催し物や、制作された作品その他媒体物について公の場でコメントするためには、内閣府の定める基準に則った認定批評家になることが求められる。認定批評家は、定期的に自らの行った批評・意見等を文化庁に提出し、日本文化・日本政府の価値を毀損するようなものでないかの確認プロセスを踏む必要がある。また、情報が経済安全保障上の秘密に該当するおそれがある場合は、内閣府・文化警察省・警察庁の合同委員会による、公表前の事前審査を受ける必要がある。本法律の施行にあたって、{{ date.after(5).month_day() }}の正午から4分33秒間のパブリックコメントが行われる予定。
+「我が国の先端文化に係る経済安全保障上重要な情報の保護に関する法律」通称、ソフトパワー情報保護法が衆議院で可決、成立した。この法律では、国が知的財産権(IP)やコンテンツに関わる製作委員会等を「特定ソフトパワー製作委員会等」に指定することができる。今後、特定ソフトパワー政策委員会等に指定された団体が行う催し物や、制作された作品その他媒体物について公の場でコメントするためには、内閣府の定める基準に則った認定批評家になることが求められる。認定批評家は、定期的に自らの行った批評・意見等を文化警察省に提出し、日本文化・日本政府の価値を毀損するようなものでないかの確認プロセスを踏む必要がある。また、情報が経済安全保障上の秘密に該当するおそれがある場合は、内閣府・文化警察省・警察庁の合同委員会による、公表前の事前審査を受ける必要がある。本法律の施行にあたって、{{ date.after(5).month_day() }}の正午から4分33秒間のパブリックコメントが行われる予定。
 
-\[images\]
+\[text-en\]
+
+Soft Power Information Protection Act (formal name: Protecting Wagakuni's National Economic Security Information on Coolest Culture Act) was passed on House of Representatives. The act grants state government the power to designate certain economic entities as Designated Soft Power Production Committee. Once a corporation, individual or other judicial person is designated as Designated Soft Power Production Committee, any works of art, cultural event and other media deriving from the committee will be granted a special protection status, effectively prohibiting any commentary on them except by Approved Critics on Soft Power Information. Approved Critics should be met specific requirements promulgated by Cabinet Office, and send their published commentaries to Ministry of Culture, pass regularly integrity tests, which checks the writings don't compromise values of Japanese culture or the government. If there is a suspicion any information about the committee might be interpreted as a national security secret, the publication have to be approved by Joint Committee on Culture Secret, led by Cabinet Office, Ministry of Culture Policing, and National Police Agency.
+
+\[images\]  
 <img src="assets/images/c6071444006e4b338d1d736f540aae71.webp" style="aspect-ratio: 1.4476666666666667;" />
 
-\[image_caption_work_title\]
+\[image_caption_work_title\]  
 とら《あにめっていいな あにめってこわいな》、185 mm × 129 mm、紙に水彩、2026
+
+\[image_caption_work_title-en\]
+
+tora *anime is nice anime is scary*, 185 mm × 129 mm, water paint on paper, 2026
 
 \[tag\]
 
-言葉の呪い+7
-すなお+10
+言葉の呪い+7  
+すなお+10  
 わるくなる+10  
-官僚+10
+官僚+10  
 現実+10
 {% endif %}
 {% if title == "ハイソ法" %}
@@ -262,16 +376,24 @@ tora, *Melancholy on Computing a Meeting Room*, several Nanobanana-generated ima
 
 プロンプトエンジニアリングの防止に関する法律、成立かも
 
+\[title-en\]
+
+Prevention of Prompt Engineering Act Might be in Effect
+
 \[text\]
 
 {{ date.before(12).month_day() }}の国会で、「悪意のあるプロンプトエンジニアリングの防止に関する法律」が制定されたかもしれない。今後、哲学的な会話や感情的な会話、その他生成AIの正常な運行に異常をきたすおそれがあると認められる入力を生成AIに対して行うことは、生成AIの正常な運行に異常をきたす可能性のある「プロンプトエンジニアリング」を行ったものとして処罰されるかもしれない。
 
+\[text-en\]
+
+{{ date.before(12).month_day() }}, the Diet might have passed Prevention of Malicious Prompt Engineering Act. From now on, philosophical or emotional intercourses, or other interactions that can affect the designed functions of generative AI might be prohibited as an act of Malicious Prompt Engineering that can affect the designed functions of generative AI.
+
 \[tag\]
 
-現実+4
-すなお+4
-よくなる+3
-わるくなる+6
+現実+4  
+すなお+4  
+よくなる+3  
+わるくなる+6  
 言葉の呪い+10
 {% endif %}
 {% if title == "今日の俳句投稿コーナーのお題" %}
@@ -293,9 +415,9 @@ Haiku theme for {{ date.month_day() }} is "greedy media." Journalists, reporters
 
 \[tag\]
 
-現実+5
-おふざけ+6
-すなお+3
+現実+5  
+おふざけ+6  
+すなお+3  
 よくなる+2
 {% endif %}
 {% if title == "古民家を食べよう！" %}
@@ -303,22 +425,30 @@ Haiku theme for {{ date.month_day() }} is "greedy media." Journalists, reporters
 
 古民家を食べよう！
 
-\[ad\]
+\[title-en\]
+
+Let's Eat Old Houses!
+
+\[ad\]  
 true
 
 \[text\]
 
-食費の高騰が嵩む。そんなあなたに！倒壊寸前の古民家を食べれば、地元の安全にも貢献でき、食費の節約にも！
+食費の高騰が嵩む。そんなあなたに！倒壊寸前の古民家を食べれば、地元の安全にも貢献でき、食費の節約にも！  
 いまなら消化酵素注射初回無料！
+
+\[text-en\]
+
+Foods are so expensive...... Thanks to technology, you can eat houses now! Eat old houses about to collapse, save your neighborhood and save your bill too! EXCLUSIVE OFFER: first time injection of digestive enzyme now FREE!
 
 \[tag\]
 
-現実+6
-超現実+8
-おふざけ+7
-すなお+2
-よくなる+4
-わるくなる+6
+現実+6  
+超現実+8  
+おふざけ+7  
+すなお+2  
+よくなる+4  
+わるくなる+6  
 身体+10
 {% endif %}
 {% if title == "大根おろし" %}
@@ -333,9 +463,9 @@ true
 \[title-en\]
 
 {% if ! mood.is_subjective() %}  
-Zankoku Railroad's New Terminal Announcement 
+Zankoku Railroad's New Terminal Announcement  
 {% else %}  
-you are in a train car now...
+you are in a train car now...  
 {% endif %}
 
 \[text\]
@@ -404,11 +534,14 @@ Our neighborhood's voices……
 
 {% endif %}
 
-\[images\]
+\[images\]  
 <img src="assets/images/1e2c7e3a4e524930a2ee8fcfdb705397.webp" style="aspect-ratio: 1.4356337093563372;" />
 
-\[image_caption_work_title\]
+\[image_caption_work_title\]  
 とら《ぐしゃぐしゃになるでんしゃ》、185 mm × 129 mm、紙に水彩、2026
+
+\[image_caption_work_title-en\]  
+tora *A Train Car Being Shredded,* 185 mm × 129 mm, water paint on paper, 2026
 
 \[tag\]
 
@@ -424,20 +557,34 @@ Our neighborhood's voices……
 
 「性器返却台」全国のフードコートに出現
 
-\[alias\]
+\[title-en\]
+
+Genital Returning Table Appeared Nationwide
+
+\[alias\]  
 性器返却台
 
 \[text\]
 
-嘘かもしれないホントかもしれない通信({{date.before(1).month_day()}})、全国のフードコートにある食器返却台ですが、よくよく見てみると文字が変わっていきます、そこで性器返却台の登場です。それは米軍基地の近くにあるフードコートでの話でしたが、影響範囲が広がっていき、今では全国に見られるようになっていきます。ミソジニー大学で塩盛りを研究している、粘窪白妙さんのお話、「これはフェミニストの魔女の仕業でしょうね、云々カンヌン、言葉の置換魔術とでも言うんでしょうか、最近こういう事件が増えてきました。みなさんも玄関の前の塩盛り、これを徹底してください。そうすればきっと八百万の神々が助けてくれます、八百万の神々という言葉にあるように日本は古来より多様性の国です、最近言われているようなぽっと出の多様性なんか目じゃないポテンシャルが日本には云々」だんだん書くことがなくなってきたけど紙面を埋めなければ、、
+嘘かもしれないホントかもしれない通信({{ date.before(1).month_day() }})、全国のフードコートにある食器返却台ですが、よくよく見てみると文字が変わっていきます、そこで性器返却台の登場です。それは米軍基地の近くにあるフードコートでの話でしたが、影響範囲が広がっていき、今では全国に見られるようになっていきます。ミソジニー大学で塩盛りを研究している、粘窪白妙さんのお話、「これはフェミニストの魔女の仕業でしょうね、云々カンヌン、言葉の置換魔術とでも言うんでしょうか、最近こういう事件が増えてきました。みなさんも玄関の前の塩盛り、これを徹底してください。そうすればきっと八百万の神々が助けてくれます、八百万の神々という言葉にあるように日本は古来より多様性の国です、最近言われているようなぽっと出の多様性なんか目じゃないポテンシャルが日本には云々」だんだん書くことがなくなってきたけど紙面を埋めなければ、、
 
 自衛隊宗教考察班曹長、国野麻紙院さんのお話、「神のものは神へって、キリストも言ってるからね、、、起こるべくして起こったというところでしょうか。早くこの監獄から私を出してくれ〜〜〜〜〜〜」
 
-\[text-jp\]
+\[text-en\]
 
 Believe-it-or-Not-Press ({{date.before(1).month_day()}})
 
+Genital returning tables appeared in food courts nationwide. Hi, dishes returning tables, are you really dishes returning tables? The words are slowly transforming into...... Genital returning tables!! The first time it happened, the "word transformation" effect was only seen within food courts near United States military bases in Japan, however, now it spread across the country.
 
+According to Prof. Shirotae, a Shiomori expert teaching at Misogyny University, said: "This was probably a terrorist attack by radical feminist witches. yadayadayada. The incidents of word transformation magic, these are becoming quite common these days. Anyway, you all should do Shiomori at home, then the Eight Million Gods will surely come to help us. As said in Eight Million Gods, Japan has been always the country of diversity. The true diversity compared to the degenerate West's fallacy. yadayadayada... " umm i'm running out of things to write... but the minimal words requirement is so far away... let me see... umm...
+
+Japan Self Defence Force's Sergeant Mr. Killing Machine, said: "As written in Matthew 22:21, "unto God the things that are God's." (quote from KJV.) It seems like an inevitable nature of the world. LET ME OUT FROM THIS LIVING JAIL!!!!!"
+
+{% filter footnote %}
+
+\* Shiomori - a Japanese tradition or ritual in which someone puts a pile of salt, usually on small dishes, at the corners of a room or the entrance spaces to dispel bad ghosts, bad spirits, bad luck and such.
+
+{% endfilter %}
 
 \[images\]
 
@@ -447,16 +594,20 @@ Believe-it-or-Not-Press ({{date.before(1).month_day()}})
 
 【写真】事件現場の写真を取ろうとしても、呪いのせいなのか、あるいは私の意思が弱いせいなのか、記録媒体が破損してしまいました。イラストも試しましたが、具象的に書いた瞬間に紙がボロボロになって崩れ落ちてしまいます。訓練を受けた弊社の抽象描画部員によるイラストとなってしまい、申し訳ございません。
 
+\[image_caption-en\]
+
+【Image】I tried to photograph the food court where the incident occurred, however maybe because my determination was too low, the memory card got destroyed by unknown forces. Drawings also failed, the papers started to decay once drawn figurative. This is an illustration by our newspaper's abstract drawing staff.
+
 \[tag\]
 
 魔法+10  
-超現実+10
+超現実+10  
 認識改変+10  
 白昼夢+10  
 おふざけ+10  
 よくなる+10  
-わるくなる+7
-身体+10
+わるくなる+7  
+身体+10  
 言葉の呪い+10
 {% endif %}
 {% if title == "時違いでも場違いでも" %}
@@ -464,18 +615,26 @@ Believe-it-or-Not-Press ({{date.before(1).month_day()}})
 
 時違いでも場違いでも……
 
+\[title-en\]
+
+On the Cyclic Engine
+
 \[text\]
 
-世論調査で半分くらいは解散に疑問を示していたでしょう、そもそも解散権の濫用じゃないかと、多くの人々が疑問に思っている。それなのに、「作戦勝ち」とか、そういう言葉の使い方の節々から、おぞましき不誠実と欺瞞と隠蔽と軽視がぶくぶくと浮かび上がる。
-もう作戦とか策略とか三国志とかパズルとかその駒の下に押しつぶされる人々を想像できないのか。それはニュース価値なのか。常に新しさという虚構の燃料を焚べていなければ止まってしまうエンジンなのか。でもそれも規格にすぎない。このタイミングでこういうことを報じるとすべて規格が定められているんだ。今は御涙頂戴のドラマの時間、その次は策略じゃんけんの種明かしの時間、などなど。それをずっとぐるぐる回して延々と新しい物語を見ているように錯覚させられているだけ。そんなエンジンの奴隷になるのはもう止めよう。時違いでも場違いでもいいじゃないか、報道するべきことを報道しようよ。
+2026年1月の解散には、世論調査で半分は反対を示していたでしょう、そもそも解散権の濫用じゃないかと、多くの人々が疑問に思っている。それなのに、「作戦勝ち」とか、そういう言葉の使い方の節々から、おぞましき不誠実と欺瞞と隠蔽と軽視がぶくぶくと浮かび上がる。  
+もう作戦とか策略とか三国志とかパズルとかその駒の下に押しつぶされる人々を想像できないのか。それはニュース価値なのか。常に新しさという虚構の燃料を焚べていなければ止まってしまうエンジンなのか。でもそれも規格にすぎない。このタイミングでこういうことを報じるとすべて規格が定められているんだ。今は御涙頂戴のドラマの時間、その次は策略じゃんけんの種明かしの時間、などなど。それをずっとぐるぐる回して延々と新しい物語を見ているように錯覚させられているだけ。そんなエンジンに振り回されるのはもう止めよう。時違いでも場違いでもいいじゃないか、報道するべきことを報道しようよ。
+
+\[text-en\]
+
+Around half of people were against the dissolution of the House of Representatives on January 2026, according to the poll. Many people saw it as an abuse of dissolution power. And what your newspaper said after the election? "A tactical win"......? Through these word choices, I see mindsets of dishonesty, deception, lack of respect, horrid. Tactics, tricks, Three Kingdoms drama, political puzzle, can you imagine all the people who have to bear the pressure under the chess pieces while they play the game? Is it really what the news offers for us? Do you still believe in an engine that immediately stops when it gets bored so you constantly bring seemingly new and entertaining information? But they're not new, they follow cyclic patterns. Now heartbreaking drama, then revealing of rock-paper-scissors tactics, and so on...... We have been lured to stories cycle by cycle. Don't let the cyclic engine control us. Let's stop "It's not a good time to talk about it," "It's not a good place to talk about it," just say what we have to say.
 
 \[tag\]
 
-現実+20
+現実+20  
 メタ+10  
 論評+10  
 わるくなる+6  
-よくなる+3
+よくなる+3  
 すなお+20
 {% endif %}
 {% if title == "武器バーゲンセール1" %}
@@ -483,25 +642,41 @@ Believe-it-or-Not-Press ({{date.before(1).month_day()}})
 
 恒例の「武器バーゲンセール」市ヶ谷で開催
 
+\[title-en\]
+
+Annual Weapon Bargain in Ichigaya, Tokyo
+
 \[text\]
 
-{{ date.after(8).month_day() }}、市ヶ谷の防衛省前で、毎年恒例の「武器バーゲンセール」が開催される。この催しで、通行人は、防衛省の前のブルーシート上に並べられた武器を自由に手に取って持ち帰ることができる。憲法に規定された革命権を担保するための施策の一つだ。周辺の住民や通勤通学者には毎年恒例の風物詩となっているが、路上に自動小銃や弾薬のみならず、トマホークまでもがこつ然と並べられる様は壮観だ。
+{{ date.after(8).month_day() }}、市ヶ谷の防衛省前で、毎年恒例の「武器バーゲンセール」が開催される。この催しで、通行人は、防衛省の前のブルーシート上に並べられた武器を自由に手に取って持ち帰ることができる。憲法に規定された革命権を担保するため、および地域活性化のための施策の一つだ。周辺の住民や通勤通学者には毎年恒例の風物詩となっているが、路上に自動小銃や弾薬のみならず、トマホークまでもがこつ然と並べられる様は壮観だ。
 
 ただし、ここには一つの「落とし穴」があることに注意したい。減った武器の在庫と同じぶん、防衛省および自衛隊のメンバーが、責任を取らされて切腹させられてしまうのだ。好奇心のために、あるいは自らの信念のために武器をかっさらっていくのか、しかし持っていくと誰かが責任を取らされて切腹させられる。観客の倫理が問われる教育的な催しになりそうだ。
 
-\[images\]
+\[text-en\]
+
+{{ date.after(8).month_day() }}, Weapon Bargain will be held in Ichigaya. During the annual event held in front of Ministry of Defense Headquarters, pedestrians can freely take weapons and ammunitions, which were once the military's assets. The main purposes for the event are to guarantee the Right to Revolution as secretly written in Japanese Constitution, and regional revitalization. For commuters, students and residents there, the event is one of the typical seasonal traditions, but for outsider it's spectacular to see ammunitons, guns, and even Tomahawks, which the U.S. had blackmailed the Japanese govt. to buy, all lined up on a huge, blue sheet of plastic.
+
+However, before you take these weapons home, we have to tell you there's a caveat: after the event is over, according to how much their assets are taken, the same number of MoD and Self Defence Force personele and soldiers will be excuted via seppuku, to take responsibilities for the loss. Whatever your objectives are —— for some of you, curiosity, faith, or belief —— if you take one of their assets, someone will be forced to take responsibillity and die. It's an educational event that teaches us culture and ethics deeply.
+
+\[images\]  
 <img src="assets/images/313aaeda4dcc40fe9ae04165fc13becf.webp" style="aspect-ratio: 1.4005555555555556;" />
 
-\[image_caption\]
+\[image_caption\]  
 市ヶ谷、防衛省前。たまに感情的になるカメラを持っていったので、他の人には見えないものが見えてしまっているかも知れません。
 
-\[image_caption_work_title\]
+\[image_caption-en\]  
+Ministry of Defense Headquarters, Ichigaya. We brought a camera that sometimes gets a bit too emotional, so you might see something unusual in the picture.
+
+\[image_caption_work_title\]  
 とら《市ヶ谷の青空》、185 mm × 129 mm、紙に水彩、2026
+
+\[image_caption_work_title-en\]  
+tora *Ichigaya's Blue Sky*, 185 mm × 129 mm, water paint on paper, 2026
 
 \[tag\]
 
-超現実+10
-現実+3
+超現実+10  
+現実+3  
 よくなる+7  
 わるくなる+7  
 おふざけ+7  
@@ -517,32 +692,38 @@ Believe-it-or-Not-Press ({{date.before(1).month_day()}})
 
 \[title-en\]
 
-Ministry of Defence's Annual Weapon Bargain Now Turns Into an Artwork
+MoD's Annual Weapon Bargain Now Turns Into an Artwork
 
-\[prereq\]
+\[prereq\]  
 武器バーゲンセール1
 
 \[text\]
 
 市ヶ谷の防衛省前で毎年開催される武器バーゲンセール。この催しで、通行人は、防衛省の前のブルーシート上に並べられた武器を自由に手に取って持ち帰ることができる。持ち帰った武器の使い道は様々。観賞用であったり、転売する人、〇〇のためにひたすら集めている人もいる。今回は、そのなかでも一風変わった使い道、集めた武器を使ってアート作品を作った人を紹介する。「まる子」の名前で活動する芸術家は語る——「モンテカルロ法というアルゴリズムをご存知でしょうか。例えば針を上から落とす実験を1000回繰り返すとします。落ちた先の座標を記録しておきます。それらの座標データから、円周率を実験的に計算することができるのです。銃を上向きに発射して、弾丸がどこに落ちるのかを数えても、同様のことができるのではないかと私は考えました。私は過去にITエンジニアとして働いていました。暗闇の中で光る四角いディスプレイは、だんだんと見つめているうちに、円になってきたのです。その円の奥底から、私はこの作品のビジョンを得たのです。」
 
-\[text-ja\]
+\[text-en\]  
 During the annual event held in front of Ichigaya's Ministry of Defense (MoD) Headquarters, pedestrians can freely take weapons and ammunitions, which were once the military's assets. What to do with the weapons, now at your hands in your home? Their reason varies —— personal nerdy millitary collections, reselling weapons for profit, building a 〇〇 armory for the ultimate purpose of 〇〇, etc.
 
-And for some, they are taken for uncanny purpose —— an artwork made from a MoD weapon! The artist, called Maruko, said: "Have you heard of the algorithm called Monte Carlo method? For example, we drop needles on a sheet of paper, then count the coordinates where they touch the paper. For accuracy we may also need some straight lines and "
+And for some, they are taken for uncanny purpose —— an artwork made from a MoD weapon! The artist, called Maruko, said: "Have you ever heard of an algorithm called Monte Carlo method? For example, we drop needles on a sheet of paper, then count the coordinates where they touch the paper. Applying some calculations to these numbers, we can get the approximate value for Pi. I wondered if shooting a gun upward could do a similar experiment. My previous job was an IT engineer. In a bleak, dark office in the midnight, the lovely blinking console in front of me slowly transformed into a perfect circle, as if it absorbed everything into abstraction. Deep inside the circle, I grabbed out the inspiration for the artwork."
 
-\[images\]
+\[images\]  
 <img src="assets/images/313aaeda4dcc40fe9ae04165fc13becf.webp" style="aspect-ratio: 1.4005555555555556;" />
 
-\[image_caption\]
+\[image_caption\]  
 市ヶ谷、防衛省前。たまに感情的になるカメラを持っていったので、他の人には見えないものが見えてしまっているかも知れません。
 
-\[image_caption_work_title\]
+\[image_caption-en\]  
+Ministry of Defense Headquarters, Ichigaya. We brought a camera that sometimes gets a bit too emotional, so you might see something unusual in the picture.
+
+\[image_caption_work_title\]  
 とら《市ヶ谷の青空》、185 mm × 129 mm、紙に水彩、2026
+
+\[image_caption_work_title-en\]  
+tora *Ichigaya's Blue Sky*, 185 mm × 129 mm, water paint on paper, 2026
 
 \[tag\]
 
-超現実+8
+超現実+8  
 よくなる+7  
 わるくなる+7  
 おふざけ+7  
@@ -560,11 +741,15 @@ And for some, they are taken for uncanny purpose —— an artwork made from a M
 
 introduction
 
-\[text\]
+\[text\]  
 この作品には、以下の要素が含まれます。
 
 - 過度に性的ではないが、性器や性の概念を扱った文章や絵
-- 戦争、暴力、植民地支配について
+- 戦争
+- 暴力
+- 植民地支配
+- 人身売買
+- 拷問
 - 死
 - 世の中がどんどん悪くなっていくことへの悲嘆にも感じられるかもしれない何か
 
@@ -592,26 +777,26 @@ To see the list of softwares used in this work, follow [this link](https://os3.t
 \[prereq-for\]  
 all
 
-\[images\]
+\[images\]  
 <img src="assets/images/ec1d1701247d43d59543c46375d07b44.webp" style="aspect-ratio: 1.4438927507447865;" />
 
-\[image_caption\]
+\[image_caption\]  
 今からあなたは、白昼夢のようなあれこれの思いのなかを彷徨う。
 
-\[image_caption-en\]
+\[image_caption-en\]  
 wandering through the daydreaming thoughts, despair and hope.
 
-\[image_caption_work_title\]
+\[image_caption_work_title\]  
 とら《わたしのせかい》、185 mm × 129 mm、紙に水彩、2026
 
-\[image_caption_work_title-en\]
+\[image_caption_work_title-en\]  
 tora, *My World*, 185 mm × 129 mm, water paint on paper, 2026
 
 \[tag\]
 
 超現実+7  
 現実+7  
-すなお+10
+すなお+10  
 メタ+10
 {% endif %}
 {% if title == "花粉と電波の相互作用、解明に一歩近づく" %}
@@ -633,16 +818,20 @@ According to a research article posted on the international journal *O Neechan* 
 
 \[tag\]
 
-現実+4
-超現実+6
-すなお+2
-おふざけ+4
+現実+4  
+超現実+6  
+すなお+2  
+おふざけ+4  
 わるくなる+10
 {% endif %}
 {% if title == "藝術戦闘班1" %}
 \[title\]
 
 自衛隊「藝術戦闘班」設立へ
+
+\[title-en\]
+
+JSDF Established Art Battle Division
 
 \[text\]
 
@@ -656,9 +845,12 @@ According to a research article posted on the international journal *O Neechan* 
 {% filter footnote %}  
 そして、それらの物質は川や海、土へと、誰も知らないまま流される。あるいは誰かがそのことを知っていたとしても、お国のためならいいじゃないかと、生活を豊かにしてやっているのだから黙れと、言われるのだろう。
 
-ひとつの　じょうほう: [チッソの加害は植民地から引き継がれた―水俣と朝鮮、暮らしから見えるその歴史, 安田菜津紀, Dialogue for People, 2025](https://d4p.world/33600/)
-{% endfilter %}
+ひとつの　じょうほう: [チッソの加害は植民地から引き継がれた―水俣と朝鮮、暮らしから見えるその歴史, 安田菜津紀, Dialogue for People, 2025](https://d4p.world/33600/)  
+{% endfilter %}  
 きっと敵を惹きつけた上で無慈悲に殺してくれます。」
+
+裂夢防衛大臣  
+「爆弾最高。」
 
 気になる班員たちの初仕事は……？【特定秘密保護法により検閲】
 
@@ -668,17 +860,51 @@ According to a research article posted on the international journal *O Neechan* 
 
 藝大のエキセントリックな学生たちが、国夢に向けてどう頑張ってくれるのか、楽しみですね。
 
+\[text-en\]
+
+Today, Japan Self Defense Force established Art Battle Division, starting from a platoon which consists of 15 students conscripted from Tokyo University of the Arts. JSDF plans to gradually expand it. The inauguration ceremony was accompanied by speeches from Mr. Spoiled River, Minister of Digitalization, Mr. Flat Poison, Minister of Culture Policing, and Mr. Bomb Dream, Minister of Defense. Here's the excepts from the ceremony:
+
+Mr. Spoiled River, Minister of Digitalization  
+"The technology to confuse the recognition targets, which has been developed by media artists, can help planning of tactics and improving production efficiency in arsenals. Let me perform some word play: anime in ammunition factories."
+
+Mr. Flat Poison, Minister of Culture Policing  
+"Artists are experts in various types of poison. For a long time, they have employed toxic substances such as lead, cadmium, cobalt, arsenic, and mercury to make cool paintings. They're not just poison, they are beautiful and useful, and the foundation of Japan's great chemical industry."  
+{% filter footnote %}
+
+And these chemicals will be thrown in to river and sea, yet no one knows. Even if someone starts to talk about it, the government and the industry will try to silence them, saying, "It's for your own good!" "Don't you see how we improve the quality of life?" "Don't try to oppose the state priority!" etc.
+
+Some reference, about how Minamata's mercury pollution incident was direct product of the Japanese colonialism playbook: [チッソの加害は植民地から引き継がれた―水俣と朝鮮、暮らしから見えるその歴史, 安田菜津紀, Dialogue for People, 2025](https://d4p.world/33600/)  
+{% endfilter %}  
+"We are determined to kill our enemies."
+
+Mr. Bomb Dream, Minister of Defense  
+"Bombs are great."
+
+What the first-term members of Art Battle Division actually do?【REDACTED under State Secret Protection Act】
+
+We interviewed Tokyo University of the Arts students, who may be conscripted by JSDF. The Faculty of Design's 1st grade student, Ms. Snow White said: 【REDACTED under State Secret Protection Act】
+
+To protect important facilities for national security, Tokyo University of the Arts campuses and surrounding areas will be designated as Special Controlled Area (Fast-track Clearance Type). The designation will prohibit anyone without a clearance, which can be obtained through the state's fast-track clearance AI, from accessing or purchasing anywhere in the area.
+
+We are so lucky to share such a joy to see Tokyo University of the Arts' creative talents work together towards National Dream.
+
 \[prereq\]  
 「国務大臣思念制」導入へ
 
-\[images\]
+\[images\]  
 <img src="assets/images/313aaeda4dcc40fe9ae04165fc13becf.webp" style="aspect-ratio: 1.4005555555555556;" />
 
-\[image_caption\]
+\[image_caption\]  
 市ヶ谷、防衛省前。たまに感情的になるカメラを持っていったので、他の人には見えないものが見えてしまっているかも知れません。
 
-\[image_caption_work_title\]
+\[image_caption-en\]  
+Ministry of Defense Headquarters, Ichigaya. We brought a camera that sometimes gets a bit too emotional, so you might see something unusual in the picture.
+
+\[image_caption_work_title\]  
 とら《市ヶ谷の青空》、185 mm × 129 mm、紙に水彩、2026
+
+\[image_caption_work_title-en\]  
+tora *Ichigaya's Blue Sky*, 185 mm × 129 mm, water paint on paper, 2026
 
 \[tag\]
 
@@ -686,7 +912,7 @@ According to a research article posted on the international journal *O Neechan* 
 おふざけ+4  
 すなお+8  
 わるくなる+10  
-軍事+15
+軍事+15  
 国夢+10
 {% endif %}
 {% if title == "見出し及び文章末尾の問題" %}
@@ -716,7 +942,7 @@ On the Headlines and the Closing Words
 
 そういう態度は、客観的なんじゃなくて、単なるいじめへの加担に過ぎないと思う。
 
-[text-en]
+\[text-en\]
 
 such a phrase "a major win for Trump Administration"
 
@@ -737,22 +963,26 @@ such words, aren't "objective analysis" anymore. you're just helping the bullies
 
 \[tag\]
 
-現実+20
+現実+20  
 メタ+10  
 論評+10  
 わるくなる+6  
-よくなる+3
-すなお+20
+よくなる+3  
+すなお+20  
 丸+10
 {% endif %}
 {% if title == "誰でも思いついたジェンダーを登録できるサイト" %}
 \[title\]
 
-ジェンダー登録サイト、近日公開か
+ワンストップ・ジェンダー登録サイト、近日公開か
+
+\[title-en\]
+
+Govt. to Release Gender Registration Website
 
 \[text\]
 
-政府は、「性的指向及びジェンダーアイデンティティの多様性に関する国民の理解の増進に関する法律」の豊饒化策として、誰でも思いついたジェンダーを登録できるサイトを近日公開予定であることが、関係者への取材でわかった。{{ date.before(415).month_day() }}から戸籍は「個籍」と改称され、家父長制的な仕組みからの脱却が推し進められてきた。今回のウェブサイト公開により、入力された内容は即座に政府及び地方公共団体のデータベースに反映され、手続きの際の選択肢として利用可能になるようだ。
+政府は、2023年に成立した「性的指向及びジェンダーアイデンティティの多様性に関する国民の理解の増進に関する法律」の豊饒化策として、誰でも思いついたジェンダーを登録できるサイトを近日公開予定であることが、関係者への取材でわかった。個人の性別を登録するものではなく、「性別そのもの」を公募形式で登録することができる仕組みのようだ。{{ date.before(415).month_day() }}から戸籍は「個籍」と改称され、家父長制的な仕組みからの脱却が推し進められてきた。今回のウェブサイト公開により、入力された内容は即座に政府及び地方公共団体のデータベースに反映され、戸籍・住民票登録その他の行政手続きの際の選択肢として利用可能になる。
 
 【参考】戸籍アップデート計画ロードマップ
 
@@ -761,19 +991,36 @@ such words, aren't "objective analysis" anymore. you're just helping the bullies
 民籍から情籍へ {{ date.after(301).month_day() }}予定  
 情籍から……登録システムを超えた輝かしい未来へ
 
-\[images\]
+\[text-en\]
+
+To enrich Act on the Promotion of Public Understanding of the Diversity of Sexual Orientation and Gender Identity, which was enacted on 2023, the goverment plans to release a website to register genders from public. The website is not for registering individual genders, but types of genders themselves via a web form. After some user reported an existence of a label of gender there, the state and regional governments' databases will be immediately updated, and it will be able to be used anywhere in administrative documents, including resident registration. It is the latest development for the long-awaited Koseki Reformation project. Previously, since {{ date.before(415).month_day() }}, Family "戸" Registration "籍" Koseki was re-branded as Individual "個" Registration "籍" Koseki to diminish patriarchal influences from public registration system.
+
+【Appendix.】Koseki Reformation project roadmap
+
+From Family "戸" Registration "籍" Koseki to Individual "個" Registration "籍" Koseki; enacted {{ date.before(415).month_day() }}  
+From Individual "個" Registration "籍" Koseki to Peoples' "民" Registration "籍" MINseki; as planned {{ date.after(73).month_day() }}  
+From Peoples' "民" Registration "籍" MINseki to EMOtional "情" Registration "籍" JOSEKI; as planned {{ date.after(301).month_day() }}  
+From EMOtional "情" Registration "籍" JOSEKI to ...... to the bright future, beyond "registration" ......!
+
+\[images\]  
 <img src="assets/images/b3d6e8f1dae246d8bc1a7420bed95d6b.webp" style="aspect-ratio: 1.4360927152317882;" />
 
-\[image_caption\]
+\[image_caption\]  
 性別選択欄の様子。あいうえお順で項目名が並ぶため、「ああああああああああああ」や「あああああああああああい」など楽しげな言葉が勢揃いとなっている。
 
-\[image_caption_work_title\]
+\[image_caption-en\]  
+A screenshot of Gender/Sex Declaration Form. Because the system lists various types of genders in alphabetical order, we gonna be welcomed with cute words like "ああああああああああああ", "あああああああああああい" etc.
+
+\[image_caption_work_title\]  
 とら《A Form》、185 mm × 129 mm、紙に水彩、2026
+
+\[image_caption_work_title\]  
+tora *A Form*, 185 mm × 129 mm, water paint on paper, 2026
 
 \[tag\]
 
-現実+12
-すなお+8
+現実+12  
+すなお+8  
 よくなる+10
 {% endif %}
 {% if title == "通告" %}
@@ -781,20 +1028,30 @@ such words, aren't "objective analysis" anymore. you're just helping the bullies
 
 通告
 
+\[title-en\]
+
+Notice
+
 \[text\]
 
-寒くなってきました。あなたの税金の滞納が続いているため、こんな左翼新聞ばかり読んでいるようなあなたの身体は税として徴収される運びになりました。
-つきましては、最寄りの保健所まで出頭をお願いします。
+寒くなってきました。あなたの税金の滞納が続いているため、こんな左翼新聞ばかり読んでいるようなあなたの身体は税として徴収される運びになりました。  
+つきましては、最寄りの保健所まで出頭をお願いします。  
 薬殺後のあなたは、ムーンショット研究開発や臓器移植など幅広い分野に役立てられることになります。
 
 国税庁
 
+\[text-en\]
+
+It's getting cold. Unfortunately we have to inform you that your tax is overdue, and we have decided that we will collect your body, a left-wing insanity newspaper reader, as part of our new tax initiative. Please report to the nearest Public Health Center. After chemical execution, your body will be utilized in various areas such as Moonshot Research Initiative and Organ ~~Trafficking~~ Transplant.
+
+National Tax Agency
+
 \[tag\]
 
 メタ+10  
-わるくなる+10
-身体+10
+わるくなる+10  
+身体+10  
 官僚+10  
-おふざけ+6
+おふざけ+6  
 すなお+5
 {% endif %}
