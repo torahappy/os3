@@ -1,25 +1,43 @@
 // しんぶんからひろがっていくせかい
 
 mod data;
+mod locale;
 
-use crate::data::*;
+use crate::{data::*, locale::get_system_word};
 use askama::Template;
 use os3yew::{
     components::{ClockComponent, RenderWatchComponent},
     util::*,
 };
 use rand::{random_range, seq::IndexedRandom};
-use web_sys::console;
+use web_sys::{console, window};
 // use rustybuzz::{UnicodeBuffer, shape};
 use std::{
     collections::{HashMap, HashSet},
     hash::RandomState,
     rc::Rc,
+    sync::LazyLock,
 };
 use yew::{Html, prelude::*};
 
 const LOCK_SIZE: f64 = 110.0;
 const TIME_TILL_LOCK: f64 = 7.0;
+const LANGUAGES: LazyLock<HashSet<String, RandomState>> = std::sync::LazyLock::new(|| {
+    HashSet::from_iter(vec!["en".to_string(), "ja".to_string()].into_iter())
+});
+const DEFAULT_LANGUAGE: &str = "ja";
+const LANGUAGE_OVERWRITE_KEYS: LazyLock<HashSet<String>> = std::sync::LazyLock::new(|| {
+    HashSet::from_iter(
+        vec![
+            "title".to_string(),
+            "text".to_string(),
+            "ending".to_string(),
+            "image_caption_work_title".to_string(),
+            "image_caption".to_string(),
+        ]
+        .into_iter(),
+    )
+});
 
 fn get_exp_coeff() -> f64 {
     return (LOCK_SIZE.ln() - TIME_TILL_LOCK).exp();
@@ -69,7 +87,7 @@ fn get_sizemod_from_time(x: f64) -> f64 {
 
 #[component]
 fn App() -> Html {
-    let render_number = use_state(|| 0);
+    let current_language = use_state(|| DEFAULT_LANGUAGE.to_string());
 
     // current article
     let current_article = use_state(|| {
@@ -88,19 +106,6 @@ fn App() -> Html {
         })
     });
 
-    // counter for keeping consistent element keys and ids
-    let counter_keygen: UseStateHandle<u32> = use_state(|| 0);
-
-    // candidates of next articles
-    let forecasts: UseStateHandle<Vec<Option<Article>>> = use_state(|| Vec::new());
-
-    // articles that have been read
-    let done_titles: UseStateHandle<HashSet<String, RandomState>> = use_state(|| {
-        let mut h = HashSet::new();
-        h.insert("注意".to_string());
-        h
-    });
-
     // all titles (Actually, "title" in this regard is different from title (heading) shown on the
     // display. Rather, it acts as an internal ID, and has more strict naming rules than "title"
     // that will be displayed.)
@@ -113,6 +118,54 @@ fn App() -> Html {
                 .into_iter(),
         );
         return h;
+    });
+
+    {
+        let current_language = current_language.clone();
+        let current_article = current_article.clone();
+        let all_titles = all_titles.clone();
+
+        use_effect_with((), move |_| {
+            let s = window().unwrap().location().search().unwrap();
+            let usp = web_sys::UrlSearchParams::new_with_str(&s).unwrap();
+            if let Some(lang) = usp.get(&"lang") {
+                if LANGUAGES.contains(&lang) {
+                    current_language.set(lang);
+                }
+            }
+            if let Some(current) = usp.get(&"current") {
+                if all_titles.contains(&current) {
+                    current_article.set(Some(Article {
+                        template: ArticleTemplate {
+                            title: current,
+                            mood: Mood {},
+                            meta: Default::default(),
+                            date: Box::new(Date::new(2026, 2, 13)),
+                        },
+                        w: Some(1000.0),
+                        h: None,
+                        x: 30.0,
+                        y: 30.0,
+                        masks: Vec::new(),
+                    }));
+                }
+            }
+        });
+    };
+
+    let render_number = use_state(|| 0);
+
+    // counter for keeping consistent element keys and ids
+    let counter_keygen: UseStateHandle<u32> = use_state(|| 0);
+
+    // candidates of next articles
+    let forecasts: UseStateHandle<Vec<Option<Article>>> = use_state(|| Vec::new());
+
+    // articles that have been read
+    let done_titles: UseStateHandle<HashSet<String, RandomState>> = use_state(|| {
+        let mut h = HashSet::new();
+        h.insert("注意".to_string());
+        h
     });
 
     // ## legend
@@ -150,13 +203,6 @@ fn App() -> Html {
     let transition_history: UseStateHandle<Vec<(f64, GameStage)>> =
         use_state(|| vec![(0.0, GameStage::ArticleView)]);
 
-    // transit ArticleView -> ArticleFading instantly
-    let click_evt_fade_article: Callback<MouseEvent> =
-        use_callback(game_stage.clone(), |_, game_stage| {
-            if **game_stage == GameStage::ArticleView {
-                game_stage.set(GameStage::ArticleFading);
-            }
-        });
     let precalc_for_rects: UseStateHandle<Option<QuadNode<(usize, usize)>>> = use_state(|| None);
 
     // when forecasts change, if there are no masks, try generate initial masks. if the metrics
@@ -226,11 +272,13 @@ fn App() -> Html {
     let to_be_enlarged: UseStateHandle<Option<(usize, usize)>> = use_state(|| None);
     let to_be_enlarged_lock = use_state(|| false);
 
-    let mouse_move_evt = {
-        let precalc_for_rects = precalc_for_rects.clone();
-        let to_be_enlarged = to_be_enlarged.clone();
-        let to_be_enlarged_lock = to_be_enlarged_lock.clone();
-        Callback::from(move |me: MouseEvent| {
+    let mouse_move_evt = use_callback(
+        (
+            precalc_for_rects.clone(),
+            to_be_enlarged.clone(),
+            to_be_enlarged_lock.clone(),
+        ),
+        move |me: MouseEvent, (precalc_for_rects, to_be_enlarged, to_be_enlarged_lock)| {
             let x = me.page_x();
             let y = me.page_y();
             if let Some(precalc_for_rects) = precalc_for_rects.as_ref() {
@@ -242,12 +290,12 @@ fn App() -> Html {
                 let t = cands.get(0).map(|&x| x.clone());
                 console::log_1(&format!("{:?}", t).into());
 
-                if (!*to_be_enlarged_lock) || to_be_enlarged.is_none() {
+                if (!**to_be_enlarged_lock) || to_be_enlarged.is_none() {
                     to_be_enlarged.set(t);
                 }
             }
-        })
-    };
+        },
+    );
 
     // transit ArticleFading -> ForecastStart instantly;
     let advance_show_forecasts = use_callback(
@@ -427,15 +475,25 @@ fn App() -> Html {
     );
 
     // obtain the article text data
-    let data_table: Rc<Vec<Option<(bool, HashMap<String, String>, usize)>>> =
-        use_memo((current_article.clone(), forecasts.clone()), |(ca, fc)| {
+    let data_table: Rc<Vec<Option<(bool, HashMap<String, String>, usize)>>> = use_memo(
+        (
+            current_article.clone(),
+            forecasts.clone(),
+            current_language.clone(),
+        ),
+        |(ca, fc, current_language)| {
             let mut arr: Vec<Option<(bool, HashMap<String, String>, usize)>> = Vec::new();
 
             let insert_data = |is_current_article,
                                target: Option<&Article>,
                                arr: &mut Vec<Option<(bool, HashMap<String, String>, usize)>>,
                                idx: usize| {
-                let dt = make_data_table(target.unwrap().template.clone().render().unwrap());
+                let mut dt = make_data_table(target.unwrap().template.clone().render().unwrap());
+                dt = apply_language_to_data_table(
+                    &dt,
+                    &**current_language,
+                    &LANGUAGE_OVERWRITE_KEYS,
+                );
 
                 arr.push(Some((is_current_article, dt, idx)))
             };
@@ -454,7 +512,29 @@ fn App() -> Html {
                 }
             });
             arr
-        });
+        },
+    );
+
+    let ending: UseStateHandle<Option<String>> = use_state(|| None);
+    // transit ArticleView -> ArticleFading instantly
+    let click_evt_fade_article: Callback<MouseEvent> = use_callback(
+        (game_stage.clone(), data_table.clone(), ending.clone()),
+        |_, (game_stage, data_table, ending)| {
+            let c = data_table
+                .iter()
+                .filter(|x| x.is_some() && x.as_ref().unwrap().0)
+                .collect::<Vec<_>>();
+            if let Some(Some(c)) = c.get(0) {
+                if let Some(e) = c.1.get("ending") {
+                    ending.set(Some(e.clone()));
+                    return;
+                }
+            }
+            if **game_stage == GameStage::ArticleView {
+                game_stage.set(GameStage::ArticleFading);
+            }
+        },
+    );
 
     // get article id
     let gen_article_id = |counter: u32, idx: usize, is_current: bool| {
@@ -699,7 +779,12 @@ fn App() -> Html {
         }
         </div>
         }
-        <button onclick={click_evt_fade_article.clone()}>{"読み続ける"}</button>
+        if ending.is_none() {
+            <button onclick={click_evt_fade_article.clone()}>{get_system_word(&*current_language, "keep_reading_button")}</button>
+        } else {
+            { md(ending.as_ref().unwrap().clone()) }
+            <button onclick={|_|{window().unwrap().location().reload();}}>{get_system_word(&*current_language, "start_again_button")}</button>
+        }
     </div>
 </>
             }

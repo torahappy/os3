@@ -1,3 +1,4 @@
+use comrak::options::Parse;
 use comrak::{Options, markdown_to_html, options::Render};
 use ordered_float::OrderedFloat;
 use rand::distr::Distribution;
@@ -6,6 +7,7 @@ use rand::rng;
 use regex::Regex;
 use std::cmp::Ordering;
 use std::collections::BTreeMap;
+use std::collections::HashSet;
 use std::ops::Bound::Included;
 use web_sys::window;
 // use rustybuzz::{UnicodeBuffer, shape};
@@ -33,6 +35,10 @@ pub fn md(md_str: String) -> VNode {
         &Options {
             render: Render {
                 r#unsafe: true,
+                ..Default::default()
+            },
+            parse: Parse {
+                smart: true,
                 ..Default::default()
             },
             ..Default::default()
@@ -69,6 +75,20 @@ pub fn make_data_table(str_in: String) -> HashMap<String, String> {
     }
 
     table
+}
+
+pub fn apply_language_to_data_table(
+    lang_table: &HashMap<String, String>,
+    lang_code: &str,
+    target_keys: &HashSet<String>,
+) -> HashMap<String, String> {
+    let mut lang_table_new = lang_table.clone();
+    for k in target_keys {
+        if let Some(replace_data) = lang_table.get(&format!("{k}-{lang_code}")) {
+            lang_table_new.insert(k.to_string(), replace_data.to_string());
+        }
+    }
+    lang_table_new
 }
 
 #[derive(Clone, PartialEq, Debug)]
@@ -210,9 +230,12 @@ impl<T: Clone> QuadNode<T> {
                 .iter()
                 .enumerate()
                 .filter(|(_, c)| c.bounds.intersects(&rect))
-                .map(|x|x.0)
+                .map(|x| x.0)
                 .collect::<Vec<_>>();
-            assert!(intersect_indices.len() > 0, "Rect cannot be intersected by any child – should never happen");
+            assert!(
+                intersect_indices.len() > 0,
+                "Rect cannot be intersected by any child – should never happen"
+            );
             for child_idx in intersect_indices {
                 children[child_idx].items.push((idx.clone(), rect.clone()));
             }
@@ -229,9 +252,12 @@ impl<T: Clone> QuadNode<T> {
                 .iter()
                 .enumerate()
                 .filter(|(_, c)| c.bounds.intersects(&rect))
-                .map(|x|x.0)
+                .map(|x| x.0)
                 .collect::<Vec<_>>();
-            assert!(intersect_indices.len() > 0, "Rect cannot be intersected by any child – should never happen");
+            assert!(
+                intersect_indices.len() > 0,
+                "Rect cannot be intersected by any child – should never happen"
+            );
             for child_idx in intersect_indices {
                 children[child_idx].items.push((idx.clone(), rect.clone()));
             }
@@ -247,7 +273,7 @@ impl<T: Clone> QuadNode<T> {
 
     /// Return all items that intersect `rect` (including the ones stored
     /// in child nodes).  The result is appended to `out`.
-    /// Please note that if the rectangle touches boundaries, 
+    /// Please note that if the rectangle touches boundaries,
     /// the returned data (T) might be duplicated.
     pub fn query(&self, rect: &RectMask, out: &mut Vec<(T, RectMask)>) {
         // if node's own bounds do not intersect – no point to look further
@@ -526,7 +552,7 @@ pub fn search_intersects_btreemap(
 
 #[cfg(test)]
 mod tests_rectmask {
-    use super::{RectMask};
+    use super::RectMask;
 
     // ------------------------------------------------------------------
     // Helper to create a rectangle – keeps the tests readable

@@ -196,7 +196,8 @@ impl<'a> Date {
             candidates.push((11, format!("来年{}月{}日", new_month, self.day)));
         }
 
-        // Fallback – fTIME_TILL_LOCK        candidates.push((12, format!("{}年{}月{}日", new_year, new_month, self.day)));
+        // Fallback – fTIME_TILL_LOCK        
+        candidates.push((12, format!("{}年{}月{}日", new_year, new_month, self.day)));
 
         // This will serialize the program execution tree. Inputs which share same execution tree
         // results in the same condition_hash.
@@ -239,12 +240,6 @@ impl Default for Meta {
     }
 }
 
-impl Meta {
-    pub fn get_instruction_manual(&self) -> String {
-        return "下にあるボタンを押すと、今読んでいる文章が消えていきます。そうしてしばらくすると、色々な言葉の断片が浮かび上がっていきます。その言葉の断片の上にマウスカーソルを置いて、マウスを押し続けると、新たな文章が浮かび上がっていきます。".to_string();
-    }
-}
-
 #[derive(PartialEq, Debug, Clone)]
 pub struct Mood {}
 
@@ -265,7 +260,7 @@ mod filters {
         // values, these two arguments are always passed into a custom filter.
         env: &dyn askama::Values,
     ) -> askama::Result<String> {
-        Ok(format!("<div class=\"footnote\">{value}</div>"))
+        Ok(format!("<div class=\"footnote\">\n{value}\n</div>"))
     }
 }
 

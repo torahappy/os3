@@ -111,12 +111,27 @@ Just one-time Congress would not be enough for full consideration and reparation
 This is just a small step forward. Going through the true reparation, redemption, reflection and reconciliation —— not just being a facade —— will not be an easy task, but it have to be done someday. I hope that the commencing of the first Congress improves the current situation, even little by little.
 
 \[ending\]  
+
+* * *
+
 本作のコンテンツは、今のところはここまでになります。  
 今後もコンテンツを追加して行きたいと思っています。
 
+## あとがき
+
+夢と現実と喜びと怒りと悲しみと歴史と今と未来とを、漂う意識の波を手繰り寄せるようにして「読む」という感覚を、うまいことゲームを用いて表現できはしないものかと思いながら、私は本作を作りました。そのアイデアの元は、The Cosmic Wheel Sisterhood (作: Deconstructeam) というゲーム作品から連想したものです。
+
 \[ending-en\]  
+
+* * *
+
 You have seen all the the game contents so far.  
-I'm planning for game updates. Stay tuned!
+I plan to add more contents and make game mechanics more entertaining.  
+Stay tuned!
+
+## Afterword
+
+I made this game, thinking about how I could simulate an experience where I "read" through the dream, the reality, the joy, the anger, the sorrow, the history, the present, the future, and where they are going forward and back, intersecting and separated, while I "read" the weaves of consciousness. I came up of this idea after finishing *The Cosmic Wheel Sisterhood* (a game by Deconstructeam).
 
 \[images\]  
 <img src="assets/images/33b72989270e4ff8bd7bd05ab3e36aff.webp" style="aspect-ratio: 1.4380574826560952;" />
@@ -252,7 +267,7 @@ National Dream Police is currently gathering information that leads to arresting
 
 \[image_caption-en\]
 
-A crime scene shot in which the wind destroyed Hinomaru for some seconds. Poor Hinomaru, it was completely smashed. Image provided by National Dream Police.
+A crime scene where the wind destroyed Hinomaru for some seconds. Poor Hinomaru, it was completely smashed. Image provided by National Dream Police.
 
 \[tag\]
 
@@ -303,7 +318,7 @@ Soft Power Information Protection Act Passed
 
 \[text-en\]
 
-Soft Power Information Protection Act (formal name: Protecting Wagakuni's National Economic Security Information on Coolest Culture Act) was passed on House of Representatives. The act grants state government the power to designate certain economic entities as Designated Soft Power Production Committee. Once a corporation, individual or other judicial person is designated as Designated Soft Power Production Committee, any works of art, cultural event and other media deriving from the committee will be granted a special protection status, effectively prohibiting any commentary on them except by Approved Critics on Soft Power Information. Approved Critics should be met specific requirements promulgated by Cabinet Office, and send their published commentaries to Ministry of Culture, pass regularly integrity tests, which checks the writings don't compromise values of Japanese culture or the government. If there is a suspicion any information about the committee might be interpreted as a national security secret, the publication have to be approved by Joint Committee on Culture Secret, led by Cabinet Office, Ministry of Culture Policing, and National Police Agency.
+Soft Power Information Protection Act (formal name: Protecting Wagakuni's National Economic Security Information on Coolest Culture Act) was passed on House of Representatives. The law grants state government the power to designate certain economic entities as Designated Soft Power Production Committee. Once a corporation, individual or other judicial person is designated as Designated Soft Power Production Committee, any works of art, cultural event and other media deriving from the committee will be granted a special protection status, effectively prohibiting any commentary on them except by Approved Critics on Soft Power Information. Approved Critics are to meet specific requirements promulgated by Cabinet Office, send copies of the published commentaries to Ministry of Culture Policing, and pass regularly integrity tests, which checks the writings don't compromise values of Japanese culture or government. If there is a suspicion any information about the committee might be interpreted as a national security secret, the publication must be postponed, waiting approval by Joint Committee on Culture Secret, led by Cabinet Office, Ministry of Culture Policing, and National Police Agency.
 
 \[images\]  
 <img src="assets/images/c6071444006e4b338d1d736f540aae71.webp" style="aspect-ratio: 1.4476666666666667;" />
@@ -621,12 +636,15 @@ On the Cyclic Engine
 
 \[text\]
 
-2026年1月の解散には、世論調査で半分は反対を示していたでしょう、そもそも解散権の濫用じゃないかと、多くの人々が疑問に思っている。それなのに、「作戦勝ち」とか、そういう言葉の使い方の節々から、おぞましき不誠実と欺瞞と隠蔽と軽視がぶくぶくと浮かび上がる。  
+2026年1月の解散には、世論調査で半分は反対を示していたでしょう、そもそも解散権の濫用じゃないかと、多くの人々が疑問に思っている。それなのに、「作戦勝ち」とか、そういう言葉の使い方の節々から、おぞましき不誠実と欺瞞と隠蔽と軽視がぶくぶくと浮かび上がる。
+
 もう作戦とか策略とか三国志とかパズルとかその駒の下に押しつぶされる人々を想像できないのか。それはニュース価値なのか。常に新しさという虚構の燃料を焚べていなければ止まってしまうエンジンなのか。でもそれも規格にすぎない。このタイミングでこういうことを報じるとすべて規格が定められているんだ。今は御涙頂戴のドラマの時間、その次は策略じゃんけんの種明かしの時間、などなど。それをずっとぐるぐる回して延々と新しい物語を見ているように錯覚させられているだけ。そんなエンジンに振り回されるのはもう止めよう。時違いでも場違いでもいいじゃないか、報道するべきことを報道しようよ。
 
 \[text-en\]
 
-Around half of people were against the dissolution of the House of Representatives on January 2026, according to the poll. Many people saw it as an abuse of dissolution power. And what your newspaper said after the election? "A tactical win"......? Through these word choices, I see mindsets of dishonesty, deception, lack of respect, horrid. Tactics, tricks, Three Kingdoms drama, political puzzle, can you imagine all the people who have to bear the pressure under the chess pieces while they play the game? Is it really what the news offers for us? Do you still believe in an engine that immediately stops when it gets bored so you constantly bring seemingly new and entertaining information? But they're not new, they follow cyclic patterns. Now heartbreaking drama, then revealing of rock-paper-scissors tactics, and so on...... We have been lured to stories cycle by cycle. Don't let the cyclic engine control us. Let's stop "It's not a good time to talk about it," "It's not a good place to talk about it," just say what we have to say.
+Around half of people were against the dissolution of the House of Representatives on January 2026, according to the poll. Many people saw it as an abuse of dissolution power. And what your newspaper said after the election? "A tactical win"......? Through these word choices, I see mindset of dishonesty, deception, lack of respect, horrid.
+
+Tactics, tricks, Three Kingdoms drama, political puzzle, can you imagine all the people who have to bear the pressure under chess pieces while they play the game? Is it really what the news offers for us? Do you still believe in an engine that immediately stops when it gets bored so you constantly bring seemingly new and entertaining information? But they're not new, they follow cyclic patterns. Now heartbreaking drama, then revealing of rock-paper-scissors tactics, and so on...... We have been lured to stories cycle by cycle. Don't let the cyclic engine control us. Let's stop "It's not a good time to talk about it," "It's not a good place to talk about it," just say what we have to say, as always.
 
 \[tag\]
 
@@ -654,9 +672,9 @@ Annual Weapon Bargain in Ichigaya, Tokyo
 
 \[text-en\]
 
-{{ date.after(8).month_day() }}, Weapon Bargain will be held in Ichigaya. During the annual event held in front of Ministry of Defense Headquarters, pedestrians can freely take weapons and ammunitions, which were once the military's assets. The main purposes for the event are to guarantee the Right to Revolution as secretly written in Japanese Constitution, and regional revitalization. For commuters, students and residents there, the event is one of the typical seasonal traditions, but for outsider it's spectacular to see ammunitons, guns, and even Tomahawks, which the U.S. had blackmailed the Japanese govt. to buy, all lined up on a huge, blue sheet of plastic.
+{{ date.after(8).month_day() }}, Weapon Bargain will be held in front of Ministry of Defense Headquarters, Ichigaya. During the annual event, pedestrians can freely take weapons and ammunitions, which were once the military's assets. The main purpose of the event is to guarantee Right to Revolution as secretly written in Japanese Constitution, and for regional revitalization. For commuters, students and residents, the event is one of typical seasonal traditions. If you're an outsider, you might feel overwhelmed to see ammunitons, guns, and even Tomahawk missiles, which the U.S. had blackmailed the Japanese govt. to buy, all lined up on a huge, blue sheet of plastic.
 
-However, before you take these weapons home, we have to tell you there's a caveat: after the event is over, according to how much their assets are taken, the same number of MoD and Self Defence Force personele and soldiers will be excuted via seppuku, to take responsibilities for the loss. Whatever your objectives are —— for some of you, curiosity, faith, or belief —— if you take one of their assets, someone will be forced to take responsibillity and die. It's an educational event that teaches us culture and ethics deeply.
+However, before you take these weapons home, we have to tell you there's a caveat: after the event is over, according to how much their assets are taken, the same number of MoD and Self Defence Force personnel will be excuted via seppuku, to take responsibilities for the loss. Whatever your objectives are —— curiosity, faith, belief, or else —— if you take one of their machines, someone will be forced to take responsibillity and die. It's an educational event that teaches us culture and ethics deeply.
 
 \[images\]  
 <img src="assets/images/313aaeda4dcc40fe9ae04165fc13becf.webp" style="aspect-ratio: 1.4005555555555556;" />
@@ -755,7 +773,9 @@ introduction
 
 ## 操作方法
 
-{{ meta.get_instruction_manual() }}
+下にあるボタンを押すと、今読んでいる文章が消えていきます。そうしてしばらくすると、色々な言葉の断片が浮かび上がっていきます。その言葉の断片の上にマウスカーソルを置いて、マウスカーソルを置き続けると、新たな文章が浮かび上がっていきます。
+
+## ソフトウェアクレジット
 
 このプログラムを作るに当たって使用したプログラムの一覧は、[こちらのリンク](https://os3.torahappy.org/shimbun_web/dependencies.html)で確認できます。
 
@@ -764,13 +784,23 @@ introduction
 This work has following elements:
 
 - although not sexually explicit, talks about sexual concepts
-- war, violence, colonialism
+- war
+- violence
+- colonialism
+- human trafficking
+- torture
 - death
 - somewhat dooming dooming despair on how the world has gotten worse and is becoming worse
 
 ## How to Play
 
-{{ meta.get_instruction_manual() }}
+Press a button below the texts.  
+Texts start to disappear.  
+Wait a while, then you will see scrambled words and images.  
+Put the mouse cursor over these pieces.  
+New texts starts to appear.
+
+## Software Credits
 
 To see the list of softwares used in this work, follow [this link](https://os3.torahappy.org/shimbun_web/dependencies.html).
 
@@ -841,12 +871,14 @@ JSDF Established Art Battle Division
 「メディアアートの分野が培ってきた、認識の対象を混乱させる技術は、戦場での作戦や、兵器工場での能率向上にも大きな寄与をするものと考えます。兵器工場での能率向上。これ、駄洒落ですよ。わかっていますか。」
 
 平毒文化警察大臣  
-「藝術家は毒物のエキスパートです。昔から、鉛、カドミウム、コバルト、ヒ素、水銀などさまざまな毒物がお絵描きに使われてきました。ただの毒ではありません。美しい毒です。これらの物質は日本が誇る素晴らしき化学工業の礎となるものです。  
+「藝術家は毒物のエキスパートです。昔から、鉛、カドミウム、コバルト、ヒ素、水銀などさまざまな毒物がお絵描きに使われてきました。ただの毒ではありません。美しい毒です。これらの物質は日本が誇る素晴らしき化学工業の礎となるものです。
+
 {% filter footnote %}  
 そして、それらの物質は川や海、土へと、誰も知らないまま流される。あるいは誰かがそのことを知っていたとしても、お国のためならいいじゃないかと、生活を豊かにしてやっているのだから黙れと、言われるのだろう。
 
 ひとつの　じょうほう: [チッソの加害は植民地から引き継がれた―水俣と朝鮮、暮らしから見えるその歴史, 安田菜津紀, Dialogue for People, 2025](https://d4p.world/33600/)  
 {% endfilter %}  
+
 きっと敵を惹きつけた上で無慈悲に殺してくれます。」
 
 裂夢防衛大臣  
@@ -993,7 +1025,7 @@ Govt. to Release Gender Registration Website
 
 \[text-en\]
 
-To enrich Act on the Promotion of Public Understanding of the Diversity of Sexual Orientation and Gender Identity, which was enacted on 2023, the goverment plans to release a website to register genders from public. The website is not for registering individual genders, but types of genders themselves via a web form. After some user reported an existence of a label of gender there, the state and regional governments' databases will be immediately updated, and it will be able to be used anywhere in administrative documents, including resident registration. It is the latest development for the long-awaited Koseki Reformation project. Previously, since {{ date.before(415).month_day() }}, Family "戸" Registration "籍" Koseki was re-branded as Individual "個" Registration "籍" Koseki to diminish patriarchal influences from public registration system.
+To enrich Act on the Promotion of Public Understanding of the Diversity of Sexual Orientation and Gender Identity, which was enacted on 2023, the goverment plans to release a website to register genders from public. The website is not for registering individual genders, but types of genders themselves via a web form. After some user reported an existence of a label of gender there, the state and regional governments' databases will be immediately updated, and it can be used anywhere in administrative documents, including resident registration. It is the latest development for the long-awaited Koseki Reformation project. Previously, since {{ date.before(415).month_day() }}, Family "戸" Registration "籍" Koseki was re-branded as Individual "個" Registration "籍" Koseki to diminish patriarchal influences from public registration system.
 
 【Appendix.】Koseki Reformation project roadmap
 
