@@ -305,8 +305,6 @@ pub struct ParsedDomRect {
     pub width: f64,
     pub height: f64,
     pub top: f64,
-    pub right: f64,
-    pub bottom: f64,
     pub left: f64,
 }
 
@@ -325,10 +323,8 @@ pub fn get_bounding_from_id(elem_id: &str) -> Option<ParsedDomRect> {
             y: bounding.y(),
             width: bounding.width(),
             height: bounding.height(),
-            left: bounding.left(),
-            top: bounding.top(),
-            bottom: bounding.bottom(),
-            right: bounding.right(),
+            left: bounding.left() + window().unwrap().scroll_x().unwrap(),
+            top: bounding.top() + window().unwrap().scroll_y().unwrap(),
         }
     })
 }
@@ -1092,6 +1088,9 @@ extern "C" {
     #[wasm_bindgen(js_name = "getSpanMetrics")]
     /// Get all characters metrics within the element of given id via JSON serialized array of {x:number, y:number, width:number, height:number, top:number, right:number, bottom:number, left:number, character:string}.
     fn get_span_metrics_inner(id: &str) -> String;
+    #[wasm_bindgen(js_name = "doSpeech")]
+    /// Do speech using speechSynthesis.
+    pub fn do_speech(data: &str);
 }
 
 pub fn get_span_metrics (id: &str) -> Result<Vec<CharacterMetric>, serde_json::Error> {
@@ -1107,8 +1106,6 @@ pub struct CharacterMetric {
     pub width: f64,
     pub height: f64,
     pub top: f64,
-    pub right: f64,
-    pub bottom: f64,
     pub left: f64,
     pub character: String,
 }

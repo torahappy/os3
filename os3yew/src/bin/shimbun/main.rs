@@ -302,7 +302,7 @@ fn App() -> Html {
                     };
                     if (!bound_flattened.intersects(&r)) {
                         return;
-                    } // TODO: why error happens :((
+                    } 
                     char_quad.insert((*i, m.character.clone()), r, 4);
                 });
 
@@ -332,7 +332,6 @@ fn App() -> Html {
                 cands.sort(); // TODO: use more funny selection algo
 
                 let t = cands.get(0).map(|&x| x.clone());
-                console::log_1(&format!("{:?}", t).into());
 
                 if (!**to_be_enlarged_lock) || to_be_enlarged.is_none() {
                     to_be_enlarged.set(t);
@@ -370,7 +369,7 @@ fn App() -> Html {
                                 .map(|x| x.0.1.clone())
                                 .collect::<Vec<_>>()
                                 .join("");
-                            console::log_1(&format!("{}", &joined).into());
+                            do_speech(&joined);
                         }
                     }
                 }

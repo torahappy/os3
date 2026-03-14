@@ -7,27 +7,23 @@
  * @returns {Text[]}  - An array of Text node objects.
  */
 function getAllTextNodes(id) {
-    // Grab the element; return an empty array if it doesn't exist
-    const root = document.getElementById(id);
-    if (!root) return [];
+  // Grab the element; return an empty array if it doesn't exist
+  const root = document.getElementById(id);
+  if (!root)
+    return [];
 
-    // Create a TreeWalker that only shows text nodes
-    const walker = document.createTreeWalker(
-        root,
-        NodeFilter.SHOW_TEXT,
-        null,
-        false
-    );
+  // Create a TreeWalker that only shows text nodes
+  const walker =
+      document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null, false);
 
-    // Walk the tree and push each encountered text node into the result array
-    const textNodes = [];
-    while (walker.nextNode()) {
-        textNodes.push(walker.currentNode);
-    }
+  // Walk the tree and push each encountered text node into the result array
+  const textNodes = [];
+  while (walker.nextNode()) {
+    textNodes.push(walker.currentNode);
+  }
 
-    return textNodes;          // a flat array of Text nodes
+  return textNodes; // a flat array of Text nodes
 }
-
 
 /**
  * Wrap every character in the element with the given id in a <span>.
@@ -41,7 +37,8 @@ function wrapCharactersInSpans(id) {
   // For each text node … create a <span> for each character
   textNodes.forEach(textNode => {
     const parent = textNode.parentNode;
-    if (!parent) return; // safety check
+    if (!parent)
+      return; // safety check
 
     // Build a fragment that will replace the original text node
     const frag = document.createDocumentFragment();
@@ -60,7 +57,6 @@ function wrapCharactersInSpans(id) {
     parent.removeChild(textNode);
   });
 }
-
 
 /**
  * Run `wrapCharactersInSpans` for the supplied element and return a
@@ -88,15 +84,13 @@ export function getSpanMetrics(id) {
 
     // DOMRect has the same numeric properties we need
     metrics.push({
-      x:        rect.x,
-      y:        rect.y,
-      width:    rect.width,
-      height:   rect.height,
-      top:      rect.top,
-      right:    rect.right,
-      bottom:   rect.bottom,
-      left:     rect.left,
-      character: span.textContent   // the single character in that <span>
+      x : rect.x,
+      y : rect.y,
+      width : rect.width,
+      height : rect.height,
+      top : rect.top + window.scrollY,
+      left : rect.left + window.scrollX,
+      character : span.textContent // the single character in that <span>
     });
   });
 
@@ -105,3 +99,20 @@ export function getSpanMetrics(id) {
   return JSON.stringify(metrics);
 }
 
+export function doSpeech(text) {
+  console.log(text)
+  let uttr = new SpeechSynthesisUtterance(text);
+  if (window.VOICE_CACHE === undefined) {
+    let speech_candidates = [ "takumi_happy" ];
+    window.VOICE_CACHE = window.speechSynthesis.getVoices().find(
+        x => speech_candidates.some((y) => (x.name.includes(y))));
+  }
+  if (window.VOICE_CACHE !== undefined) {
+    uttr.voice = window.VOICE_CACHE;
+    uttr.rate = 1.2;
+    uttr.pitch = 1.2;
+    uttr.volume = 0.8;
+    window.speechSynthesis.cancel();
+    window.speechSynthesis.speak(uttr);
+  }
+}
