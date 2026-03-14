@@ -1102,13 +1102,13 @@ pub fn get_span_metrics (id: &str) -> Result<Vec<CharacterMetric>, serde_json::E
 
 #[derive(Clone, PartialEq, Serialize, Deserialize, Debug)]
 pub struct CharacterMetric {
-    x: f64,
-    y: f64,
-    width: f64,
-    height: f64,
-    top: f64,
-    right: f64,
-    bottom: f64,
-    left: f64,
-    character: String,
+    pub x: f64,
+    pub y: f64,
+    pub width: f64,
+    pub height: f64,
+    pub top: f64,
+    pub right: f64,
+    pub bottom: f64,
+    pub left: f64,
+    pub character: String,
 }

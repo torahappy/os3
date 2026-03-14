@@ -195,13 +195,21 @@ fn App() -> Html {
     let transition_history: UseStateHandle<Vec<(f64, GameStage)>> =
         use_state(|| vec![(0.0, GameStage::ArticleView)]);
 
+    // precalc for "mask" rects; keyed by forecast index & mask index
     let precalc_for_rects: UseStateHandle<Option<QuadNode<(usize, usize)>>> = use_state(|| None);
+
+    let precalc_for_characters: UseStateHandle<Option<QuadNode<(usize, String)>>> =
+        use_state(|| None);
 
     // when forecasts change, if there are no masks, try generate initial masks. if the metrics
     // aren't filled yet, do nothing for the article.
     use_effect_with(
-        (precalc_for_rects.clone(), forecasts.clone()),
-        |(precalc_for_rects, forecasts)| {
+        (
+            precalc_for_rects.clone(),
+            forecasts.clone(),
+            precalc_for_characters.clone(),
+        ),
+        |(precalc_for_rects, forecasts, precalc_for_characters)| {
             let next_forecasts = forecasts
                 .iter()
                 .map(|x| {
@@ -231,16 +239,29 @@ fn App() -> Html {
                 })
                 .collect::<Vec<_>>();
 
+            // get possible range of all masks coordinates
             let bound = next_forecasts
                 .iter()
                 .filter_map(|x| x.as_ref())
-                .map(|x| x.masks.iter().filter_map(|x| x.clone()))
-                .flatten()
+                .map(|x| {
+                    if x.w.is_some() && x.h.is_some() {
+                        Some(RectMask {
+                            w: x.w.unwrap(),
+                            h: x.h.unwrap(),
+                            x: x.x,
+                            y: x.y,
+                        })
+                    } else {
+                        None
+                    }
+                })
+                .filter_map(|x| x)
                 .collect::<Vec<_>>();
 
             if bound.len() != 0 {
+                let bound_flattened = RectMask::bounding_rect(bound).unwrap();
                 let mut quad_data: QuadNode<(usize, usize)> =
-                    QuadNode::new(RectMask::bounding_rect(bound).unwrap());
+                    QuadNode::new(bound_flattened.clone());
 
                 for (i, a) in forecasts.iter().enumerate() {
                     if let Some(a) = a {
@@ -255,7 +276,37 @@ fn App() -> Html {
                     }
                 }
 
+                let all_chars = forecasts
+                    .iter()
+                    .enumerate()
+                    .map(|(i, a)| {
+                        a.as_ref()
+                            .map(|a| a.character_metrics.as_ref().map(|m| (i, m)))
+                            .flatten()
+                    })
+                    .filter_map(|m| m)
+                    .map(|(i, m)| m.iter().map(|m| (i, m)).collect::<Vec<_>>())
+                    .flatten()
+                    .collect::<Vec<_>>();
+
+                let mut char_quad: QuadNode<(usize, String)> =
+                    QuadNode::new(bound_flattened.clone());
+
+                all_chars.iter().for_each(|(i, m)| {
+                    let r = RectMask {
+                        w: m.width,
+                        h: m.height,
+                        x: m.left,
+                        y: m.top,
+                    };
+                    if (!bound_flattened.intersects(&r)) {
+                        return;
+                    } // TODO: why error happens :((
+                    char_quad.insert((*i, m.character.clone()), r, 4);
+                });
+
                 precalc_for_rects.set(Some(quad_data));
+                precalc_for_characters.set(Some(char_quad));
                 forecasts.set(next_forecasts);
             }
         },
@@ -264,30 +315,44 @@ fn App() -> Html {
     let to_be_enlarged: UseStateHandle<Option<(usize, usize)>> = use_state(|| None);
     let to_be_enlarged_lock = use_state(|| false);
 
-    let mouse_move_evt = use_callback(
-        (
-            precalc_for_rects.clone(),
-            to_be_enlarged.clone(),
-            to_be_enlarged_lock.clone(),
-        ),
-        move |me: MouseEvent, (precalc_for_rects, to_be_enlarged, to_be_enlarged_lock)| {
-            let x = me.page_x();
-            let y = me.page_y();
-            if let Some(precalc_for_rects) = precalc_for_rects.as_ref() {
-                let mut r = vec![];
-                precalc_for_rects.query(&RectMask::new(x as f64, y as f64, 1.0, 1.0), &mut r);
-                let mut cands = r.iter().map(|x| &x.0).collect::<Vec<_>>();
-                cands.sort(); // TODO: use more funny selection algo
+    let mouse_move_evt =
+        use_callback(
+            (
+                precalc_for_rects.clone(),
+                to_be_enlarged.clone(),
+                to_be_enlarged_lock.clone(),
+                precalc_for_characters.clone(),
+            ),
+            move |me: MouseEvent,
+                  (
+                precalc_for_rects,
+                to_be_enlarged,
+                to_be_enlarged_lock,
+                precalc_for_characters,
+            )| {
+                let x = me.page_x();
+                let y = me.page_y();
+                if let Some(precalc_for_rects) = precalc_for_rects.as_ref() {
+                    let mut r = vec![];
+                    precalc_for_rects.query(&RectMask::new(x as f64, y as f64, 1.0, 1.0), &mut r);
+                    let mut cands = r.iter().map(|x| &x.0).collect::<Vec<_>>();
+                    cands.sort(); // TODO: use more funny selection algo
 
-                let t = cands.get(0).map(|&x| x.clone());
-                console::log_1(&format!("{:?}", t).into());
+                    let t = cands.get(0).map(|&x| x.clone());
+                    console::log_1(&format!("{:?}", t).into());
 
-                if (!**to_be_enlarged_lock) || to_be_enlarged.is_none() {
-                    to_be_enlarged.set(t);
+                    if (!**to_be_enlarged_lock) || to_be_enlarged.is_none() {
+                        to_be_enlarged.set(t);
+                    }
                 }
-            }
-        },
-    );
+                if let Some(precalc_for_characters) = precalc_for_characters.as_ref() {
+                    let mut r2 = vec![];
+                    precalc_for_characters
+                        .query(&RectMask::new(x as f64, y as f64, 1.0, 1.0), &mut r2);
+                    console::log_1(&format!("{:?}", &r2).into());
+                }
+            },
+        );
 
     // transit ArticleFading -> ForecastStart instantly;
     let advance_show_forecasts = use_callback(
