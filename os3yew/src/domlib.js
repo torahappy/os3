@@ -99,19 +99,22 @@ export function getSpanMetrics(id) {
   return JSON.stringify(metrics);
 }
 
-export function doSpeech(text) {
+export function doSpeech(text, lang) {
   console.log(text)
   let uttr = new SpeechSynthesisUtterance(text);
   if (window.VOICE_CACHE === undefined) {
-    let speech_candidates = [ "takumi_happy" ];
+    let speech_candidates = [];
+    if (lang === "en") {
+      speech_candidates = [ "libritts_r-medium" ];
+    }
+    if (lang === "ja") {
+      speech_candidates = [ "takumi_happy" ];
+    }
     window.VOICE_CACHE = window.speechSynthesis.getVoices().find(
         x => speech_candidates.some((y) => (x.name.includes(y))));
   }
   if (window.VOICE_CACHE !== undefined) {
     uttr.voice = window.VOICE_CACHE;
-    uttr.rate = 1.2;
-    uttr.pitch = 1.2;
-    uttr.volume = 0.8;
     window.speechSynthesis.cancel();
     window.speechSynthesis.speak(uttr);
   }

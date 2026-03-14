@@ -341,8 +341,8 @@ fn App() -> Html {
     );
 
     use_effect_with(
-        (to_be_enlarged.clone(), forecasts.clone()),
-        move |(to_be_enlarged, forecasts)| {
+        (to_be_enlarged.clone(), forecasts.clone(), current_language.clone()),
+        move |(to_be_enlarged, forecasts, current_language)| {
             if let Some(precalc_for_characters) = precalc_for_characters.as_ref() {
                 if let Some((idx_a, idx_b)) = **to_be_enlarged {
                     if let Some(forecast) = forecasts.get(idx_a).unwrap() {
@@ -369,7 +369,7 @@ fn App() -> Html {
                                 .map(|x| x.0.1.clone())
                                 .collect::<Vec<_>>()
                                 .join("");
-                            do_speech(&joined);
+                            do_speech(&joined, &**current_language);
                         }
                     }
                 }

@@ -1090,7 +1090,7 @@ extern "C" {
     fn get_span_metrics_inner(id: &str) -> String;
     #[wasm_bindgen(js_name = "doSpeech")]
     /// Do speech using speechSynthesis.
-    pub fn do_speech(data: &str);
+    pub fn do_speech(data: &str, lang: &str);
 }
 
 pub fn get_span_metrics (id: &str) -> Result<Vec<CharacterMetric>, serde_json::Error> {
