@@ -10,6 +10,7 @@ use os3yew::{
     util::*,
 };
 use rand::{random_range, seq::IndexedRandom};
+use wasm_bindgen::prelude::wasm_bindgen;
 use web_sys::{console, window};
 // use rustybuzz::{UnicodeBuffer, shape};
 use std::{
@@ -140,6 +141,7 @@ fn App() -> Html {
             x: 30.0,
             y: 30.0,
             masks: Vec::new(),
+            character_metrics: None,
         })
     });
 
@@ -336,6 +338,7 @@ fn App() -> Html {
                         x: 30.0,
                         y: 30.0,
                         masks: Vec::new(),
+                        character_metrics: None,
                     })
                 })
                 .collect::<Vec<_>>();
@@ -537,7 +540,11 @@ fn App() -> Html {
 
     // "upgrade" Article structure. If there are width/height field that are not filled yet, try
     // invoking getBoundingClientRect API and fetch the metrics.
-    let upgrade_plan: UseStateHandle<Vec<(bool, usize, (f64, f64))>> = use_state(|| Vec::new());
+    let upgrade_plan_whole: UseStateHandle<Vec<(bool, usize, (f64, f64))>> =
+        use_state(|| Vec::new());
+
+    let upgrade_plan_characters: UseStateHandle<Vec<(bool, usize, Vec<CharacterMetric>)>> =
+        use_state(|| Vec::new());
 
     // invokes getBoundingClientRect for each elements with unfetched metrics. Also, if there are
     // any inconsistencies between the component state and the actual rendered DOM, then query
@@ -547,10 +554,20 @@ fn App() -> Html {
             current_article.clone(),
             forecasts.clone(),
             counter_keygen.clone(),
-            upgrade_plan.clone(),
+            upgrade_plan_whole.clone(),
             render_number.clone(),
+            upgrade_plan_characters.clone(),
         ),
-        move |_, (current_article, forecasts, counter, upgrade_plan_in, render_number)| {
+        move |_,
+              (
+            current_article,
+            forecasts,
+            counter,
+            upgrade_plan_whole,
+            render_number,
+            upgrade_plan_characters,
+        )| {
+            // 1. common setup
             let mut all_articles = vec![(current_article.as_ref(), 0, true)];
             all_articles.append(
                 &mut forecasts
@@ -559,7 +576,12 @@ fn App() -> Html {
                     .map(|(i, x)| (x.as_ref(), i, false))
                     .collect(),
             );
-            let no_need_upgrade = all_articles.iter().all(|(a, _, _)| {
+
+            let mut something_wrong = false;
+
+            // 2. WHOLE metrics
+
+            let no_need_upgrade_whole = all_articles.iter().all(|(a, _, _)| {
                 if let Some(a) = a {
                     if a.w.is_some() && a.h.is_some() {
                         true
@@ -570,8 +592,8 @@ fn App() -> Html {
                     true
                 }
             });
-            let mut not_yet_rendered = false;
-            let upgrade_plan = if !no_need_upgrade {
+
+            let upgrade_plan_whole_new = if !no_need_upgrade_whole {
                 all_articles
                     .iter()
                     .map(|(a, i, is_current)| {
@@ -581,7 +603,7 @@ fn App() -> Html {
                             if let Some(rect) = rect {
                                 Some((*is_current, *i, (rect.width, rect.height)))
                             } else {
-                                not_yet_rendered = true;
+                                something_wrong = true;
                                 None
                             }
                         } else {
@@ -593,11 +615,60 @@ fn App() -> Html {
                 Vec::new()
             };
 
-            if not_yet_rendered {
+            // 3. Character metrics
+
+            let no_need_upgrade_char = all_articles.iter().all(|(a, _, _)| {
+                if let Some(a) = a {
+                    if a.character_metrics.is_some() {
+                        true
+                    } else {
+                        false
+                    }
+                } else {
+                    true
+                }
+            });
+
+            let upgrade_plan_char_new = if !no_need_upgrade_char {
+                all_articles
+                    .iter()
+                    .map(|(a, i, is_current)| {
+                        if a.is_some() && a.unwrap().w.is_some() && a.unwrap().h.is_some() {
+                            let elem_id = gen_article_id(**counter, *i, *is_current);
+                            if let Ok(data) = get_span_metrics(&elem_id) {
+                                Some((*is_current, *i, data))
+                            } else {
+                                something_wrong = true;
+                                None
+                            }
+                        } else {
+                            None
+                        }
+                    })
+                    .collect()
+            } else {
+                Vec::new()
+            };
+
+            // 4. postprocess
+
+            if something_wrong {
                 render_number.set(**render_number + 1);
             }
 
-            upgrade_plan_in.set(upgrade_plan.into_iter().filter_map(|x| x).collect());
+            upgrade_plan_whole.set(
+                upgrade_plan_whole_new
+                    .into_iter()
+                    .filter_map(|x| x)
+                    .collect(),
+            );
+
+            upgrade_plan_characters.set(
+                upgrade_plan_char_new
+                    .into_iter()
+                    .filter_map(|x| x)
+                    .collect(),
+            );
         },
     );
 
@@ -605,32 +676,53 @@ fn App() -> Html {
     {
         let current_article = current_article.clone();
         let forecasts = forecasts.clone();
-        let upgrade_plan = upgrade_plan.clone();
+        let upgrade_plan_whole = upgrade_plan_whole.clone();
+        let upgrade_plan_char = upgrade_plan_characters.clone();
         use_effect(move || {
-            if upgrade_plan.is_empty() {
+            if upgrade_plan_whole.is_empty() && upgrade_plan_char.is_empty() {
                 return;
             }
             let mut forecasts_new = (&*forecasts).clone();
-            upgrade_plan.iter().for_each(|(is_current, idx, (w, h))| {
-                if *is_current {
-                    if let Some(a) = current_article.as_ref() {
-                        let mut a = a.clone();
-                        a.w = Some(*w);
-                        a.h = Some(*h);
-                        current_article.set(Some(a));
-                    }
-                } else {
-                    if let Some(Some(a)) = forecasts.get(*idx) {
-                        let mut a = a.clone();
+            upgrade_plan_whole
+                .iter()
+                .for_each(|(is_current, idx, (w, h))| {
+                    if *is_current {
+                        if let Some(a) = current_article.as_ref() {
+                            let mut a = a.clone();
+                            a.w = Some(*w);
+                            a.h = Some(*h);
+                            current_article.set(Some(a));
+                        }
+                    } else {
+                        if let Some(Some(a)) = forecasts.get(*idx) {
+                            let mut a = a.clone();
 
-                        a.w = Some(*w);
-                        a.h = Some(*h);
-                        forecasts_new[*idx] = Some(a);
+                            a.w = Some(*w);
+                            a.h = Some(*h);
+                            forecasts_new[*idx] = Some(a);
+                        }
                     }
-                }
-            });
+                });
+            upgrade_plan_char
+                .iter()
+                .for_each(|(is_current, idx, data)| {
+                    if *is_current {
+                        if let Some(a) = current_article.as_ref() {
+                            let mut a = a.clone();
+                            a.character_metrics = Some(data.clone());
+                            current_article.set(Some(a));
+                        }
+                    } else {
+                        if let Some(Some(a)) = forecasts.get(*idx) {
+                            let mut a = a.clone();
+                            a.character_metrics = Some(data.clone());
+                            forecasts_new[*idx] = Some(a);
+                        }
+                    }
+                });
             forecasts.set(forecasts_new);
-            upgrade_plan.set(Vec::new());
+            upgrade_plan_whole.set(Vec::new());
+            upgrade_plan_char.set(Vec::new());
         });
     }
 
@@ -769,17 +861,32 @@ fn App() -> Html {
         }
         </div>
         }
-        if ending.is_none() {
-            <button onclick={click_evt_fade_article.clone()}>{get_system_word(&*current_language, "keep_reading_button")}</button>
-        } else {
-            { md(ending.as_ref().unwrap().clone()) }
-            <button onclick={|_|{window().unwrap().location().reload();}}>{get_system_word(&*current_language, "start_again_button")}</button>
-        }
     </div>
 </>
             }
         })
         .collect();
+
+    let get_btn_style = use_callback((current_article.clone()), move |(), ca| {
+        if ca.is_some() && ca.as_ref().unwrap().w.is_some() && ca.as_ref().unwrap().h.is_some() {
+            let mut s = "".to_string();
+            s += "position: absolute;";
+            s += &format!("left: {}px;", ca.as_ref().unwrap().x);
+            s += &format!(
+                "top: {}px;",
+                ca.as_ref().unwrap().y + ca.as_ref().unwrap().h.unwrap()
+            );
+            return s;
+        }
+        return "".to_string();
+    });
+
+    let get_btn_class = use_callback((game_stage.clone()), move |(), gs| {
+        if **gs == GameStage::ArticleFading {
+            return "btn-fading".to_string();
+        }
+        return "".to_string();
+    });
 
     // the final virtual dom
     html! {
@@ -789,6 +896,15 @@ fn App() -> Html {
         }
         <div class="app-wrapper">
             {html_articles}
+
+        if *game_stage <= GameStage::ArticleFading {
+        if ending.is_none() {
+            <button class={get_btn_class.emit(())} style={get_btn_style.emit(())} onclick={click_evt_fade_article.clone()}>{get_system_word(&*current_language, "keep_reading_button")}</button>
+        } else {
+            { md(ending.as_ref().unwrap().clone()) }
+            <button style={get_btn_style.emit(())} onclick={|_|{window().unwrap().location().reload();}}>{get_system_word(&*current_language, "start_again_button")}</button>
+        }
+        }
             <RenderWatchComponent render_number={*render_number} callback={upgrade_plan_check}><></></RenderWatchComponent>
             <ClockComponent callback={clock_callback} interval={42} />
             <svg height="0" xmlns="http://www.w3.org/2000/svg">

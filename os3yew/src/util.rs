@@ -5,10 +5,12 @@ use rand::distr::Distribution;
 use rand::distr::Uniform;
 use rand::rng;
 use regex::Regex;
+use serde::{Deserialize, Serialize};
 use std::cmp::Ordering;
 use std::collections::BTreeMap;
 use std::collections::HashSet;
 use std::ops::Bound::Included;
+use wasm_bindgen::prelude::wasm_bindgen;
 use web_sys::window;
 // use rustybuzz::{UnicodeBuffer, shape};
 use std::collections::HashMap;
@@ -1083,4 +1085,30 @@ mod tests_simple_range {
             assert_eq!(h1, h4, "{:?}", &(x, y));
         }
     }
+}
+
+#[wasm_bindgen(module = "/src/domlib.js")]
+extern "C" {
+    #[wasm_bindgen(js_name = "getSpanMetrics")]
+    /// Get all characters metrics within the element of given id via JSON serialized array of {x:number, y:number, width:number, height:number, top:number, right:number, bottom:number, left:number, character:string}.
+    fn get_span_metrics_inner(id: &str) -> String;
+}
+
+pub fn get_span_metrics (id: &str) -> Result<Vec<CharacterMetric>, serde_json::Error> {
+    let s = get_span_metrics_inner(id);
+    let parsed: Result<Vec<CharacterMetric>, _> = serde_json::from_str(&s);
+    return parsed;
+}
+
+#[derive(Clone, PartialEq, Serialize, Deserialize, Debug)]
+pub struct CharacterMetric {
+    x: f64,
+    y: f64,
+    width: f64,
+    height: f64,
+    top: f64,
+    right: f64,
+    bottom: f64,
+    left: f64,
+    character: String,
 }

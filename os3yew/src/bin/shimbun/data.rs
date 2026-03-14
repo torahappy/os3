@@ -3,7 +3,7 @@
 pub mod util;
 
 use askama::Template;
-use os3yew::util::RectMask;
+use os3yew::util::{CharacterMetric, RectMask};
 // use gloo_net::http::Request;
 use rand::{Rng, RngExt, SeedableRng, distr::slice::Choose, rng, rngs::StdRng};
 use rust_embed::RustEmbed;
@@ -374,6 +374,7 @@ mod filters {
     }
 }
 
+
 #[derive(Clone, PartialEq)]
 pub struct Article {
     pub template: ArticleTemplate,
@@ -382,4 +383,5 @@ pub struct Article {
     pub x: f64,
     pub y: f64,
     pub masks: Vec<Option<RectMask>>,
+    pub character_metrics: Option<Vec<CharacterMetric>>
 }
