@@ -65,6 +65,48 @@ def tasks_openjtalk(open_jtalk_cmd: list[str], mpv_cmd: list[str], text: str):
     open_proc.wait()
     mpv_proc.wait()
 
+
+def tasks_piper(mpv_cmd: list[str], text: str):
+
+    # -------------------------------------------------------------
+    # POST the text to the local Piper-TTS server
+    # -------------------------------------------------------------
+    payload = {"text": text}
+    try:
+        r = requests.post(
+            "http://localhost:5000",
+            json=payload,
+            stream=True,
+            timeout=10,
+        )
+        r.raise_for_status()
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail=f"Error contacting Piper-TTS: {exc}"
+        )
+
+    # -------------------------------------------------------------
+    # Pipe the streamed audio to mpv
+    # -------------------------------------------------------------
+    try:
+        mpv_proc = subprocess.Popen(mpv_cmd, stdin=subprocess.PIPE)
+
+        # Stream the response directly to mpv
+        for chunk in r.iter_content(chunk_size=4096):
+            if chunk:
+                mpv_proc.stdin.write(chunk)
+
+        # Close the pipe and wait
+        mpv_proc.stdin.close()
+        mpv_proc.wait()
+
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error playing LibrtTS output: {exc}"
+        )
+
 @app.post("/api/say")
 async def say(req: SayRequest, tasks: BackgroundTasks):
     """
@@ -119,45 +161,8 @@ async def say(req: SayRequest, tasks: BackgroundTasks):
             )
 
     else:   # libritts_r-medium
-        # -------------------------------------------------------------
-        # POST the text to the local Piper-TTS server
-        # -------------------------------------------------------------
-        payload = {"text": req.text}
-        try:
-            r = requests.post(
-                "http://localhost:5000",
-                json=payload,
-                stream=True,
-                timeout=10,
-            )
-            r.raise_for_status()
-        except Exception as exc:
-            raise HTTPException(
-                status_code=status.HTTP_502_BAD_GATEWAY,
-                detail=f"Error contacting Piper-TTS: {exc}"
-            )
-
-        # -------------------------------------------------------------
-        # Pipe the streamed audio to mpv
-        # -------------------------------------------------------------
         mpv_cmd = ["mpv", "-"]
-        try:
-            mpv_proc = subprocess.Popen(mpv_cmd, stdin=subprocess.PIPE, text=True)
-
-            # Stream the response directly to mpv
-            for chunk in r.iter_content(chunk_size=4096):
-                if chunk:
-                    mpv_proc.stdin.write(chunk.decode(errors="ignore"))
-
-            # Close the pipe and wait
-            mpv_proc.stdin.close()
-            mpv_proc.wait()
-
-        except Exception as exc:
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=f"Error playing LibrtTS output: {exc}"
-            )
+        tasks.add_task(tasks_piper, mpv_cmd, req.text)
 
     # We only return after the audio finished – the caller can ignore the body
     return {"status": "ok"}
