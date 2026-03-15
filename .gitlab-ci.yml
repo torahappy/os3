@@ -39,6 +39,7 @@ build:
     - cp ./os3yew/wasm/shimbun/shimbun_bg.wasm public/shimbun_web
     - cp ./os3yew/wasm/shimbun/*.html public/shimbun_web
     - cp ./os3yew/wasm/shimbun/shimbun.js public/shimbun_web
+    - cp -r ./os3yew/wasm/shimbun/snippets public/shimbun_web
     - cp -r ./os3yew/assets public/shimbun_web
   artifacts:
     expire_in: 1 hour
