@@ -61,12 +61,13 @@ def tasks_openjtalk(open_jtalk_cmd: list[str], mpv_cmd: list[str], text: str):
     open_proc.wait()
     mpv_proc.wait()
 
+import random
 
 def tasks_piper(mpv_cmd: list[str], text: str):
     # -------------------------------------------------------------
     # POST the text to the local Piper-TTS server
     # -------------------------------------------------------------
-    payload = {"text": text}
+    payload = {"text": text, "speaker_id": 0}
     r = requests.post(
         "http://localhost:5111",
         json=payload,
