@@ -31,3 +31,6 @@ OPEN_JTALK_URL=https://github.com/r9y9/open_jtalk/archive/462fc38e7520aa89e4d32b
 MMDAGENT_VOICE_VERSION=1.8
 MMDAGENT_VOICE_URL=https://sourceforge.net/projects/mmdagent/files/MMDAgent_Example/MMDAgent_Example-1.8/MMDAgent_Example-1.8.zip/download
 MMDAGENT_VOICE_INSIDE_DIRNAME=Voice
+
+OPEN_JTALK_DIC_URL=http://downloads.sourceforge.net/open-jtalk/open_jtalk_dic_utf_8-1.11.tar.gz
+OPEN_JTALK_DIC_VERSION=1.11
