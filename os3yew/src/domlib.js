@@ -99,23 +99,110 @@ export function getSpanMetrics(id) {
   return JSON.stringify(metrics);
 }
 
-export function doSpeech(text, lang) {
-  console.log(text)
-  let uttr = new SpeechSynthesisUtterance(text);
-  if (window.VOICE_CACHE === undefined) {
-    let speech_candidates = [];
-    if (lang === "en") {
-      speech_candidates = [ "libritts_r-medium" ];
+/**
+ * Speak some text, using the browser’s SpeechSynthesis API by default.
+ * If the current page URL contains the query string `tts=api` then
+ *   1.  Query `/api/voices` to obtain the list of voice IDs that the
+ *       backend knows about.
+ *   2.  Pick the first ID that matches one of the candidates for the
+ *       supplied language.
+ *   3.  Store that ID string in `window.VOICE_CACHE` instead of a
+ *       SpeechSynthesisVoice object.
+ *   4.  Send a POST to `/api/say` with `{ voice: <id>, text: <text> }`
+ *       instead of using the browser’s synth.
+ *
+ * This function assumes that lang parameter does not change across the
+ * session.
+ *
+ * @param {string} text  The text to speak
+ * @param {string} lang  Language code (`"en"`, `"ja"`, …)
+ */
+export async function doSpeech(text, lang) {
+  console.log(text);
+
+  // ------------------------------------------------------------------
+  // 1 Detect whether we should use the API path
+  // ------------------------------------------------------------------
+  const search = new URLSearchParams(window.location.search);
+  const useApi = search.has('tts') && search.get('tts') === 'api';
+
+  // ------------------------------------------------------------------
+  // 2 Build the list of candidate names for the requested language
+  // ------------------------------------------------------------------
+  let speechCandidates = [];
+  if (lang === 'en')
+    speechCandidates = [ 'libritts_r-medium' ];
+  if (lang === 'ja')
+    speechCandidates = [ 'takumi_happy' ];
+
+  // ------------------------------------------------------------------
+  // 3 API path – fetch the list of voices from the backend
+  // ------------------------------------------------------------------
+  if (useApi) {
+    try {
+      if (window.VOICE_CACHE === undefined) {
+        const resp = await fetch('/api/voices');
+        if (!resp.ok)
+          throw new Error(`GET /api/voices failed (${resp.status})`);
+        const voices =
+            await resp
+                .json(); // expect an array of strings [id1, id2, id3, ...]
+
+        // Find the first voice whose id contains one of our candidates
+        const matched =
+            voices.find(v => speechCandidates.some(c => v.includes(c)));
+
+        if (!matched) {
+          console.warn('No matching voice found on /api/voices');
+          return;
+        }
+
+        // Cache the id string
+        window.VOICE_CACHE = matched;
+      }
+
+      // ------------------------------------------------------------------
+      // 4 POST to /api/say with the chosen voice id & the text
+      // ------------------------------------------------------------------
+      if (window.VOICE_CACHE !== undefined) {
+        const payload = {voice : window.VOICE_CACHE, text};
+        const r = await fetch('/api/say', {
+          method : 'POST',
+          headers : {'Content-Type' : 'application/json'},
+          body : JSON.stringify(payload)
+        });
+
+        if (!r.ok) {
+          console.error(`POST /api/say failed (${r.status})`);
+        }
+      }
+
+      return;
+    } catch (e) {
+      console.error('doSpeech (API mode) error:', e);
     }
-    if (lang === "ja") {
-      speech_candidates = [ "takumi_happy" ];
-    }
-    window.VOICE_CACHE = window.speechSynthesis.getVoices().find(
-        x => speech_candidates.some((y) => (x.name.includes(y))));
   }
+
+  // ------------------------------------------------------------------
+  // 5 Non‑API mode – use the browser’s SpeechSynthesis API
+  // ------------------------------------------------------------------
+  const utter = new SpeechSynthesisUtterance(text);
+
+  // Lazily initialise the voice cache (the voice object itself)
+  if (window.VOICE_CACHE === undefined) {
+    const candidates = speechCandidates;
+    const voices = window.speechSynthesis.getVoices();
+
+    const matchedVoice =
+        voices.find(v => candidates.some(c => v.name.includes(c)));
+    if (matchedVoice)
+      window.VOICE_CACHE = matchedVoice;
+  }
+
   if (window.VOICE_CACHE !== undefined) {
-    uttr.voice = window.VOICE_CACHE;
+    utter.voice = window.VOICE_CACHE;
+    // Prevent the queued speech
     window.speechSynthesis.cancel();
-    window.speechSynthesis.speak(uttr);
+    window.speechSynthesis.speak(utter);
   }
 }

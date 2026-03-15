@@ -13,46 +13,33 @@ import time
 import asyncio
 
 import requests
-from fastapi import BackgroundTasks, FastAPI, HTTPException, status
+from fastapi import APIRouter, BackgroundTasks, FastAPI, HTTPException, status
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
-app = FastAPI(title="Speech Dispatcher API")
+app_router = APIRouter()
 
-# ------------------------------------------------------------------
-# Configuration – can be overridden by an env var if you want.
-# ------------------------------------------------------------------
+
+# config vars
 SPEECH_INSTALL_PREFIX = Path(__file__).resolve().parent.parent / "external-apps"
 TRAIN_DATA_PREFIX = Path(__file__).resolve().parent.parent / "external-sources"
 
-# Paths we need
 OPEN_JTALK_BIN = SPEECH_INSTALL_PREFIX / "open_jtalk" / "bin" / "open_jtalk"
 DICTIONARY_DIR = TRAIN_DATA_PREFIX.glob("open_jtalk_dic*").__next__()
 MMD_MODEL_DIR = TRAIN_DATA_PREFIX.glob("mmdagent_voice*").__next__()
 
-# ------------------------------------------------------------------
-# 1️⃣  Voices that the API knows about
-# ------------------------------------------------------------------
 ALLOWED_VOICES = ["takumi_happy", "libritts_r-medium"]
 
-# ------------------------------------------------------------------
-# 2️⃣  Pydantic model for the POST /api/say body
-# ------------------------------------------------------------------
+# request for tts
 class SayRequest(BaseModel):
     voice: str
     text: str
 
-# ------------------------------------------------------------------
-# 3️⃣  /api/voices – just return the list
-# ------------------------------------------------------------------
-@app.get("/api/voices")
+@app_router.get("/voices")
 async def get_voices() -> List[str]:
     """Return the list of supported voice IDs."""
     return ALLOWED_VOICES
 
-
-# ------------------------------------------------------------------
-# 4️⃣  /api/say – main handler
-# ------------------------------------------------------------------
 
 def tasks_openjtalk(open_jtalk_cmd: list[str], mpv_cmd: list[str], text: str):
     open_proc = subprocess.Popen(open_jtalk_cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, text=True)
@@ -107,7 +94,7 @@ def tasks_piper(mpv_cmd: list[str], text: str):
             detail=f"Error playing LibrtTS output: {exc}"
         )
 
-@app.post("/api/say")
+@app_router.post("/say")
 async def say(req: SayRequest, tasks: BackgroundTasks):
     """
     Speak the supplied text with the requested voice.
@@ -166,4 +153,14 @@ async def say(req: SayRequest, tasks: BackgroundTasks):
 
     # We only return after the audio finished – the caller can ignore the body
     return {"status": "ok"}
+
+app = FastAPI(title="Speech Dispatcher API")
+
+app.include_router(app_router, prefix="/api")
+
+app.mount(
+    "/",
+    StaticFiles(directory=Path(__file__).parent.parent / "os3yew" / "wasm" / "shimbun", html=True, follow_symlink=True),
+    name="static"
+)
 
