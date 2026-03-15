@@ -18,3 +18,11 @@ jpeg-9f/libtool
 jpeg-9f/rdjpgcom
 jpeg-9f/stamp-h1
 jpeg-9f/wrjpgcom
+hts_engine_api-1.10/Makefile
+hts_engine_api-1.10/bin/.deps/
+hts_engine_api-1.10/bin/Makefile
+hts_engine_api-1.10/bin/hts_engine
+hts_engine_api-1.10/config.log
+hts_engine_api-1.10/config.status
+hts_engine_api-1.10/lib/.deps/
+hts_engine_api-1.10/lib/Makefile
