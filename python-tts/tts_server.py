@@ -19,7 +19,6 @@ from pydantic import BaseModel
 
 app_router = APIRouter()
 
-
 # config vars
 SPEECH_INSTALL_PREFIX = Path(__file__).resolve().parent.parent / "external-apps"
 TRAIN_DATA_PREFIX = Path(__file__).resolve().parent.parent / "external-sources"
@@ -29,6 +28,16 @@ DICTIONARY_DIR = TRAIN_DATA_PREFIX.glob("open_jtalk_dic*").__next__()
 MMD_MODEL_DIR = TRAIN_DATA_PREFIX.glob("mmdagent_voice*").__next__()
 
 ALLOWED_VOICES = ["takumi_happy", "libritts_r-medium"]
+
+from dataclasses import dataclass
+
+@dataclass
+class MyState:
+    last_time_read: int
+    last_voice: str
+    lock: asyncio.Lock
+
+shared_state = MyState(time.perf_counter_ns(), ALLOWED_VOICES[0], asyncio.Lock())
 
 # request for tts
 class SayRequest(BaseModel):
@@ -54,45 +63,31 @@ def tasks_openjtalk(open_jtalk_cmd: list[str], mpv_cmd: list[str], text: str):
 
 
 def tasks_piper(mpv_cmd: list[str], text: str):
-
     # -------------------------------------------------------------
     # POST the text to the local Piper-TTS server
     # -------------------------------------------------------------
     payload = {"text": text}
-    try:
-        r = requests.post(
-            "http://localhost:5000",
-            json=payload,
-            stream=True,
-            timeout=10,
-        )
-        r.raise_for_status()
-    except Exception as exc:
-        raise HTTPException(
-            status_code=status.HTTP_502_BAD_GATEWAY,
-            detail=f"Error contacting Piper-TTS: {exc}"
-        )
+    r = requests.post(
+        "http://localhost:5000",
+        json=payload,
+        stream=True,
+        timeout=10,
+    )
+    r.raise_for_status()
 
     # -------------------------------------------------------------
     # Pipe the streamed audio to mpv
     # -------------------------------------------------------------
-    try:
-        mpv_proc = subprocess.Popen(mpv_cmd, stdin=subprocess.PIPE)
+    mpv_proc = subprocess.Popen(mpv_cmd, stdin=subprocess.PIPE)
 
-        # Stream the response directly to mpv
-        for chunk in r.iter_content(chunk_size=4096):
-            if chunk:
-                mpv_proc.stdin.write(chunk)
+    # Stream the response directly to mpv
+    for chunk in r.iter_content(chunk_size=4096):
+        if chunk:
+            mpv_proc.stdin.write(chunk)
 
-        # Close the pipe and wait
-        mpv_proc.stdin.close()
-        mpv_proc.wait()
-
-    except Exception as exc:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Error playing LibrtTS output: {exc}"
-        )
+    # Close the pipe and wait
+    mpv_proc.stdin.close()
+    mpv_proc.wait()
 
 @app_router.post("/say")
 async def say(req: SayRequest, tasks: BackgroundTasks):
@@ -137,19 +132,28 @@ async def say(req: SayRequest, tasks: BackgroundTasks):
         mpv_cmd = ["mpv", "-"]
 
         # We start open_jtalk, capture its stdout and feed it to mpv
-        try:
-            # open_jtalk → mpv (both as subprocesses)
-            tasks.add_task(tasks_openjtalk, open_jtalk_cmd, mpv_cmd, req.text)
-
-        except Exception as exc:
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=f"Error running open_jtalk: {exc}"
-            )
+        async with shared_state.lock:
+            t = time.monotonic_ns()
+            if t - shared_state.last_time_read > int(1000000000 * 0.3):
+                shared_state.last_time_read = t
+                shared_state.last_voice = req.voice
+                # open_jtalk → mpv (both as subprocesses)
+                tasks.add_task(tasks_openjtalk, open_jtalk_cmd, mpv_cmd, req.text)
+            else:
+                return {"status": "skipped"}
 
     else:   # libritts_r-medium
         mpv_cmd = ["mpv", "-"]
-        tasks.add_task(tasks_piper, mpv_cmd, req.text)
+
+        async with shared_state.lock:
+            t = time.monotonic_ns()
+            if t - shared_state.last_time_read > int(1000000000 * 0.3):
+                shared_state.last_time_read = t
+                shared_state.last_voice = req.voice
+                # open_jtalk → mpv (both as subprocesses)
+                tasks.add_task(tasks_piper, mpv_cmd, req.text)
+            else:
+                return {"status": "skipped"}
 
     # We only return after the audio finished – the caller can ignore the body
     return {"status": "ok"}
