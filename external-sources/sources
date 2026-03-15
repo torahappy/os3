@@ -1,3 +1,9 @@
+# specification
+# <APPID>_VERSION=app version
+# <APPID>_URL=fetch url
+# <APPID>_INSIDE_DIRNAME=pick up the directory inside, discard others.
+# unpacked data should be named in ./<APPID in lowercase>-<APP version>/
+
 JPEG_VERSION=9f
 JPEG_URL=https://www.ijg.org/files/jpegsrc.v9f.tar.gz
 
@@ -15,3 +21,13 @@ ZLIBNG_URL=https://github.com/zlib-ng/zlib-ng/archive/refs/tags/2.2.5.tar.gz
 
 HARFBUZZ_VERSION=12.1.0
 HARFBUZZ_URL=https://github.com/harfbuzz/harfbuzz/releases/download/12.1.0/harfbuzz-12.1.0.tar.xz
+
+HTS_ENGINE_API_VERSION=1.10
+HTS_ENGINE_API_URL=https://sourceforge.net/projects/hts-engine/files/hts_engine%20API/hts_engine_API-1.10/hts_engine_API-1.10.tar.gz/download
+
+OPEN_JTALK_VERSION=462fc38e7520aa89e4d32b2611749208528c901e
+OPEN_JTALK_URL=https://github.com/r9y9/open_jtalk/archive/462fc38e7520aa89e4d32b2611749208528c901e.zip
+
+MMDAGENT_VERSION=1.8
+MMDAGENT_URL=https://sourceforge.net/projects/mmdagent/files/MMDAgent_Example/MMDAgent_Example-1.8/MMDAgent_Example-1.8.zip/download
+MMDAGENT_INSIDE_DIRNAME=Voice
