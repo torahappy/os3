@@ -162,9 +162,17 @@ app = FastAPI(title="Speech Dispatcher API")
 
 app.include_router(app_router, prefix="/api")
 
+
+app.mount(
+    "/assets",
+    StaticFiles(directory=Path(__file__).parent.parent / "os3yew" / "assets", html=True),
+    name="assets"
+)
+
 app.mount(
     "/",
-    StaticFiles(directory=Path(__file__).parent.parent / "os3yew" / "wasm" / "shimbun", html=True, follow_symlink=True),
+    StaticFiles(directory=Path(__file__).parent.parent / "os3yew" / "wasm" / "shimbun", html=True),
     name="static"
 )
+
 
