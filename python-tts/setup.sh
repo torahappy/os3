@@ -6,13 +6,18 @@ mkdir models
 
 pushd models
 
+if [[ ! -f en_US-libritts_r-medium.onnx ]]; then
+
 wget https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_US/libritts_r/medium/en_US-libritts_r-medium.onnx
 
 wget https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_US/libritts_r/medium/en_US-libritts_r-medium.onnx.json
 
+fi
+
 popd
 
 if [[ -f /opt/homebrew/bin/python3 ]]; then
+  brew install python3 mpv
   MYPYTHON=/opt/homebrew/bin/python3
 else
   MYPYTHON=python3
