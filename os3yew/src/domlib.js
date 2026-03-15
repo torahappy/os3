@@ -9,12 +9,17 @@
 function getAllTextNodes(id) {
   // Grab the element; return an empty array if it doesn't exist
   const root = document.getElementById(id);
-  if (!root)
+  if (!root) {
     return [];
+  }
 
   // Create a TreeWalker that only shows text nodes
-  const walker =
-      document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null, false);
+  const walker = document.createTreeWalker(
+    root,
+    NodeFilter.SHOW_TEXT,
+    null,
+    false,
+  );
 
   // Walk the tree and push each encountered text node into the result array
   const textNodes = [];
@@ -35,17 +40,18 @@ function wrapCharactersInSpans(id) {
   const textNodes = getAllTextNodes(id);
 
   // For each text node … create a <span> for each character
-  textNodes.forEach(textNode => {
+  textNodes.forEach((textNode) => {
     const parent = textNode.parentNode;
-    if (!parent)
+    if (!parent) {
       return; // safety check
+    }
 
     // Build a fragment that will replace the original text node
     const frag = document.createDocumentFragment();
 
     // Walk through the text and create a <span> for each character
     for (let i = 0; i < textNode.textContent.length; i++) {
-      const span = document.createElement('span');
+      const span = document.createElement("span");
       // Preserve the exact character (including whitespace)
       span.textContent = textNode.textContent[i];
       span.setAttribute("data-fetch-metrics", "1");
@@ -71,30 +77,35 @@ function wrapCharactersInSpans(id) {
 export function getSpanMetrics(id) {
   const root = document.getElementById(id);
 
-  const orig_innerHTML = root.innerHTML;
+  const tmp_elem = document.createElement(root.tagName.toLowerCase());
+  tmp_elem.id = "span-metrics-tmp-" + id;
+  tmp_elem.style = root.style.cssText;
+  tmp_elem.className = root.className;
+  tmp_elem.innerHTML = root.innerHTML;
+  document.body.appendChild(tmp_elem);
 
-  wrapCharactersInSpans(id);
+  wrapCharactersInSpans(tmp_elem.id);
 
   const metrics = [];
 
-  const spans = root.querySelectorAll('span[data-fetch-metrics]');
+  const spans = tmp_elem.querySelectorAll("span[data-fetch-metrics]");
 
-  spans.forEach(span => {
+  spans.forEach((span) => {
     const rect = span.getBoundingClientRect();
 
     // DOMRect has the same numeric properties we need
     metrics.push({
-      x : rect.x,
-      y : rect.y,
-      width : rect.width,
-      height : rect.height,
-      top : rect.top + window.scrollY,
-      left : rect.left + window.scrollX,
-      character : span.textContent // the single character in that <span>
+      x: rect.x,
+      y: rect.y,
+      width: rect.width,
+      height: rect.height,
+      top: rect.top + window.scrollY,
+      left: rect.left + window.scrollX,
+      character: span.textContent, // the single character in that <span>
     });
   });
 
-  root.innerHTML = orig_innerHTML;
+  tmp_elem.remove();
 
   return JSON.stringify(metrics);
 }
@@ -124,16 +135,18 @@ export async function doSpeech(text, lang) {
   // 1 Detect whether we should use the API path
   // ------------------------------------------------------------------
   const search = new URLSearchParams(window.location.search);
-  const useApi = search.has('tts') && search.get('tts') === 'api';
+  const useApi = search.has("tts") && search.get("tts") === "api";
 
   // ------------------------------------------------------------------
   // 2 Build the list of candidate names for the requested language
   // ------------------------------------------------------------------
   let speechCandidates = [];
-  if (lang === 'en')
-    speechCandidates = [ 'libritts_r-medium' ];
-  if (lang === 'ja')
-    speechCandidates = [ 'takumi_happy' ];
+  if (lang === "en") {
+    speechCandidates = ["libritts_r-medium", "Bad News"];
+  }
+  if (lang === "ja") {
+    speechCandidates = ["takumi_happy", "Kyoko"];
+  }
 
   // ------------------------------------------------------------------
   // 3 API path – fetch the list of voices from the backend
@@ -141,19 +154,20 @@ export async function doSpeech(text, lang) {
   if (useApi) {
     try {
       if (window.VOICE_CACHE === undefined) {
-        const resp = await fetch('/api/voices');
-        if (!resp.ok)
+        const resp = await fetch("/api/voices");
+        if (!resp.ok) {
           throw new Error(`GET /api/voices failed (${resp.status})`);
-        const voices =
-            await resp
-                .json(); // expect an array of strings [id1, id2, id3, ...]
+        }
+        const voices = await resp
+          .json(); // expect an array of strings [id1, id2, id3, ...]
 
         // Find the first voice whose id contains one of our candidates
-        const matched =
-            voices.find(v => speechCandidates.some(c => v.includes(c)));
+        const matched = voices.find((v) =>
+          speechCandidates.some((c) => v.includes(c))
+        );
 
         if (!matched) {
-          console.warn('No matching voice found on /api/voices');
+          console.warn("No matching voice found on /api/voices");
           return;
         }
 
@@ -165,11 +179,11 @@ export async function doSpeech(text, lang) {
       // 4 POST to /api/say with the chosen voice id & the text
       // ------------------------------------------------------------------
       if (window.VOICE_CACHE !== undefined) {
-        const payload = {voice : window.VOICE_CACHE, text};
-        const r = await fetch('/api/say', {
-          method : 'POST',
-          headers : {'Content-Type' : 'application/json'},
-          body : JSON.stringify(payload)
+        const payload = { voice: window.VOICE_CACHE, text };
+        const r = await fetch("/api/say", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
         });
 
         if (!r.ok) {
@@ -179,7 +193,7 @@ export async function doSpeech(text, lang) {
 
       return;
     } catch (e) {
-      console.error('doSpeech (API mode) error:', e);
+      console.error("doSpeech (API mode) error:", e);
     }
   }
 
@@ -193,10 +207,12 @@ export async function doSpeech(text, lang) {
     const candidates = speechCandidates;
     const voices = window.speechSynthesis.getVoices();
 
-    const matchedVoice =
-        voices.find(v => candidates.some(c => v.name.includes(c)));
-    if (matchedVoice)
+    const matchedVoice = voices.find((v) =>
+      candidates.some((c) => v.name.includes(c))
+    );
+    if (matchedVoice) {
       window.VOICE_CACHE = matchedVoice;
+    }
   }
 
   if (window.VOICE_CACHE !== undefined) {
