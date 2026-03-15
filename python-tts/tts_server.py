@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """
 FastAPI TTS dispatcher that replaces the old speech‑dispatcher‑helper script.
+
+python -m piper.http_server -m ./models/en_US-libritts_r-medium.onnx --port 5000
 """
 
 import os
@@ -8,9 +10,10 @@ import subprocess
 from pathlib import Path
 from typing import List
 import time
+import asyncio
 
 import requests
-from fastapi import FastAPI, HTTPException, status
+from fastapi import BackgroundTasks, FastAPI, HTTPException, status
 from pydantic import BaseModel
 
 app = FastAPI(title="Speech Dispatcher API")
@@ -19,11 +22,12 @@ app = FastAPI(title="Speech Dispatcher API")
 # Configuration – can be overridden by an env var if you want.
 # ------------------------------------------------------------------
 SPEECH_INSTALL_PREFIX = Path(__file__).resolve().parent.parent / "external-apps"
+TRAIN_DATA_PREFIX = Path(__file__).resolve().parent.parent / "external-sources"
 
 # Paths we need
 OPEN_JTALK_BIN = SPEECH_INSTALL_PREFIX / "open_jtalk" / "bin" / "open_jtalk"
-DICTIONARY_DIR = SPEECH_INSTALL_PREFIX / "open_jtalk_dic_utf_8"
-MMD_MODEL_DIR = SPEECH_INSTALL_PREFIX / "MMDAgent_voices"
+DICTIONARY_DIR = TRAIN_DATA_PREFIX.glob("open_jtalk_dic*").__next__()
+MMD_MODEL_DIR = TRAIN_DATA_PREFIX.glob("mmdagent_voice*").__next__()
 
 # ------------------------------------------------------------------
 # 1️⃣  Voices that the API knows about
@@ -45,11 +49,24 @@ async def get_voices() -> List[str]:
     """Return the list of supported voice IDs."""
     return ALLOWED_VOICES
 
+
 # ------------------------------------------------------------------
 # 4️⃣  /api/say – main handler
 # ------------------------------------------------------------------
+
+def tasks_openjtalk(open_jtalk_cmd: list[str], mpv_cmd: list[str], text: str):
+    open_proc = subprocess.Popen(open_jtalk_cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, text=True)
+    mpv_proc = subprocess.Popen(mpv_cmd, stdin=open_proc.stdout)
+
+    # Close open_jtalk's stdout so mpv gets EOF when done
+    open_proc.stdin.write(text)
+    open_proc.stdin.close()
+    open_proc.stdout.close()
+    open_proc.wait()
+    mpv_proc.wait()
+
 @app.post("/api/say")
-async def say(req: SayRequest):
+async def say(req: SayRequest, tasks: BackgroundTasks):
     """
     Speak the supplied text with the requested voice.
 
@@ -67,7 +84,7 @@ async def say(req: SayRequest):
         # -------------------------------------------------------------
         # Build the command for open_jtalk
         # -------------------------------------------------------------
-        model_path = MMD_MODEL_DIR / f"{req.voice}.htsvoice"
+        model_path = MMD_MODEL_DIR.rglob(f"**/{req.voice}.htsvoice").__next__()
         if not model_path.is_file():
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -79,8 +96,9 @@ async def say(req: SayRequest):
             str(OPEN_JTALK_BIN),
             "-x", str(DICTIONARY_DIR),
             "-m", str(model_path),
-            "-r", "1",            # rate – default
-            "-fm", "24",           # pitch – default
+            "-r", "1",
+            "-fm", "20",
+            "-ow", "/dev/stdout"
         ]
 
         # -------------------------------------------------------------
@@ -92,14 +110,7 @@ async def say(req: SayRequest):
         # We start open_jtalk, capture its stdout and feed it to mpv
         try:
             # open_jtalk → mpv (both as subprocesses)
-            open_proc = subprocess.Popen(open_jtalk_cmd, stdout=subprocess.PIPE, text=True)
-            mpv_proc = subprocess.Popen(mpv_cmd, stdin=open_proc.stdout, text=True)
-
-            # Close open_jtalk's stdout so mpv gets EOF when done
-            open_proc.stdout.close()
-
-            # Wait for both to finish
-            time.sleep(0.3)
+            tasks.add_task(tasks_openjtalk, open_jtalk_cmd, mpv_cmd, req.text)
 
         except Exception as exc:
             raise HTTPException(
@@ -150,11 +161,4 @@ async def say(req: SayRequest):
 
     # We only return after the audio finished – the caller can ignore the body
     return {"status": "ok"}
-
-# ------------------------------------------------------------------
-# 5️⃣  Run via: uvicorn this_module:app
-# ------------------------------------------------------------------
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run("this_module:app", host="0.0.0.0", port=8000, reload=True)
 

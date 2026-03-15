@@ -1,0 +1,5 @@
+#!/bin/bash
+
+cd "$(dirname "$0")"
+
+./venv/bin/uvicorn tts_server:app --port 3000
