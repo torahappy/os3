@@ -2,7 +2,7 @@
 """
 FastAPI TTS dispatcher that replaces the old speech‑dispatcher‑helper script.
 
-python -m piper.http_server -m ./models/en_US-libritts_r-medium.onnx --port 5000
+python -m piper.http_server -m ./models/en_US-libritts_r-medium.onnx --port 5111
 """
 
 import os
@@ -68,7 +68,7 @@ def tasks_piper(mpv_cmd: list[str], text: str):
     # -------------------------------------------------------------
     payload = {"text": text}
     r = requests.post(
-        "http://localhost:5000",
+        "http://localhost:5111",
         json=payload,
         stream=True,
         timeout=10,
@@ -95,7 +95,7 @@ async def say(req: SayRequest, tasks: BackgroundTasks):
     Speak the supplied text with the requested voice.
 
     * For `takumi_happy` we run open_jtalk and pipe its stdout to mpv.
-    * For `libritts_r-medium` we POST to http://localhost:5000 and pipe the
+    * For `libritts_r-medium` we POST to http://localhost:5111 and pipe the
       response raw bytes to mpv.
     """
     if req.voice not in ALLOWED_VOICES:
@@ -120,8 +120,8 @@ async def say(req: SayRequest, tasks: BackgroundTasks):
             str(OPEN_JTALK_BIN),
             "-x", str(DICTIONARY_DIR),
             "-m", str(model_path),
-            "-r", "1",
-            "-fm", "20",
+            "-r", "2.5",
+            "-fm", "1",
             "-ow", "/dev/stdout"
         ]
 
