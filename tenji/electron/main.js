@@ -7,7 +7,7 @@ function createWindow () {
     kiosk: true
   })
 
-  win.loadURL('http://localhost:3000/?tts=api&lang=en')
+  win.loadURL('http://localhost:3000/select.html')
 }
 
 app.whenReady().then(() => {

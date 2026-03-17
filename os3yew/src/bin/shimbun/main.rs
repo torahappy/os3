@@ -990,7 +990,7 @@ fn App() -> Html {
             <button class={get_btn_class.emit(())} style={get_btn_style.emit(())} onclick={click_evt_fade_article.clone()}>{get_system_word(&*current_language, "keep_reading_button")}</button>
         } else {
             { md(ending.as_ref().unwrap().clone()) }
-            <button style={get_btn_style.emit(())} onclick={|_|{window().unwrap().location().reload();}}>{get_system_word(&*current_language, "start_again_button")}</button>
+            <button style={get_btn_style.emit(())} onclick={|_|{window().unwrap().location().set_href("select.html");}}>{get_system_word(&*current_language, "start_again_button")}</button>
         }
         }
             <RenderWatchComponent render_number={*render_number} callback={upgrade_plan_check}><></></RenderWatchComponent>
