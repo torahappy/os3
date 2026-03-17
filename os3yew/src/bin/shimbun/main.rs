@@ -971,9 +971,9 @@ fn App() -> Html {
 
     let get_btn_class = use_callback((game_stage.clone()), move |(), gs| {
         if **gs == GameStage::ArticleFading {
-            return "btn-fading".to_string();
+            return "btn-fading btn-wrapper".to_string();
         }
-        return "".to_string();
+        return "btn-wrapper".to_string();
     });
 
     // the final virtual dom
@@ -986,12 +986,15 @@ fn App() -> Html {
             {html_articles}
 
         if *game_stage <= GameStage::ArticleFading {
+
+        <div class={get_btn_class.emit(())} style={get_btn_style.emit(())}>
         if ending.is_none() {
-            <button class={get_btn_class.emit(())} style={get_btn_style.emit(())} onclick={click_evt_fade_article.clone()}>{get_system_word(&*current_language, "keep_reading_button")}</button>
+            <button onclick={click_evt_fade_article.clone()}>{get_system_word(&*current_language, "keep_reading_button")}</button>
         } else {
             { md(ending.as_ref().unwrap().clone()) }
-            <button style={get_btn_style.emit(())} onclick={|_|{window().unwrap().location().set_href("select.html");}}>{get_system_word(&*current_language, "start_again_button")}</button>
+            <button onclick={|_|{window().unwrap().location().set_href("select.html");}}>{get_system_word(&*current_language, "start_again_button")}</button>
         }
+        </div>
         }
             <RenderWatchComponent render_number={*render_number} callback={upgrade_plan_check}><></></RenderWatchComponent>
             <ClockComponent callback={clock_callback} interval={42} />
