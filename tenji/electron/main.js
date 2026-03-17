@@ -7,7 +7,7 @@ function createWindow () {
     kiosk: true
   })
 
-  win.loadURL('http://localhost:3000?tts=api&lang=en')
+  win.loadURL('http://localhost:3000/?tts=api&lang=en')
 }
 
 app.whenReady().then(() => {
@@ -19,5 +19,5 @@ app.whenReady().then(() => {
 })
 
 app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') app.quit()
+  app.quit()
 })
