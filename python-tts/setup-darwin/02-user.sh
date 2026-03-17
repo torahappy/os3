@@ -1,0 +1,39 @@
+#!/bin/bash
+
+git lfs install
+
+echo >> ~/.zprofile
+echo 'eval "$(/opt/homebrew/bin/brew shellenv zsh)"' >> ~/.zprofile
+eval "$(/opt/homebrew/bin/brew shellenv zsh)"
+
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.4/install.sh | bash
+
+echo 'export NVM_DIR="$HOME/.nvm"; [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"' >> $HOME/.zprofile
+
+. $HOME/.zprofile
+
+nvm install --lts
+
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+
+echo '. "$HOME/.cargo/env"' >> $HOME/.zprofile
+
+. $HOME/.zprofile
+ 
+git clone https://gitlab.torahappy.org/tora/os3 
+
+cd os3
+
+cd os3bevy; rustup target add wasm32-unknown-unknown; cargo install -f wasm-bindgen-cli --version 0.2.108; cargo install wasm-opt; cd ..
+
+./build_scripts/wasm-once.sh os3yew shimbun
+
+cd python-tts
+./setup.sh
+
+cd electron
+npm install -g yarn
+yarn
+cd ..
+
+cd ..
