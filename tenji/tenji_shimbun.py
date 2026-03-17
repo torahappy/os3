@@ -69,9 +69,11 @@ while True:
 
     if not my_state['started']:
         my_state['started'] = True
-        my_state['process_shimbun'] = subprocess.Popen([os.path.join(ELECTRON_DIR, "node_modules", ".bin", "electron"), ELECTRON_DIR], stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
-        my_state['process_piper'] = subprocess.Popen([os.path.join(SERVER_DIR, "venv", "bin", "python3")] + piper_py_args, stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL, cwd=SERVER_DIR)
-        my_state['process_fastapi'] = subprocess.Popen(fastapi_py_args, stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL, cwd=SERVER_DIR)
+        subprocess.Popen(["osascript", "-e", "set Volume 5.4"])
+        my_state['process_piper'] = subprocess.Popen([os.path.join(SERVER_DIR, "venv", "bin", "python3")] + piper_py_args, cwd=SERVER_DIR)
+        my_state['process_fastapi'] = subprocess.Popen(fastapi_py_args, cwd=SERVER_DIR)
+        time.sleep(5)
+        my_state['process_shimbun'] = subprocess.Popen([os.path.join(ELECTRON_DIR, "node_modules", ".bin", "electron"), ELECTRON_DIR])
 
     pids_raw = subprocess.run(["ps", "-Ao", "pid,args"], capture_output=True, text=True)
     pids = [re.match(r'^\s*(\d+)\s*(.*)$', l) for l in pids_raw.stdout.split("\n")]

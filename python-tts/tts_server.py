@@ -130,7 +130,9 @@ async def say(req: SayRequest, tasks: BackgroundTasks):
         # Run open_jtalk → mpv
         # -------------------------------------------------------------
         # mpv reads from stdin when we pass '-' as the file name
-        mpv_cmd = ["mpv", "-"]
+
+        # mpv_cmd = ["ffplay", "-i", "/dev/stdin", "-nodisp"]
+        mpv_cmd = ["mpv", "/dev/stdin"]
 
         # We start open_jtalk, capture its stdout and feed it to mpv
         async with shared_state.lock:
@@ -144,7 +146,8 @@ async def say(req: SayRequest, tasks: BackgroundTasks):
                 return {"status": "skipped"}
 
     else:   # libritts_r-medium
-        mpv_cmd = ["mpv", "-"]
+        # mpv_cmd = ["ffplay", "-i", "/dev/stdin", "-nodisp"]
+        mpv_cmd = ["mpv", "--volume=50", "/dev/stdin"]
 
         async with shared_state.lock:
             t = time.monotonic_ns()
