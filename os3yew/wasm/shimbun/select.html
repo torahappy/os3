@@ -81,6 +81,13 @@
       isolation: isolate;
     }
     /* END reset CSS*/
+    @font-face {
+      font-family: "GenEi Koburi Mincho v6";
+      src: url("assets/GenEiKoburiMin6-R.ttf");
+    }
+    * {
+      font-family: "GenEi Koburi Mincho v6", serif;
+    }
     body {
     	margin: 2em;
 	background: black;
@@ -93,15 +100,21 @@
     	width: 100vw;
 	height: 50vh;
 	object-fit: center;
-	pointer-events: none;
     }
     p {
     	text-align: center;
     }
+    @font-face {
+      font-family: "GenEi Koburi Mincho v6";
+      src: url("assets/GenEiKoburiMin6-R.ttf");
+    }
+    * {
+      font-family: "GenEi Koburi Mincho v6", serif;
+    }
   </style>
 </head>
 <body>
-  <video controls autoplay>
+  <video autoplay loop>
     <source src="assets/title.webm" type="video/mp4">
   </video>
   <p><a href="index.html?lang=en&tts=api">英 ENGLISH 語</a></p>

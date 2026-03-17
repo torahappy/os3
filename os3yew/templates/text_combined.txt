@@ -110,7 +110,7 @@ Just one-time Congress would not be enough for full consideration and reparation
 
 This is just a small step forward. Going through the true reparation, redemption, reflection and reconciliation —— not just being a facade —— will not be an easy task, but it have to be done someday. I hope that the commencing of the first Congress improves the current situation, even little by little.
 
-\[ending\]  
+\[ending\]
 
 * * *
 
@@ -121,7 +121,7 @@ This is just a small step forward. Going through the true reparation, redemption
 
 夢と現実と喜びと怒りと悲しみと歴史と今と未来とを、漂う意識の波を手繰り寄せるようにして「読む」という感覚を、うまいことゲームを用いて表現できはしないものかと思いながら、私は本作を作りました。そのアイデアの元は、The Cosmic Wheel Sisterhood (作: Deconstructeam) というゲーム作品から連想したものです。
 
-\[ending-en\]  
+\[ending-en\]
 
 * * *
 
@@ -131,7 +131,7 @@ Stay tuned!
 
 ## Afterword
 
-I made this game, thinking about how I could simulate an experience where I "read" through the dream, the reality, the joy, the anger, the sorrow, the history, the present, the future, and where they are going forward and back, intersecting and separated, while I "read" the weaves of consciousness. I came up of this idea after finishing *The Cosmic Wheel Sisterhood* (a game by Deconstructeam).
+I made this game, thinking about how I could simulate an experience where I "read" through the dream, the reality, the joy, the anger, the sorrow, the history, the present, the future, and where they are going forward and back, intersecting and separated, while I "read" the weaves of consciousness. I came up of this idea after playing *The Cosmic Wheel Sisterhood* (a game by Deconstructeam).
 
 \[images\]  
 <img src="assets/images/33b72989270e4ff8bd7bd05ab3e36aff.webp" style="aspect-ratio: 1.4380574826560952;" />
