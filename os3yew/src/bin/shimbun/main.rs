@@ -137,7 +137,7 @@ fn App() -> Html {
                 meta: Default::default(),
                 date: Box::new(Date::new(2026, 2, 13, (*current_language).clone())),
             },
-            w: Some(1000.0),
+            w: Some(800.0),
             h: None,
             x: 30.0,
             y: 30.0,
@@ -421,7 +421,7 @@ fn App() -> Html {
                     };
                     Some(Article {
                         template: t,
-                        w: Some(1000.0),
+                        w: Some(800.0),
                         h: None,
                         x: 30.0,
                         y: 30.0,
@@ -922,21 +922,21 @@ fn App() -> Html {
         </h1>
         }
         if data.get("images").is_some() {
-        <div>
+        <div class="images">
         {
             md(data.get("images").unwrap().clone())
         }
         </div>
         }
         if data.get("image_caption_work_title").is_some() {
-        <div>
+        <div class="work-title">
         {
             md(data.get("image_caption_work_title").unwrap().clone())
         }
         </div>
         }
         if data.get("image_caption").is_some() {
-        <div>
+        <div class="image-caption">
         {
             md(data.get("image_caption").unwrap().clone())
         }

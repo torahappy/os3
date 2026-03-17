@@ -129,9 +129,9 @@ You have seen all the the game contents so far.
 I plan to add more contents and make game mechanics more entertaining.  
 Stay tuned!
 
-## Afterword
+## Afterwords
 
-I made this game, thinking about how I could simulate an experience where I "read" through the dream, the reality, the joy, the anger, the sorrow, the history, the present, the future, and where they are going forward and back, intersecting and separated, while I "read" the weaves of consciousness. I came up of this idea after playing *The Cosmic Wheel Sisterhood* (a game by Deconstructeam).
+I made this game, thinking about how I could simulate an experience where I "read" through the dream, the reality, the joy, the anger, the sorrow, the past, the present, the future, and where they are going forward and back, intersecting and separated, while I "read" the weaves of consciousness. I came up of this idea after playing *The Cosmic Wheel Sisterhood* (a game by Deconstructeam).
 
 \[images\]  
 <img src="assets/images/33b72989270e4ff8bd7bd05ab3e36aff.webp" style="aspect-ratio: 1.4380574826560952;" />
@@ -371,7 +371,7 @@ I apologize for being part of elite society.
 多様性エリートたちの退廃的な語りの場。天皇陛下を頂点とする、我が国の素晴らしい伝統を背負った、頼れる「文化の先輩方」は、このような多様性エリートとは違って諸君を善導していくので、心配しないでもらいたい。
 
 \[image_caption-en\]  
-Image of a degenerate meeting room of elite DEI gangs. Our supreme national tradition and its supreme cultural senpai, the supreme Emperor will guide you towards better self, unlike those degenerates. So don't worry anymore.
+Image of a degenerate meeting room of elite DEI gangs. Our supreme national tradition and its supreme cultural senpai, the supreme Emperor will guide us towards better self, unlike those degenerates. So don't worry anymore.
 
 \[image_caption_work_title\]  
 とら《語り場のイメージは憂鬱》、NanobananaによるAI生成画像を重ね合わせ加工したもの、2199px × 1536px、2026
@@ -779,6 +779,8 @@ introduction
 
 このプログラムを作るに当たって使用したプログラムの一覧は、[こちらのリンク](https://os3.torahappy.org/shimbun_web/dependencies.html)で確認できます。
 
+<img src="assets/images/119efe30215740a391b0ddefc86622aa.png" style="aspect-ratio: 1.0;" />
+
 \[text-en\]
 
 This work has following elements:
@@ -803,6 +805,8 @@ New texts starts to appear.
 ## Software Credits
 
 To see the list of softwares used in this work, follow [this link](https://os3.torahappy.org/shimbun_web/dependencies.html).
+
+<img src="assets/images/119efe30215740a391b0ddefc86622aa.png" style="aspect-ratio: 1.0;" />
 
 \[prereq-for\]  
 all
@@ -861,7 +865,7 @@ According to a research article posted on the international journal *O Neechan* 
 
 \[title-en\]
 
-JSDF Established Art Battle Division
+JSDF Launched Art Battle Division
 
 \[text\]
 
@@ -877,6 +881,9 @@ JSDF Established Art Battle Division
 そして、それらの物質は川や海、土へと、誰も知らないまま流される。あるいは誰かがそのことを知っていたとしても、お国のためならいいじゃないかと、生活を豊かにしてやっているのだから黙れと、言われるのだろう。
 
 ひとつの　じょうほう: [チッソの加害は植民地から引き継がれた―水俣と朝鮮、暮らしから見えるその歴史, 安田菜津紀, Dialogue for People, 2025](https://d4p.world/33600/)  
+
+<img src="assets/images/82a5306c1b2543b6ac06182df8283b66.png" style="aspect-ratio: 1.0;" />
+
 {% endfilter %}  
 
 きっと敵を惹きつけた上で無慈悲に殺してくれます。」
@@ -905,7 +912,8 @@ Mr. Flat Poison, Minister of Culture Policing
 
 And these chemicals will be thrown in to river and sea, yet no one knows. Even if someone starts to talk about it, the government and the industry will try to silence them, saying, "It's for your own good!" "Don't you see how we improve the quality of life?" "Don't try to oppose the state priority!" etc.
 
-Some reference, about how Minamata's mercury pollution incident was direct product of the Japanese colonialism playbook: [チッソの加害は植民地から引き継がれた―水俣と朝鮮、暮らしから見えるその歴史, 安田菜津紀, Dialogue for People, 2025](https://d4p.world/33600/)  
+Some reference, about how Minamata's mercury pollution incident was direct product of the Japanese colonialism playbook: [チッソの加害は植民地から引き継がれた―水俣と朝鮮、暮らしから見えるその歴史, 安田菜津紀, Dialogue for People, 2025](https://d4p.world/33600/) <img src="assets/images/82a5306c1b2543b6ac06182df8283b66.png" style="aspect-ratio: 1.0;" />
+
 {% endfilter %}  
 "We are determined to kill our enemies."
 
