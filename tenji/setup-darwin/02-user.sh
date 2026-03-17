@@ -1,10 +1,14 @@
 #!/bin/bash
 
-git lfs install
-
 echo >> ~/.zprofile
+echo 'autoload -Uz compinit && compinit -u' >> ~/.zprofile
 echo 'eval "$(/opt/homebrew/bin/brew shellenv zsh)"' >> ~/.zprofile
-eval "$(/opt/homebrew/bin/brew shellenv zsh)"
+echo >> ~/.zshrc
+echo 'alias gP="git push origin ; git push origin2"' >> ~/.zshrc
+
+. $HOME/.zprofile
+
+git lfs install
 
 curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.4/install.sh | bash
 
@@ -30,10 +34,11 @@ cd os3bevy; rustup target add wasm32-unknown-unknown; cargo install -f wasm-bind
 
 cd python-tts
 ./setup.sh
+cd ..
 
-cd electron
+cd tenji/electron
 npm install -g yarn
 yarn
-cd ..
+cd ../../
 
-cd ..
+./external-sources/setup-tts.sh
