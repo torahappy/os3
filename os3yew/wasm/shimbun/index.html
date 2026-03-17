@@ -104,11 +104,16 @@
     body {
       font-size: 18px;
     }
+    /* small images */
     .article img {
+      width: 10em;
+    }
+    /* heading images */
+    .article .images img {
       width: 100%;
-      height: 30em;
+      /*height: 30em;
       object-fit: contain;
-      object-position: left;
+      object-position: left top;*/
     }
     .article.fading, .btn-fading {
       transition-property: opacity;
@@ -167,6 +172,19 @@
     }
     .btn-wrapper {
       width: 600px;
+
+    }
+    .work-title, .image-caption {
+      font-size: 15px;
+      border-left: 4px #A02030 solid;
+      padding-left: 6px;
+
+    }
+    .work-title {
+      border-left: 4px #2030A0 solid;
+    }
+    .image-caption {
+      border-left: 4px #A02030 solid;
     }
   </style>
 </head>
