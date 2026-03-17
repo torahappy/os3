@@ -1,4 +1,5 @@
 {
+  "name": "shimbun-wa-jibun",
   "dependencies": {
     "electron": "^41.0.2"
   },

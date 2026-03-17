@@ -870,6 +870,7 @@ fn App() -> Html {
                 classes.push("hidden".to_string());
             }
         }
+        classes.push("link-deactivated".to_string());
         return classes.join(" ");
     };
 
@@ -980,22 +981,22 @@ fn App() -> Html {
     html! {
         <>
         if *game_stage >= GameStage::ForecastStart {
-            <div id="mouse-evt-overlay" onmousemove={mouse_move_evt}></div>
+        <div id="mouse-evt-overlay" onmousemove={mouse_move_evt}></div>
         }
         <div class="app-wrapper">
             {html_articles}
 
-        if *game_stage <= GameStage::ArticleFading {
+            if *game_stage <= GameStage::ArticleFading {
+            <div class={get_btn_class.emit(())} style={get_btn_style.emit(())}>
+                if ending.is_none() {
+                <button onclick={click_evt_fade_article.clone()}>{get_system_word(&*current_language, "keep_reading_button")}</button>
+                } else {
+                { md(ending.as_ref().unwrap().clone()) }
+                <button onclick={|_|{window().unwrap().location().set_href("select.html");}}>{get_system_word(&*current_language, "start_again_button")}</button>
+                }
+            </div>
+            }
 
-        <div class={get_btn_class.emit(())} style={get_btn_style.emit(())}>
-        if ending.is_none() {
-            <button onclick={click_evt_fade_article.clone()}>{get_system_word(&*current_language, "keep_reading_button")}</button>
-        } else {
-            { md(ending.as_ref().unwrap().clone()) }
-            <button onclick={|_|{window().unwrap().location().set_href("select.html");}}>{get_system_word(&*current_language, "start_again_button")}</button>
-        }
-        </div>
-        }
             <RenderWatchComponent render_number={*render_number} callback={upgrade_plan_check}><></></RenderWatchComponent>
             <ClockComponent callback={clock_callback} interval={42} />
             <svg height="0" xmlns="http://www.w3.org/2000/svg">
@@ -1007,6 +1008,10 @@ fn App() -> Html {
                     </feComponentTransfer>
                 </filter>
             </svg>
+            <a href="select.html" class="lang-select">
+                {"language select"}<br/>
+                {"言語変更"}
+            </a>
         </div>
         </>
     }

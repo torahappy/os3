@@ -68,6 +68,7 @@ while True:
     fastapi_py_args = [os.path.join(SERVER_DIR, "venv", "bin", "uvicorn"), "tts_server:app", "--port", "3000"]
 
     if not my_state['started']:
+        shutil.rmtree(os.path.join(os.path.expanduser('~'), 'Library', 'Application Support', 'shimbun-wa-jibun'), ignore_errors=True)
         my_state['started'] = True
         subprocess.Popen(["osascript", "-e", "set Volume 5.4"])
         my_state['process_piper'] = subprocess.Popen([os.path.join(SERVER_DIR, "venv", "bin", "python3")] + piper_py_args, cwd=SERVER_DIR)
