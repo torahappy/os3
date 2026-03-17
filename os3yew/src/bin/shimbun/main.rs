@@ -7,7 +7,7 @@ use crate::{data::*, locale::get_system_word};
 use askama::Template;
 use ordered_float::OrderedFloat;
 use os3yew::{
-    components::{ClockComponent, RenderWatchComponent},
+    components::{AudioPlayer, ClockComponent, RenderWatchComponent},
     util::*,
 };
 use rand::{random_range, seq::IndexedRandom};
@@ -20,7 +20,7 @@ use std::{
     rc::Rc,
     sync::LazyLock,
 };
-use yew::{Html, prelude::*};
+use yew::{prelude::*, Html};
 
 const LOCK_SIZE: f64 = 110.0;
 const TIME_TILL_LOCK: f64 = 7.0;
@@ -202,6 +202,9 @@ fn App() -> Html {
     let precalc_for_characters: UseStateHandle<Option<QuadNode<(usize, String)>>> =
         use_state(|| None);
 
+    let track_iteration_1 = use_state(|| 0 as u32);
+    let track_src_1 = use_state(|| "".to_string());
+
     // when forecasts change, if there are no masks, try generate initial masks. if the metrics
     // aren't filled yet, do nothing for the article.
     use_effect_with(
@@ -302,7 +305,7 @@ fn App() -> Html {
                     };
                     if (!bound_flattened.intersects(&r)) {
                         return;
-                    } 
+                    }
                     char_quad.insert((*i, m.character.clone()), r, 4);
                 });
 
@@ -341,7 +344,11 @@ fn App() -> Html {
     );
 
     use_effect_with(
-        (to_be_enlarged.clone(), forecasts.clone(), current_language.clone()),
+        (
+            to_be_enlarged.clone(),
+            forecasts.clone(),
+            current_language.clone(),
+        ),
         move |(to_be_enlarged, forecasts, current_language)| {
             if let Some(precalc_for_characters) = precalc_for_characters.as_ref() {
                 if let Some((idx_a, idx_b)) = **to_be_enlarged {
@@ -359,14 +366,14 @@ fn App() -> Html {
                             );
                             r2.sort_by_key(|x| {
                                 (
-                                    x.0.0.clone(),
+                                    x.0 .0.clone(),
                                     OrderedFloat::from(x.1.y),
                                     OrderedFloat::from(x.1.x),
                                 )
                             });
                             let joined = r2
                                 .iter()
-                                .map(|x| x.0.1.clone())
+                                .map(|x| x.0 .1.clone())
                                 .collect::<Vec<_>>()
                                 .join("");
                             do_speech(&joined, &**current_language);
@@ -486,6 +493,8 @@ fn App() -> Html {
             to_be_enlarged_lock.clone(),
             forecasts.clone(),
             advance_elect_article.clone(),
+            track_iteration_1.clone(),
+            track_src_1.clone()
         ),
         |(delta, culmative),
          (
@@ -497,15 +506,24 @@ fn App() -> Html {
             to_be_enlarged_lock,
             forecasts,
             advance_elect_article,
+            track_iteration_1,
+            track_src_1
         )| {
             let last_gs = transition_history.last().unwrap().1;
+
+            // immediately after GameStage changes
             if **game_stage != last_gs {
+                if last_gs == GameStage::ArticleView {
+                    track_iteration_1.set(**track_iteration_1 + 1);
+                    track_src_1.set("assets/next_v.wav".to_string());
+                }
                 let mut new_th = (**transition_history).clone();
                 new_th.push((culmative, **game_stage));
                 transition_history.set(new_th);
                 return;
             }
 
+            // timeout functions
             if **game_stage == GameStage::ArticleFading
                 && culmative - transition_history.last().unwrap().0 > 10.0
             {
@@ -516,12 +534,13 @@ fn App() -> Html {
 
             if **game_stage == GameStage::ForecastStart {
                 if to_be_enlarged.is_some() {
-                    // TODO: use ease curve??
                     to_be_enlarged_elapesed_time.set(**to_be_enlarged_elapesed_time + delta);
                     let sizemod = get_sizemod_from_time(**to_be_enlarged_elapesed_time);
 
                     if sizemod > LOCK_SIZE {
                         to_be_enlarged_lock.set(true);
+                        track_iteration_1.set(**track_iteration_1 + 1);
+                        track_src_1.set("assets/after_election_v.wav".to_string());
                         let a_o = forecasts.get(to_be_enlarged.unwrap().0).unwrap();
                         if let Some(a) = a_o {
                             let m_o = a.masks.get(to_be_enlarged.unwrap().1).unwrap();
@@ -1008,11 +1027,12 @@ fn App() -> Html {
                     </feComponentTransfer>
                 </filter>
             </svg>
-            <a href="select.html" class="lang-select">
-                {"language select"}<br/>
-                {"言語変更"}
-            </a>
         </div>
+        <a href="select.html" class="lang-select">
+            {"language select"}<br/>
+            {"言語変更"}
+        </a>
+        <AudioPlayer src={(*track_src_1).clone()} iteration={*track_iteration_1}/>
         </>
     }
 }

@@ -1,5 +1,6 @@
 use gloo_timers::callback::Timeout;
-use yew::{Html, prelude::*};
+use web_sys::HtmlAudioElement;
+use yew::{prelude::*, Html};
 
 #[derive(PartialEq, Properties)]
 pub struct RenderWatchProps {
@@ -88,5 +89,56 @@ impl Component for ClockComponent {
 
     fn view(&self, ctx: &Context<Self>) -> Html {
         html!(<></>)
+    }
+}
+
+/// The props that the component receives.
+#[derive(Properties, PartialEq)]
+pub struct AudioPlayerProps {
+    /// URL of the audio file to play.
+    pub src: Option<String>,
+
+    /// A number that changes whenever we want to trigger a new play.
+    pub iteration: u32,
+}
+
+/// The component that plays the audio automatically.
+#[component]
+pub fn AudioPlayer(props: &AudioPlayerProps) -> Html {
+    let audio_ref = use_node_ref();
+    let src = props.src.clone();
+    let iteration = props.iteration;
+
+    {
+        let audio_ref = audio_ref.clone();
+        use_effect_with((src.clone(), iteration), {
+            move |(src, _iteration)| {
+                if src.is_some() {
+                    let audio_element: HtmlAudioElement = audio_ref
+                        .cast::<HtmlAudioElement>()
+                        .expect("audio element not found");
+
+                    audio_element.set_src(&src.as_ref().unwrap());
+                    audio_element.set_current_time(0.0);
+
+                    match audio_element.play() {
+                        Ok(_) => {}
+                        Err(e) => {
+                            web_sys::console::error_1(
+                                &format!(
+                                    "Error while calling play(): {}",
+                                    e.as_string().unwrap_or_default()
+                                )
+                                .into(),
+                            );
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    html! {
+        <audio ref={audio_ref} style="display:none" />
     }
 }
