@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "electron": "^41.0.2"
+  },
+  "main": "main.js"
+}
