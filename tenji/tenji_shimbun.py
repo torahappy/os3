@@ -13,6 +13,7 @@ import signal
 import time
 
 SERVER_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "python-tts"))
+ELECTRON_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "electron"))
 
 # todo: change output via maos scripts?
 # DEFAULT_SINK = 'alsa_output.pci-0000_e5_00.6.analog-stereo'
@@ -49,7 +50,7 @@ def initial_state() -> MyState:
         "process_shimbun": None,
         "process_piper": None,
         "process_fastapi": None,
-        "to_check_startup_flag": [False],
+        "to_check_startup_flag": [False, False, False],
     }
 
 basepath = os.path.dirname(os.path.abspath(__file__))
@@ -63,21 +64,22 @@ import shutil
 
 while True:
     check_pulseaudio()
+    piper_py_args = ["-m", "piper.http_server", "-m", os.path.join(SERVER_DIR, "models", "en_US-libritts_r-medium.onnx"), "--port", "5111"] 
+    fastapi_py_args = [os.path.join(SERVER_DIR, "venv", "bin", "uvicorn"), "tts_server:app", "--port", "3000"]
 
     if not my_state['started']:
         my_state['started'] = True
-        my_state['process_shimbun'] = subprocess.Popen(["sleep", "3600"], stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL) #TODO
-        my_state['process_piper'] = subprocess.Popen([os.path.join(SERVER_DIR, "start_piper")], stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
-        my_state['process_fastapi'] = subprocess.Popen([os.path.join(SERVER_DIR, "start_tts_server")], stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
+        my_state['process_shimbun'] = subprocess.Popen([os.path.join(ELECTRON_DIR, "node_modules", ".bin", "electron"), ELECTRON_DIR], stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
+        my_state['process_piper'] = subprocess.Popen([os.path.join(SERVER_DIR, "venv", "bin", "python3")] + piper_py_args, stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL, cwd=SERVER_DIR)
+        my_state['process_fastapi'] = subprocess.Popen(fastapi_py_args, stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL, cwd=SERVER_DIR)
 
     pids_raw = subprocess.run(["ps", "-Ao", "pid,args"], capture_output=True, text=True)
     pids = [re.match(r'^\s*(\d+)\s*(.*)$', l) for l in pids_raw.stdout.split("\n")]
     pids = [(int(p[1]), str(p[2])) for p in pids if p is not None]
 
-    #TODO
-    p_shimbun = [p[0] for p in pids if '/douga/douga.mov' in p[1]]
-    p_piper = [p[0] for p in pids if '/douga/douga.mov' in p[1]]
-    p_fastapi = [p[0] for p in pids if '/douga/douga.mov' in p[1]]
+    p_shimbun = [p[0] for p in pids if os.path.join(ELECTRON_DIR, "node_modules", ".bin", "electron") in p[1]]
+    p_piper = [p[0] for p in pids if " ".join(piper_py_args) in p[1]]
+    p_fastapi = [p[0] for p in pids if " ".join(fastapi_py_args) in p[1]]
 
     to_check = [p_shimbun, p_piper, p_fastapi]
 
