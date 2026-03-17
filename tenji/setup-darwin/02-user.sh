@@ -3,6 +3,8 @@
 echo >> ~/.zprofile
 echo 'autoload -Uz compinit && compinit -u' >> ~/.zprofile
 echo 'eval "$(/opt/homebrew/bin/brew shellenv zsh)"' >> ~/.zprofile
+echo >> ~/.zshrc
+echo 'alias gP="git push origin ; git push origin2"' >> ~/.zshrc
 
 . $HOME/.zprofile
 
