@@ -87,6 +87,11 @@ fn get_sizemod_from_time(x: f64) -> f64 {
     }
 }
 
+/// get (w, h, x, y) data of current article
+fn get_article_metrics(meta: &Meta) -> (f64, f64, f64, f64) {
+    return (800.0, 800.0, meta.window_width / 2.0 - 400.0, 30.0)
+}
+
 #[component]
 fn App() -> Html {
     // all titles (Actually, "title" in this regard is different from title (heading) shown on the
@@ -114,6 +119,7 @@ fn App() -> Html {
         DEFAULT_LANGUAGE.to_string()
     });
 
+
     // current article
     let current_article = use_state(|| {
         let s = window().unwrap().location().search().unwrap();
@@ -130,6 +136,7 @@ fn App() -> Html {
                 "注意".to_string()
             }
         };
+        let am = get_article_metrics(&Default::default());
         Some(Article {
             template: ArticleTemplate {
                 title,
@@ -137,10 +144,10 @@ fn App() -> Html {
                 meta: Default::default(),
                 date: Box::new(Date::new(2026, 2, 13, (*current_language).clone())),
             },
-            w: Some(800.0),
+            w: Some(am.0),
             h: None,
-            x: 30.0,
-            y: 30.0,
+            x: am.2,
+            y: am.3,
             masks: Vec::new(),
             character_metrics: None,
         })
@@ -426,12 +433,13 @@ fn App() -> Html {
                         meta: template.meta.clone(),
                         date: Box::new(template.date.clone().after(days_skip).move_origin()),
                     };
+                    let am = get_article_metrics(&template.meta);
                     Some(Article {
                         template: t,
-                        w: Some(800.0),
+                        w: Some(am.1),
                         h: None,
-                        x: 30.0,
-                        y: 30.0,
+                        x: am.2,
+                        y: am.3,
                         masks: Vec::new(),
                         character_metrics: None,
                     })
@@ -494,7 +502,7 @@ fn App() -> Html {
             forecasts.clone(),
             advance_elect_article.clone(),
             track_iteration_1.clone(),
-            track_src_1.clone()
+            track_src_1.clone(),
         ),
         |(delta, culmative),
          (
@@ -507,7 +515,7 @@ fn App() -> Html {
             forecasts,
             advance_elect_article,
             track_iteration_1,
-            track_src_1
+            track_src_1,
         )| {
             let last_gs = transition_history.last().unwrap().1;
 
@@ -532,39 +540,24 @@ fn App() -> Html {
                 return;
             }
 
-            if **game_stage == GameStage::ForecastStart {
+            if GameStage::ForecastStart <= **game_stage && **game_stage <= GameStage::Cleanup {
                 if to_be_enlarged.is_some() {
                     to_be_enlarged_elapesed_time.set(**to_be_enlarged_elapesed_time + delta);
-                    let sizemod = get_sizemod_from_time(**to_be_enlarged_elapesed_time);
+                    if **game_stage == GameStage::ForecastStart {
+                        let sizemod = get_sizemod_from_time(**to_be_enlarged_elapesed_time);
 
-                    if sizemod > LOCK_SIZE {
-                        to_be_enlarged_lock.set(true);
-                        track_iteration_1.set(**track_iteration_1 + 1);
-                        track_src_1.set("assets/after_election_v.wav".to_string());
-                        let a_o = forecasts.get(to_be_enlarged.unwrap().0).unwrap();
-                        if let Some(a) = a_o {
-                            let m_o = a.masks.get(to_be_enlarged.unwrap().1).unwrap();
-                            if let Some(m) = m_o {
-                                if a.w.is_some() && a.h.is_some() {
-                                    let m_big = apply_sizemod(m, sizemod);
-                                    if m_big.contains(&RectMask {
-                                        w: a.w.unwrap(),
-                                        h: a.h.unwrap(),
-                                        x: a.x,
-                                        y: a.y,
-                                    }) {
-                                        game_stage.set(GameStage::Cleanup);
-                                        console::log_1(&"cleanup".into());
-                                    }
-                                }
-                            }
+                        if sizemod > LOCK_SIZE {
+                            to_be_enlarged_lock.set(true);
+                            track_iteration_1.set(**track_iteration_1 + 1);
+                            track_src_1.set("assets/after_election_v.wav".to_string());
+                            game_stage.set(GameStage::Cleanup);
                         }
                     }
                 }
             }
 
             if **game_stage == GameStage::Cleanup
-                && culmative - transition_history.last().unwrap().0 > 10.0
+                && culmative - transition_history.last().unwrap().0 > 16.0
             {
                 let a_o = forecasts.get(to_be_enlarged.unwrap().0).unwrap();
                 if let Some(a) = a_o {
@@ -875,7 +868,7 @@ fn App() -> Html {
                 if idx == to_be_enlarged.unwrap().0 {
                     classes.push("chosen".to_string());
                 } else {
-                    classes.push("fading".to_string());
+                    classes.push("fading-cleanup".to_string());
                 }
             }
         }
