@@ -558,6 +558,7 @@ fn App() -> Html {
 
             if **game_stage == GameStage::Cleanup
                 && culmative - transition_history.last().unwrap().0 > 16.0
+                && to_be_enlarged.is_some()
             {
                 let a_o = forecasts.get(to_be_enlarged.unwrap().0).unwrap();
                 if let Some(a) = a_o {
@@ -865,7 +866,7 @@ fn App() -> Html {
         } else {
             classes.push("forecast".to_string());
             if *game_stage == GameStage::Cleanup {
-                if idx == to_be_enlarged.unwrap().0 {
+                if to_be_enlarged.is_some() && idx == to_be_enlarged.unwrap().0 {
                     classes.push("chosen".to_string());
                 } else {
                     classes.push("fading-cleanup".to_string());
