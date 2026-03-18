@@ -1,0 +1,14 @@
+#!/bin/zsh
+
+. $HOME/.zprofile
+
+while true; do
+
+sleep 5
+cd $HOME/os3
+git reset --hard
+git pull
+./build_scripts/wasm-once.sh os3yew shimbun
+/opt/homebrew/bin/python3 ./tenji/tenji_shimbun.py
+
+done

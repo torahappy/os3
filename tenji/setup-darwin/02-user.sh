@@ -1,5 +1,7 @@
 #!/bin/bash
 
+cd $HOME
+
 echo >> ~/.zprofile
 echo 'autoload -Uz compinit && compinit -u' >> ~/.zprofile
 echo 'eval "$(/opt/homebrew/bin/brew shellenv zsh)"' >> ~/.zprofile
@@ -46,3 +48,10 @@ yarn
 cd ../../
 
 ./external-sources/setup-tts.sh
+
+cd tenji/setup-darwin
+
+mkdir $HOME/Library/LaunchAgents
+cp com.torahappy.shimbunstartup.plist $HOME/Library/LaunchAgents
+
+cd ../../

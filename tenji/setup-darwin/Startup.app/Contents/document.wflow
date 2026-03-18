@@ -59,16 +59,10 @@
 				<key>ActionParameters</key>
 				<dict>
 					<key>COMMAND_STRING</key>
-					<string>. $HOME/.zprofile
-
-while true; do
-cd $HOME/os3
-sleep 5
-git reset --hard
-git pull origin2 tenji2603
-./build_scripts/wasm-once.sh os3yew shimbun
-/opt/homebrew/bin/python3 ./tenji/tenji_shimbun.py
-done</string>
+					<string>echo ShimbunStartupMainScriptDoNotKill
+ps -Ao pid,args | grep tenji_shimbun_infloop | grep -v ShimbunStartupMainScriptDoNotKill | awk '{print $1}' | xargs -n1 kill
+cd $HOME/os3/tenji
+./tenji_shimbun_infloop</string>
 					<key>CheckedForUserDefaultShell</key>
 					<true/>
 					<key>inputMethod</key>
@@ -178,12 +172,10 @@ done</string>
 						<string>4</string>
 					</dict>
 				</dict>
-				<key>conversionLabel</key>
-				<integer>0</integer>
 				<key>isViewVisible</key>
 				<integer>1</integer>
 				<key>location</key>
-				<string>309.000000:252.000000</string>
+				<string>1089.000000:252.000000</string>
 				<key>nibPath</key>
 				<string>/System/Library/Automator/Run Shell Script.action/Contents/Resources/Base.lproj/main.nib</string>
 			</dict>
