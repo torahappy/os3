@@ -589,7 +589,7 @@ Genital Returning Table Appeared Nationwide
 
 Believe-it-or-Not-Press ({{date.before(1).no_fill_prep().month_day()}})
 
-Genital returning tables appeared in food courts nationwide. Hi, dishes returning tables, are you really dishes returning tables? The words are slowly transforming into...... Genital returning tables!! The first time it happened, the "word transformation" effect was only seen within food courts near United States military bases in Japan, however, now it spread across the country.
+Genital returning tables appeared in food courts nationwide. Hi, dishes returning tables, are you really dishes returning tables? The words are slowly transforming into...... Genital returning tables!! The first time it happened, the "word transformation" effect was only seen within food courts near United States military bases in Japan, however, now they spread across the country.
 
 According to Prof. Shirotae, a Shiomori expert teaching at Misogyny University, said: "This was probably a terrorist attack by radical feminist witches. yadayadayada. The incidents of word transformation magic, these are becoming quite common these days. Anyway, you all should do Shiomori at home, then the Eight Million Gods will surely come to help us. As said in Eight Million Gods, Japan has been always the country of diversity. The true diversity compared to the degenerate West's fallacy. yadayadayada... " umm i'm running out of things to write... but the minimal words requirement is so far away... let me see... umm...
 
@@ -775,6 +775,8 @@ introduction
 
 下にあるボタンを押すと、今読んでいる文章が消えていきます。そうしてしばらくすると、色々な言葉の断片が浮かび上がっていきます。その言葉の断片の上にマウスカーソルを置いて、マウスカーソルを置き続けると、新たな文章が浮かび上がっていきます。
 
+怖い内容の文章が浮かび上がって来るかもしれません。もしこれ以上読みたくなくなったときは、右下の「言語変更」ボタンからすぐにタイトル画面に退出できます。
+
 ## ソフトウェアクレジット
 
 このプログラムを作るに当たって使用したプログラムの一覧は、[こちらのリンク](https://os3.torahappy.org/shimbun_web/dependencies.html)で確認できます。
@@ -801,6 +803,8 @@ Texts start to disappear.
 Wait a while, then you will see scrambled words and images.  
 Put the mouse cursor over these pieces.  
 New texts starts to appear.
+
+Some texts might cause discomfort or fear. If you don't want to read them anymore, exit to the title screen via the "Language Select" button on the bottom-right corner.
 
 ## Software Credits
 
