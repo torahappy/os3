@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.torahappy.shimbunstartup</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>/Users/exhibition/os3/tenji/setup-darwin/Startup.app/Contents/MacOS/Automator Application Stub</string>
+    </array>
+    <key>RunAtLoad</key>
+    <true/>
+    <key>KeepAlive</key>
+    <false/>
+</dict>
+</plist>
