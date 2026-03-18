@@ -28,6 +28,10 @@ git clone https://gitlab.torahappy.org/tora/os3
 
 cd os3
 
+git remote add origin2 https://github.com/torahappy/os3
+
+git checkout tenji2603
+
 cd os3bevy; rustup target add wasm32-unknown-unknown; cargo install -f wasm-bindgen-cli --version 0.2.108; cargo install wasm-opt; cd ..
 
 ./build_scripts/wasm-once.sh os3yew shimbun
