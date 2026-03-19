@@ -20,7 +20,7 @@ use std::{
     rc::Rc,
     sync::LazyLock,
 };
-use yew::{prelude::*, Html};
+use yew::{Html, prelude::*};
 
 const LOCK_SIZE: f64 = 110.0;
 const TIME_TILL_LOCK: f64 = 7.0;
@@ -89,7 +89,7 @@ fn get_sizemod_from_time(x: f64) -> f64 {
 
 /// get (w, h, x, y) data of current article
 fn get_article_metrics(meta: &Meta) -> (f64, f64, f64, f64) {
-    return (800.0, 800.0, meta.window_width / 2.0 - 400.0, 30.0)
+    return (800.0, 800.0, meta.window_width / 2.0 - 400.0, 30.0);
 }
 
 #[component]
@@ -118,7 +118,6 @@ fn App() -> Html {
         }
         DEFAULT_LANGUAGE.to_string()
     });
-
 
     // current article
     let current_article = use_state(|| {
@@ -373,14 +372,14 @@ fn App() -> Html {
                             );
                             r2.sort_by_key(|x| {
                                 (
-                                    x.0 .0.clone(),
+                                    x.0.0.clone(),
                                     OrderedFloat::from(x.1.y),
                                     OrderedFloat::from(x.1.x),
                                 )
                             });
                             let joined = r2
                                 .iter()
-                                .map(|x| x.0 .1.clone())
+                                .map(|x| x.0.1.clone())
                                 .collect::<Vec<_>>()
                                 .join("");
                             do_speech(&joined, &**current_language);
@@ -1026,6 +1025,7 @@ fn App() -> Html {
             {"Back to Title"}<br/>
             {"タイトルに戻る"}
         </a>
+        <p class="tips-scroll">{ get_system_word(&*current_language, "tips_scroll") }</p>
         <AudioPlayer src={(*track_src_1).clone()} iteration={*track_iteration_1}/>
         </>
     }
