@@ -121,7 +121,7 @@ async def say(req: SayRequest, tasks: BackgroundTasks):
             str(OPEN_JTALK_BIN),
             "-x", str(DICTIONARY_DIR),
             "-m", str(model_path),
-            "-r", "2.5",
+            "-r", "1.8",
             "-fm", "1",
             "-ow", "/dev/stdout"
         ]

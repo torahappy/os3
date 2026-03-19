@@ -5,8 +5,8 @@ const LOCALE_DATA_JA: LazyLock<HashMap<String, String>> = std::sync::LazyLock::n
         vec![
             ("keep_reading_button", "読み続ける"),
             ("start_again_button", "はじめから"),
-            ("tips_scroll", "↓ スクロールしてみてください ↓"),
-            ("tips_words", "文字たちをなぞってみてください"),
+            ("tips_scroll", "↓ スクロールしてみてね ↓"),
+            ("tips_words", "言葉の欠片たちの上を、マウスカーソルでなぞってみたり、一つの欠片の上にマウスカーソルを置き続けたりしてみてください。"),
         ]
         .into_iter()
         .map(|x| (x.0.to_string(), x.1.to_string())),
@@ -19,7 +19,7 @@ const LOCALE_DATA_EN: LazyLock<HashMap<String, String>> = std::sync::LazyLock::n
             ("keep_reading_button", "keep reading"),
             ("start_again_button", "start again"),
             ("tips_scroll", "↓ scroll ↓"),
-            ("tips_words", "move mouse through the words"),
+            ("tips_words", "Move the mouse cursor through the pieces of words and images, or put it on a piece and patiently wait."),
         ]
         .into_iter()
         .map(|x| (x.0.to_string(), x.1.to_string())),
