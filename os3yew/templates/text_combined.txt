@@ -775,7 +775,7 @@ introduction
 
 下にあるボタンを押すと、今読んでいる文章が消えていきます。そうしてしばらくすると、色々な言葉の断片が浮かび上がっていきます。その言葉の断片の上にマウスカーソルを置いて、マウスカーソルを置き続けると、新たな文章が浮かび上がっていきます。
 
-怖い内容の文章が浮かび上がって来るかもしれません。もしこれ以上読みたくなくなったときは、右下の「言語変更」ボタンからすぐにタイトル画面に退出できます。
+怖い内容の文章が浮かび上がって来るかもしれません。もしこれ以上読みたくなくなったときは、右下の「タイトルに戻る」ボタンからすぐにタイトル画面に退出できます。
 
 ## ソフトウェアクレジット
 
@@ -804,7 +804,7 @@ Wait a while, then you will see scrambled words and images.
 Put the mouse cursor over these pieces.  
 New texts starts to appear.
 
-Some texts might cause discomfort or fear. If you don't want to read them anymore, exit to the title screen via the "Language Select" button on the bottom-right corner.
+Some texts might cause discomfort or fear. If you don't want to read them anymore, exit to the title screen via the "Back to Title" button on the bottom-right corner.
 
 ## Software Credits
 
