@@ -20,8 +20,9 @@ use std::{
     rc::Rc,
     sync::LazyLock,
 };
-use yew::{prelude::*, Html};
+use yew::{Html, prelude::*};
 
+const BTN_HEIGHT: f64 = 90.0;
 const LOCK_SIZE: f64 = 110.0;
 const TIME_TILL_LOCK: f64 = 7.0;
 const LANGUAGES: LazyLock<HashSet<String, RandomState>> = std::sync::LazyLock::new(|| {
@@ -89,7 +90,7 @@ fn get_sizemod_from_time(x: f64) -> f64 {
 
 /// get (w, h, x, y) data of current article
 fn get_article_metrics(meta: &Meta) -> (f64, f64, f64, f64) {
-    return (800.0, 800.0, meta.window_width / 2.0 - 400.0, 30.0)
+    return (800.0, 800.0, meta.window_width / 2.0 - 400.0, 30.0);
 }
 
 #[component]
@@ -118,7 +119,6 @@ fn App() -> Html {
         }
         DEFAULT_LANGUAGE.to_string()
     });
-
 
     // current article
     let current_article = use_state(|| {
@@ -373,14 +373,15 @@ fn App() -> Html {
                             );
                             r2.sort_by_key(|x| {
                                 (
-                                    x.0 .0.clone(),
+                                    x.0.0.clone(),
                                     OrderedFloat::from(x.1.y),
                                     OrderedFloat::from(x.1.x),
                                 )
                             });
+                            r2.dedup(); // very important!!!!!!
                             let joined = r2
                                 .iter()
-                                .map(|x| x.0 .1.clone())
+                                .map(|x| x.0.1.clone())
                                 .collect::<Vec<_>>()
                                 .join("");
                             do_speech(&joined, &**current_language);
@@ -436,7 +437,7 @@ fn App() -> Html {
                     let am = get_article_metrics(&template.meta);
                     Some(Article {
                         template: t,
-                        w: Some(am.1),
+                        w: Some(am.0),
                         h: None,
                         x: am.2,
                         y: am.3,
@@ -983,6 +984,47 @@ fn App() -> Html {
         return "".to_string();
     });
 
+    let tips_scroll_shown = use_memo(
+        (
+            current_article.clone(),
+            transition_history.clone(),
+            game_stage.clone(),
+        ),
+        |(ca, th, gs)| {
+            if let Some(ca) = &**ca {
+                if let Some(h) = ca.h {
+                    if **gs == GameStage::ArticleView
+                        && ca.y + h + BTN_HEIGHT > ca.template.meta.window_height
+                    {
+                        return true;
+                    }
+                }
+                return false;
+            } else {
+                return false;
+            }
+        },
+    );
+
+    let tips_words_shown = use_memo(
+        (transition_history.clone(), game_stage.clone()),
+        |(th, gs)| {
+            if **gs == GameStage::ForecastStart {
+                let fs_cnt = th
+                    .iter()
+                    .filter(|(_, g)| *g == GameStage::ForecastStart)
+                    .count();
+                if fs_cnt <= 3 {
+                    return true;
+                } else {
+                    return false;
+                }
+            } else {
+                return false;
+            }
+        },
+    );
+
     let get_btn_class = use_callback((game_stage.clone()), move |(), gs| {
         if **gs == GameStage::ArticleFading {
             return "btn-fading btn-wrapper".to_string();
@@ -1026,6 +1068,14 @@ fn App() -> Html {
             {"Back to Title"}<br/>
             {"タイトルに戻る"}
         </a>
+        if *tips_scroll_shown {
+            <div class="tips-scroll-wrap">
+                <p class="tips-scroll">{ get_system_word(&*current_language, "tips_scroll") }</p>
+            </div>
+        }
+        if *tips_words_shown {
+            <p class="tips-words">{ get_system_word(&*current_language, "tips_words") }</p>
+        }
         <AudioPlayer src={(*track_src_1).clone()} iteration={*track_iteration_1}/>
         </>
     }

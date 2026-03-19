@@ -773,7 +773,13 @@ introduction
 
 ## 操作方法
 
-下にあるボタンを押すと、今読んでいる文章が消えていきます。そうしてしばらくすると、色々な言葉の断片が浮かび上がっていきます。その言葉の断片の上にマウスカーソルを置いて、マウスカーソルを置き続けると、新たな文章が浮かび上がっていきます。
+記事を読み終わったら、下にある「読み続ける」のボタンを押します。
+
+しばらくすると、色々な言葉の断片が浮かび上がっていきます。
+
+言葉の欠片たちの上を、マウスカーソルでなぞってみたり、一つの欠片の上にマウスカーソルを置き続けたりしてみてください。
+
+そうすると、また新たな記事へと進むことができます。
 
 怖い内容の文章が浮かび上がって来るかもしれません。もしこれ以上読みたくなくなったときは、右下の「タイトルに戻る」ボタンからすぐにタイトル画面に退出できます。
 
@@ -798,11 +804,13 @@ This work has following elements:
 
 ## How to Play
 
-Press a button below the texts.  
-Texts start to disappear.  
-Wait a while, then you will see scrambled words and images.  
-Put the mouse cursor over these pieces.  
-New texts starts to appear.
+After reading the article, press the "keep reading" button below.
+
+Wait a while, then you will see scrambled words and images.
+
+Move the mouse cursor through the pieces, or put it on a piece and patiently wait.
+
+Then, you can see another readings, another future.
 
 Some texts might cause discomfort or fear. If you don't want to read them anymore, exit to the title screen via the "Back to Title" button on the bottom-right corner.
 
