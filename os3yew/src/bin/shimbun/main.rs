@@ -1023,8 +1023,8 @@ fn App() -> Html {
             </svg>
         </div>
         <a href="select.html" class="lang-select">
-            {"language select"}<br/>
-            {"言語変更"}
+            {"Back to Title"}<br/>
+            {"タイトルに戻る"}
         </a>
         <AudioPlayer src={(*track_src_1).clone()} iteration={*track_iteration_1}/>
         </>
