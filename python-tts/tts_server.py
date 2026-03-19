@@ -132,7 +132,7 @@ async def say(req: SayRequest, tasks: BackgroundTasks):
         # mpv reads from stdin when we pass '-' as the file name
 
         # mpv_cmd = ["ffplay", "-i", "/dev/stdin", "-nodisp"]
-        mpv_cmd = ["mpv", "/dev/stdin"]
+        mpv_cmd = ["mpv", "--volume=85", "/dev/stdin"]
 
         # We start open_jtalk, capture its stdout and feed it to mpv
         async with shared_state.lock:
