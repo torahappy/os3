@@ -132,13 +132,14 @@ export async function doSpeech(text, lang) {
   console.log(text);
 
   // ------------------------------------------------------------------
-  // 1 Detect whether we should use the API path
+  // Detect whether we should use the API path
   // ------------------------------------------------------------------
   const search = new URLSearchParams(window.location.search);
   const useApi = search.has("tts") && search.get("tts") === "api";
+  const useWasm = search.has("tts") && search.get("tts") === "wasm";
 
   // ------------------------------------------------------------------
-  // 2 Build the list of candidate names for the requested language
+  // Build the list of candidate names for the requested language
   // ------------------------------------------------------------------
   let speechCandidates = [];
   if (lang === "en") {
@@ -149,7 +150,7 @@ export async function doSpeech(text, lang) {
   }
 
   // ------------------------------------------------------------------
-  // 3 API path – fetch the list of voices from the backend
+  // API path – fetch the list of voices from the backend
   // ------------------------------------------------------------------
   if (useApi) {
     try {
@@ -176,7 +177,7 @@ export async function doSpeech(text, lang) {
       }
 
       // ------------------------------------------------------------------
-      // 4 POST to /api/say with the chosen voice id & the text
+      // POST to /api/say with the chosen voice id & the text
       // ------------------------------------------------------------------
       if (window.VOICE_CACHE !== undefined) {
         const payload = { voice: window.VOICE_CACHE, text };
@@ -195,30 +196,121 @@ export async function doSpeech(text, lang) {
     } catch (e) {
       console.error("doSpeech (API mode) error:", e);
     }
-  }
+  } else if (useWasm) {
+    // ------------------------------------------------------------------
+    // WASM mode – use the wasm webworkers, send runInference message
+    // ------------------------------------------------------------------
+    if (window.VOICE_WORKER_DATA.workers.every((x) => x.is_init_completed)) {
+      let workers = window.VOICE_WORKER_DATA.workers;
+      let target_worker = workers.reduce((
+        a,
+        b,
+      ) => (a.queue.len > b.queue.len ? b : a));
+      target_worker.worker.postMessage({
+        type: "runInference",
+        data: text,
+        relation: window.VOICE_WORKER_DATA.currentRelation,
+      });
+      target_worker.queue.push({
+        relation: window.VOICE_WORKER_DATA.currentRelation,
+        timestamp: new Date(),
+      });
+      window.VOICE_WORKER_DATA.currentRelation += 1;
+    } else {
+      console.error("doSpeech (WASM mode) error: workers not yet initialized");
+    }
+  } else {
+    // ------------------------------------------------------------------
+    // Non‑API mode – use the browser’s SpeechSynthesis API
+    // ------------------------------------------------------------------
+    const utter = new SpeechSynthesisUtterance(text);
 
-  // ------------------------------------------------------------------
-  // 5 Non‑API mode – use the browser’s SpeechSynthesis API
-  // ------------------------------------------------------------------
-  const utter = new SpeechSynthesisUtterance(text);
+    // Lazily initialise the voice cache (the voice object itself)
+    if (window.VOICE_CACHE === undefined) {
+      const candidates = speechCandidates;
+      const voices = window.speechSynthesis.getVoices();
 
-  // Lazily initialise the voice cache (the voice object itself)
-  if (window.VOICE_CACHE === undefined) {
-    const candidates = speechCandidates;
-    const voices = window.speechSynthesis.getVoices();
+      const matchedVoice = voices.find((v) =>
+        candidates.some((c) => v.name.includes(c))
+      );
+      if (matchedVoice) {
+        window.VOICE_CACHE = matchedVoice;
+      }
+    }
 
-    const matchedVoice = voices.find((v) =>
-      candidates.some((c) => v.name.includes(c))
-    );
-    if (matchedVoice) {
-      window.VOICE_CACHE = matchedVoice;
+    if (window.VOICE_CACHE !== undefined) {
+      utter.voice = window.VOICE_CACHE;
+      // Prevent the queued speech
+      window.speechSynthesis.cancel();
+      window.speechSynthesis.speak(utter);
     }
   }
+}
 
-  if (window.VOICE_CACHE !== undefined) {
-    utter.voice = window.VOICE_CACHE;
-    // Prevent the queued speech
-    window.speechSynthesis.cancel();
-    window.speechSynthesis.speak(utter);
+/**
+ * Prepare Speech Synthesis. Do nothing except in wasm mode.
+ *
+ * @param {string} lang - The speech language. Should not be changed during the app run.
+ */
+export async function prepareSpeech(lang) {
+  const search = new URLSearchParams(window.location.search);
+  const useWasm = search.has("tts") && search.get("tts") === "wasm";
+
+  if (useWasm) {
+    if (window.VOICE_WORKER_DATA === undefined) {
+      window.VOICE_WORKER_DATA = {};
+      let cores = 4; // TODO: how to obtain core data???
+      let workers = [];
+      for (let i = 0; i < cores; i++) {
+        let worker = new Worker("voice-worker-" + lang + ".js", {
+          type: "module",
+        });
+
+        let worker_obj = {
+          worker,
+          queue: [],
+          is_init_completed: false,
+        };
+
+        workers.push(worker_obj);
+
+        worker.addEventListener("message", (e) => {
+          if (e.data.type === "init_ort") {
+            worker_obj.is_init_completed = true;
+          } else if (e.data.type === "runInference_result") {
+            playArray(e.data.data, 22050);
+            worker_obj.queue = worker_obj.queue.filter(
+              (x) => (x.relation != e.data.relation),
+            );
+          }
+        });
+      }
+
+      window.VOICE_WORKER_DATA["workers"] = workers;
+      window.VOICE_WORKER_DATA["currentRelation"] = 0;
+    }
   }
+}
+
+/**
+ * Play Float32Array as a sound.
+ *
+ * @param {Float32Array} myArray - Float32Array of the sound.
+ * @param {number} rate - The frequency of the sound in Hz.
+ */
+function playArray(myArray, rate) {
+  const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  const frameCount = myArray.length;
+
+  const audioBuffer = audioCtx.createBuffer(1, frameCount, rate);
+
+  const nowBuffering = audioBuffer.getChannelData(0);
+  for (let i = 0; i < frameCount; i++) {
+    nowBuffering[i] = myArray[i];
+  }
+
+  const source = audioCtx.createBufferSource();
+  source.buffer = audioBuffer;
+  source.connect(audioCtx.destination);
+  source.start();
 }

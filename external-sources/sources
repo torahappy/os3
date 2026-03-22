@@ -34,3 +34,6 @@ MMDAGENT_VOICE_INSIDE_DIRNAME=Voice
 
 OPEN_JTALK_DIC_URL=http://downloads.sourceforge.net/open-jtalk/open_jtalk_dic_utf_8-1.11.tar.gz
 OPEN_JTALK_DIC_VERSION=1.11
+
+ESPEAK_NG_URL=https://github.com/espeak-ng/espeak-ng/archive/80f7d5d5869584913b03760db302b6ca0dda9f55.zip
+ESPEAK_NG_VERSION=80f7d5d5869584913b03760db302b6ca0dda9f55

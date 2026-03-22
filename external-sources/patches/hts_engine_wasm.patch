@@ -1,0 +1,13 @@
+diff --git a/external-sources/hts_engine_api-1.10/lib/HTS_misc.c b/external-sources/hts_engine_api-1.10/lib/HTS_misc.c
+index 72306cb..a67f101 100644
+--- a/lib/HTS_misc.c
++++ b/lib/HTS_misc.c
+@@ -247,6 +247,8 @@ size_t HTS_ftell(HTS_File * fp)
+       fgetpos((FILE *) fp->pointer, &pos);
+ #if defined(_WIN32) || defined(__CYGWIN__) || defined(__APPLE__) || defined(__ANDROID__)
+       return (size_t) pos;
++#elif defined(__EMSCRIPTEN__)
++      return (size_t) ftell((FILE *) fp->pointer);
+ #else
+       return (size_t) pos.__pos;
+ #endif                          /* _WIN32 || __CYGWIN__ || __APPLE__ || __ANDROID__ */

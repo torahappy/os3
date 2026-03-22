@@ -1088,8 +1088,11 @@ extern "C" {
     #[wasm_bindgen(js_name = "getSpanMetrics")]
     /// Get all characters metrics within the element of given id via JSON serialized array of {x:number, y:number, width:number, height:number, top:number, right:number, bottom:number, left:number, character:string}.
     fn get_span_metrics_inner(id: &str) -> String;
+    #[wasm_bindgen(js_name = "prepareSpeech")]
+    /// Prepare speech for the given language. Language should not be changed during the app run.
+    pub fn prepare_speech(lang: &str);
     #[wasm_bindgen(js_name = "doSpeech")]
-    /// Do speech using speechSynthesis.
+    /// Do speech. Language should not be changed during the app run.
     pub fn do_speech(data: &str, lang: &str);
 }
 
