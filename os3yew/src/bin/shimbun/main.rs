@@ -112,12 +112,19 @@ fn App() -> Html {
     let current_language = use_state(|| {
         let s = window().unwrap().location().search().unwrap();
         let usp = web_sys::UrlSearchParams::new_with_str(&s).unwrap();
-        if let Some(lang) = usp.get(&"lang") {
-            if LANGUAGES.contains(&lang) {
-                return lang;
+        let lang = {
+            if let Some(lang) = usp.get(&"lang") {
+                if LANGUAGES.contains(&lang) {
+                    lang
+                } else {
+                    DEFAULT_LANGUAGE.to_string()
+                }
+            } else {
+                DEFAULT_LANGUAGE.to_string()
             }
-        }
-        DEFAULT_LANGUAGE.to_string()
+        };
+        prepare_speech(&lang);
+        lang
     });
 
     // current article

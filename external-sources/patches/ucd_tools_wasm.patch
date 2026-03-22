@@ -1,0 +1,13 @@
+diff --git a/external-sources/espeak_ng-1.52.0/src/ucd-tools/src/include/ucd/ucd.h b/external-sources/espeak_ng-1.52.0/src/ucd-tools/src/include/ucd/ucd.h
+index b277d4c..e7ba38a 100644
+--- a/src/ucd-tools/src/include/ucd/ucd.h
++++ b/src/ucd-tools/src/include/ucd/ucd.h
+@@ -30,7 +30,7 @@ extern "C"
+ 
+ /** @brief Represents a Unicode codepoint.
+   */
+-typedef uint32_t codepoint_t;
++typedef __WINT_TYPE__ codepoint_t;
+ 
+ /** @brief Unicode General Category Groups
+   * @see   http://www.unicode.org/reports/tr44/

@@ -13,18 +13,123 @@ cd "$SCRIPT_DIR"
 
 if [ ! -d ../external-apps/open_jtalk ]; then
   pushd ./hts_engine_api-$HTS_ENGINE_API_VERSION
+  git clean -dfx
+
   ./configure --prefix="$SCRIPT_DIR/../external-apps/open_jtalk"
   make -j$NPR
   make install
   popd
 
   pushd ./open_jtalk-$OPEN_JTALK_VERSION/src
+  git clean -dfx
+
   mkdir build
   pushd build
   cmake -DBUILD_PROGRAMS=1 -DCMAKE_INSTALL_PREFIX="$SCRIPT_DIR/../external-apps/open_jtalk" ..
   make -j$NPR
   make install
   popd
+  popd
+fi
+
+emsdk install 5.0.3
+emsdk activate 5.0.3
+
+if [ ! -d ../external-apps/open_jtalk-wasm ]; then
+  pushd ./hts_engine_api-$HTS_ENGINE_API_VERSION
+  patch -Np1 < ../patches/hts_engine_wasm.patch || true
+  git clean -dfx
+
+  emconfigure ./configure --prefix="$SCRIPT_DIR/../external-apps/open_jtalk-wasm"
+  make -j$NPR
+  make install
+  cp bin/hts_engine.wasm "$SCRIPT_DIR/../external-apps/open_jtalk-wasm/bin/hts_engine.wasm"
+  git restore .
+  popd
+
+  pushd ./open_jtalk-$OPEN_JTALK_VERSION/src
+  git clean -dfx
+
+  mkdir build
+  pushd build
+  emcmake cmake -DBUILD_PROGRAMS=1 -DCMAKE_INSTALL_PREFIX="$SCRIPT_DIR/../external-apps/open_jtalk-wasm" -DHTS_ENGINE_LIB="$SCRIPT_DIR/../external-apps/open_jtalk-wasm/lib/libHTSEngine.a" -DHTS_ENGINE_INCLUDE_DIR="$SCRIPT_DIR/../external-apps/open_jtalk-wasm/include" ..
+  make -j$NPR
+  make install
+  cp bin/open_jtalk.wasm "$SCRIPT_DIR/../external-apps/open_jtalk-wasm/bin"
+  popd
+  popd
+fi
+
+
+if [ ! -d ../external-apps/espeak_ng-data ]; then
+  pushd ./espeak_ng-$ESPEAK_NG_VERSION
+
+  git clean -dfx
+  rm -rf build-native
+
+  echo ">>> configuring espeak_ng (native)"
+  
+  mkdir build-native
+
+  pushd build-native
+
+    cmake -DCMAKE_INSTALL_PREFIX="$SCRIPT_DIR/../external-apps/espeak_ng-data" ..
+
+    echo ">>> building espeak_ng (native)"
+
+    make -j$NPR
+
+    make install
+
+  popd
+
+  rm -rf build-native
+  popd
+
+fi
+
+
+if [ ! -d ../external-apps/espeak_ng-wasm ]; then
+  pushd ./espeak_ng-$ESPEAK_NG_VERSION
+
+  git clean -dfx
+  rm -rf build-wasm
+
+  patch -Np1 < ../patches/ucd_tools_wasm.patch || true
+
+  mkdir build-wasm
+
+  pushd build-wasm
+
+    echo ">>> configuring espeak_ng (wasm)"
+
+    emcmake cmake -DCMAKE_C_FLAGS="-O3" -DCMAKE_CXX_FLAGS="-O3" -DUSE_SPEECHPLAYER=0 -DCMAKE_INSTALL_PREFIX="$SCRIPT_DIR/../external-apps/espeak_ng-wasm" ..
+
+    echo ">>> building espeak_ng (wasm)"
+
+    make -j$NPR
+
+    make install
+
+    cp -r "$SCRIPT_DIR/../external-apps/espeak_ng-data/share/espeak-ng-data" "$SCRIPT_DIR/../external-apps/espeak_ng-wasm/share/"
+
+    cp src/espeak-ng.wasm "$SCRIPT_DIR/../external-apps/espeak_ng-wasm/bin/"
+
+    cp src/ucd-tools/libucd.a "$SCRIPT_DIR/../external-apps/espeak_ng-wasm/lib/"
+
+  popd
+
+  pushd "$SCRIPT_DIR/../external-apps/espeak_ng-wasm/"
+
+    EXFUNCS='["_espeak_Initialize", "_espeak_SetVoiceByName", "_espeak_TextToPhonemesWithTerminator", "_malloc", "_free"]'
+  
+    em++ lib/libespeak-ng.a lib/libucd.a -O3 -o espeak-ng-slim -sALLOW_MEMORY_GROWTH=1 -sMODULARIZE=1 -sEXPORT_ES6=1 -sEXPORTED_FUNCTIONS="$EXFUNCS" -sEXPORTED_RUNTIME_METHODS=stringToUTF8,UTF8ToString,AsciiToString,intArrayFromString,intArrayToString,writeArrayToMemory,setValue,getValue,HEAP8,HEAP16,HEAP32,HEAPU8,HEAPU16,HEAPU32 --embed-file "$(realpath "$SCRIPT_DIR/../external-apps/espeak_ng-wasm/share/espeak-ng-data")"@"/usr/share/espeak-ng-data" 
+    
+  popd
+
+  git restore .
+
+  rm -rf build-wasm
   popd
 fi
 
