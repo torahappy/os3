@@ -280,7 +280,7 @@ export async function prepareSpeech(lang) {
           } else if (e.data.type === "runInference_result") {
             playArray(e.data.data, 22050);
             worker_obj.queue = worker_obj.queue.filter(
-              (x) => (x.relation != e.data.relation),
+              (x) => (x.relation !== e.data.relation),
             );
           }
         });
