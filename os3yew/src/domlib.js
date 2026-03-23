@@ -15,10 +15,10 @@ function getAllTextNodes(id) {
 
   // Create a TreeWalker that only shows text nodes
   const walker = document.createTreeWalker(
-    root,
-    NodeFilter.SHOW_TEXT,
-    null,
-    false,
+      root,
+      NodeFilter.SHOW_TEXT,
+      null,
+      false,
   );
 
   // Walk the tree and push each encountered text node into the result array
@@ -95,13 +95,13 @@ export function getSpanMetrics(id) {
 
     // DOMRect has the same numeric properties we need
     metrics.push({
-      x: rect.x,
-      y: rect.y,
-      width: rect.width,
-      height: rect.height,
-      top: rect.top + window.scrollY,
-      left: rect.left + window.scrollX,
-      character: span.textContent, // the single character in that <span>
+      x : rect.x,
+      y : rect.y,
+      width : rect.width,
+      height : rect.height,
+      top : rect.top + window.scrollY,
+      left : rect.left + window.scrollX,
+      character : span.textContent, // the single character in that <span>
     });
   });
 
@@ -143,10 +143,10 @@ export async function doSpeech(text, lang) {
   // ------------------------------------------------------------------
   let speechCandidates = [];
   if (lang === "en") {
-    speechCandidates = ["libritts_r-medium", "Bad News"];
+    speechCandidates = [ "libritts_r-medium", "Bad News" ];
   }
   if (lang === "ja") {
-    speechCandidates = ["takumi_happy", "Kyoko"];
+    speechCandidates = [ "takumi_happy", "Kyoko" ];
   }
 
   // ------------------------------------------------------------------
@@ -159,13 +159,13 @@ export async function doSpeech(text, lang) {
         if (!resp.ok) {
           throw new Error(`GET /api/voices failed (${resp.status})`);
         }
-        const voices = await resp
-          .json(); // expect an array of strings [id1, id2, id3, ...]
+        const voices =
+            await resp
+                .json(); // expect an array of strings [id1, id2, id3, ...]
 
         // Find the first voice whose id contains one of our candidates
-        const matched = voices.find((v) =>
-          speechCandidates.some((c) => v.includes(c))
-        );
+        const matched =
+            voices.find((v) => speechCandidates.some((c) => v.includes(c)));
 
         if (!matched) {
           console.warn("No matching voice found on /api/voices");
@@ -180,11 +180,11 @@ export async function doSpeech(text, lang) {
       // POST to /api/say with the chosen voice id & the text
       // ------------------------------------------------------------------
       if (window.VOICE_CACHE !== undefined) {
-        const payload = { voice: window.VOICE_CACHE, text };
+        const payload = {voice : window.VOICE_CACHE, text};
         const r = await fetch("/api/say", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
+          method : "POST",
+          headers : {"Content-Type" : "application/json"},
+          body : JSON.stringify(payload),
         });
 
         if (!r.ok) {
@@ -201,21 +201,29 @@ export async function doSpeech(text, lang) {
     // WASM mode – use the wasm webworkers, send runInference message
     // ------------------------------------------------------------------
     if (window.VOICE_WORKER_DATA.workers.every((x) => x.is_init_completed)) {
-      let workers = window.VOICE_WORKER_DATA.workers;
-      let target_worker = workers.reduce((
-        a,
-        b,
-      ) => (a.queue.len > b.queue.len ? b : a));
-      target_worker.worker.postMessage({
-        type: "runInference",
-        data: text,
-        relation: window.VOICE_WORKER_DATA.currentRelation,
-      });
-      target_worker.queue.push({
-        relation: window.VOICE_WORKER_DATA.currentRelation,
-        timestamp: new Date(),
-      });
-      window.VOICE_WORKER_DATA.currentRelation += 1;
+      if ((window.VOICE_WORKER_DATA.lastPlayTime === null ||
+           (new Date()) - window.VOICE_WORKER_DATA.lastPlayTime > 300)) {
+        let workers = window.VOICE_WORKER_DATA.workers;
+        let target_worker =
+            workers.reduce((
+                               a,
+                               b,
+                               ) => (a.queue.length > b.queue.length ? b : a));
+	console.log(target_worker.i)
+        target_worker.worker.postMessage({
+          type : "runInference",
+          data : text,
+          relation : window.VOICE_WORKER_DATA.currentRelation,
+        });
+        target_worker.queue.push({
+          relation : window.VOICE_WORKER_DATA.currentRelation,
+          timestamp : new Date(),
+        });
+        window.VOICE_WORKER_DATA.currentRelation += 1;
+        window.VOICE_WORKER_DATA.lastPlayTime = new Date();
+      } else {
+        console.log("doSpeech: skip reading")
+      }
     } else {
       console.error("doSpeech (WASM mode) error: workers not yet initialized");
     }
@@ -230,9 +238,8 @@ export async function doSpeech(text, lang) {
       const candidates = speechCandidates;
       const voices = window.speechSynthesis.getVoices();
 
-      const matchedVoice = voices.find((v) =>
-        candidates.some((c) => v.name.includes(c))
-      );
+      const matchedVoice =
+          voices.find((v) => candidates.some((c) => v.name.includes(c)));
       if (matchedVoice) {
         window.VOICE_CACHE = matchedVoice;
       }
@@ -250,11 +257,22 @@ export async function doSpeech(text, lang) {
 /**
  * Prepare Speech Synthesis. Do nothing except in wasm mode.
  *
- * @param {string} lang - The speech language. Should not be changed during the app run.
+ * @param {string} lang - The speech language. Should not be changed during the
+ *     app run.
  */
 export async function prepareSpeech(lang) {
   const search = new URLSearchParams(window.location.search);
   const useWasm = search.has("tts") && search.get("tts") === "wasm";
+  let volume = 1.0;
+
+  switch (lang) {
+  case "en":
+    volume = 0.5;
+    break;
+  case "ja":
+    volume = 0.85;
+    break;
+  }
 
   if (useWasm) {
     if (window.VOICE_WORKER_DATA === undefined) {
@@ -263,13 +281,14 @@ export async function prepareSpeech(lang) {
       let workers = [];
       for (let i = 0; i < cores; i++) {
         let worker = new Worker("voice-worker-" + lang + ".js", {
-          type: "module",
+          type : "module",
         });
 
         let worker_obj = {
           worker,
-          queue: [],
-          is_init_completed: false,
+          queue : [],
+          is_init_completed : false,
+	  i
         };
 
         workers.push(worker_obj);
@@ -278,9 +297,9 @@ export async function prepareSpeech(lang) {
           if (e.data.type === "init_ort") {
             worker_obj.is_init_completed = true;
           } else if (e.data.type === "runInference_result") {
-            playArray(e.data.data, 22050);
+            playArray(e.data.data, 22050, volume);
             worker_obj.queue = worker_obj.queue.filter(
-              (x) => (x.relation !== e.data.relation),
+                (x) => (x.relation !== e.data.relation),
             );
           }
         });
@@ -288,6 +307,7 @@ export async function prepareSpeech(lang) {
 
       window.VOICE_WORKER_DATA["workers"] = workers;
       window.VOICE_WORKER_DATA["currentRelation"] = 0;
+      window.VOICE_WORKER_DATA["lastPlayTime"] = null;
     }
   }
 }
@@ -297,8 +317,9 @@ export async function prepareSpeech(lang) {
  *
  * @param {Float32Array} myArray - Float32Array of the sound.
  * @param {number} rate - The frequency of the sound in Hz.
+ * @param {number} volume - The volume of the sound.
  */
-function playArray(myArray, rate) {
+function playArray(myArray, rate, volume) {
   const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
   const frameCount = myArray.length;
 
@@ -306,7 +327,7 @@ function playArray(myArray, rate) {
 
   const nowBuffering = audioBuffer.getChannelData(0);
   for (let i = 0; i < frameCount; i++) {
-    nowBuffering[i] = myArray[i];
+    nowBuffering[i] = myArray[i] * volume;
   }
 
   const source = audioCtx.createBufferSource();

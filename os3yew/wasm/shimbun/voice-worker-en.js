@@ -227,7 +227,6 @@ espeak().then((emscripten_functions) => {
       "scales": scalesTensor,
       "sid": sidTensor,
     };
-    console.log(feeds);
     let result = WORKER_DATA.inference_session.run(
       feeds,
     );
