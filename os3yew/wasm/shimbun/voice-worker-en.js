@@ -185,9 +185,8 @@ espeak().then((emscripten_functions) => {
       } else {
         segment = phonemes_str + terminator_str;
       }
-      ret += Array.from(segment).join("_")
+      ret += Array.from(segment.normalize("NFD")).join("_") + "_"
     }
-    ret = ret.normalize("NFD");
     console.log(ret);
     return "^_" + ret + "$";
   }
