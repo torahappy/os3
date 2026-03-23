@@ -1,3 +1,15 @@
+#!/bin/bash
+
+set -e
+
+if [ "$BUILD_WASM" == "" ]; then
+  BUILD_WASM=1
+fi
+
+if [ "$BUILD_NATIVE" == "" ]; then
+  BUILD_NATIVE=1
+fi
+
 set -euo pipefail
 
 case "$OSTYPE" in
@@ -14,7 +26,7 @@ cd "$SCRIPT_DIR"
 emsdk install 4.0.10
 emsdk activate 4.0.10
 
-if [ ! -d ../external-apps/tesseract ]; then
+if [ ! -d ../external-apps/tesseract ] && [ $BUILD_NATIVE -eq 1 ]; then
 
 pushd ./tesseract-$TESSERACT_VERSION
 
@@ -34,7 +46,7 @@ popd
 
 fi
 
-if [ ! -d ../external-apps/zlibng-wasm ]; then
+if [ ! -d ../external-apps/zlibng-wasm ] && [ $BUILD_WASM -eq 1 ]; then
 
 pushd zlibng-$ZLIBNG_VERSION
   git clean -dfx
@@ -53,7 +65,7 @@ popd
 fi
 
 
-if [ ! -d ../external-apps/png-wasm ]; then
+if [ ! -d ../external-apps/png-wasm ] && [ $BUILD_WASM -eq 1 ]; then
 
 pushd png-$PNG_VERSION
   git clean -dfx
@@ -71,7 +83,7 @@ popd
 
 fi
 
-if [ ! -d ../external-apps/jpeg-wasm ]; then
+if [ ! -d ../external-apps/jpeg-wasm ] && [ $BUILD_WASM -eq 1 ]; then
 
 pushd jpeg-$JPEG_VERSION
   git clean -dfx
@@ -85,7 +97,7 @@ popd
 fi
 
 
-if [ ! -d ../external-apps/leptonica-wasm ]; then
+if [ ! -d ../external-apps/leptonica-wasm ] && [ $BUILD_WASM -eq 1 ]; then
 # missing libs: tiff, gif, webp, openjpeg
 pushd leptonica-$LEPTONICA_VERSION
   git clean -dfx
@@ -103,7 +115,7 @@ popd
 
 fi
 
-if [ ! -d ../external-apps/tesseract-wasm ]; then
+if [ ! -d ../external-apps/tesseract-wasm ] && [ $BUILD_WASM -eq 1 ]; then
 
 pushd tesseract-$TESSERACT_VERSION
 
@@ -134,7 +146,7 @@ popd
 
 fi
 
-if [ ! -d ../external-apps/harfbuzz-wasm ]; then
+if [ ! -d ../external-apps/harfbuzz-wasm ] && [ $BUILD_WASM -eq 1 ]; then
 
 pushd harfbuzz-$HARFBUZZ_VERSION
   git clean -dfx
@@ -155,6 +167,8 @@ popd
 fi
 
 if [ ! -f ../external-apps/tesseract/share/tessdata/eng.traineddata ]; then
+
+  mkdir -p ../external-apps/tesseract/share/tessdata/ || true
 
   cp ./eng.traineddata ../external-apps/tesseract/share/tessdata/
 

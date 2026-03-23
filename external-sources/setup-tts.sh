@@ -1,3 +1,15 @@
+#!/bin/bash
+
+set -e
+
+if [ "$BUILD_WASM" == "" ]; then
+  BUILD_WASM=1
+fi
+
+if [ "$BUILD_NATIVE" == "" ]; then
+  BUILD_NATIVE=1
+fi
+
 set -euo pipefail
 
 case "$OSTYPE" in
@@ -11,13 +23,16 @@ cd "$SCRIPT_DIR"
 
 . sources
 
-if [ ! -d ../external-apps/open_jtalk ]; then
+if [ ! -d ../external-apps/open_jtalk ] && [ $BUILD_NATIVE -eq 1 ]; then
   pushd ./hts_engine_api-$HTS_ENGINE_API_VERSION
   git clean -dfx
+
+  autoreconf
 
   ./configure --prefix="$SCRIPT_DIR/../external-apps/open_jtalk"
   make -j$NPR
   make install
+  git restore .
   popd
 
   pushd ./open_jtalk-$OPEN_JTALK_VERSION/src
@@ -35,10 +50,12 @@ fi
 emsdk install 5.0.3
 emsdk activate 5.0.3
 
-if [ ! -d ../external-apps/open_jtalk-wasm ]; then
+if [ ! -d ../external-apps/open_jtalk-wasm ] && [ $BUILD_WASM -eq 1 ]; then
   pushd ./hts_engine_api-$HTS_ENGINE_API_VERSION
   patch -Np1 < ../patches/hts_engine_wasm.patch || true
   git clean -dfx
+
+  autoreconf
 
   emconfigure ./configure --prefix="$SCRIPT_DIR/../external-apps/open_jtalk-wasm"
   make -j$NPR
@@ -61,7 +78,7 @@ if [ ! -d ../external-apps/open_jtalk-wasm ]; then
 fi
 
 
-if [ ! -d ../external-apps/espeak_ng-data ]; then
+if [ ! -d ../external-apps/espeak_ng-data ] && [ $BUILD_WASM -eq 1 ]; then
   pushd ./espeak_ng-$ESPEAK_NG_VERSION
 
   git clean -dfx
@@ -89,7 +106,7 @@ if [ ! -d ../external-apps/espeak_ng-data ]; then
 fi
 
 
-if [ ! -d ../external-apps/espeak_ng-wasm ]; then
+if [ ! -d ../external-apps/espeak_ng-wasm ] && [ $BUILD_WASM -eq 1 ]; then
   pushd ./espeak_ng-$ESPEAK_NG_VERSION
 
   git clean -dfx
