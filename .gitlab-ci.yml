@@ -8,6 +8,7 @@ default:
     key: ${CI_COMMIT_REF_SLUG}
     paths:
       - .cargo/
+      - .emsdk/
       - os3bevy/target/
 
 build:
@@ -17,10 +18,15 @@ build:
   rules:
     # This ensures that only pushes to the default branch will trigger
     # a pages deploy
-    - if: $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
+    - if: $CI_COMMIT_REF_NAME == "tenji2603-rebase"
   # Functions that should be executed before the build script is run
   before_script: []
   script:
+    - apt update
+    - apt install -y cmake make autoconf automake g++ gcc m4 dc
+    - if [ ! -d .emsdk ]; then git clone https://github.com/emscripten-core/emsdk .emsdk; fi
+    - cd .emsdk && git pull && ./emsdk install 5.0.3 && ./emsdk activate 5.0.3 && cd ..
+    - . .emsdk/emsdk_env.sh;  BUILD_NATIVE=0 ./external-sources/setup-tts.sh
     - mkdir public
     - cp -r ocr_web public/ocr_web
     - curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
@@ -35,11 +41,21 @@ build:
     - cp -r ./os3bevy/assets public/rireki_web
     - . "${CI_PROJECT_DIR}/.cargo/env"; ./build_scripts/wasm-once.sh os3yew shimbun
     - mkdir public/shimbun_web
+    - ./os3yew/install-wasm-binaries.sh
     - sed -i.bak s/PUT_COMMIT_ID_HERE/"${CI_COMMIT_SHA}"/ ./os3yew/wasm/shimbun/index.html
+    - cd ./os3yew/wasm/shimbun; yarn; cd ../../../
     - cp ./os3yew/wasm/shimbun/shimbun_bg.wasm public/shimbun_web
+    - cp ./os3yew/wasm/shimbun/espeak-ng-slim.wasm public/shimbun_web
+    - cp ./os3yew/wasm/shimbun/openjtalk-slim.wasm public/shimbun_web
     - cp ./os3yew/wasm/shimbun/*.html public/shimbun_web
-    - cp ./os3yew/wasm/shimbun/shimbun.js public/shimbun_web
+    - cp ./os3yew/wasm/shimbun/*.json public/shimbun_web
+    - cp ./os3yew/wasm/shimbun/*.onnx public/shimbun_web
+    - cp ./os3yew/wasm/shimbun/*.lock public/shimbun_web
+    - cp ./os3yew/wasm/shimbun/*.js public/shimbun_web
     - cp -r ./os3yew/wasm/shimbun/snippets public/shimbun_web
     - cp -r ./os3yew/assets public/shimbun_web
+    - mkdir -p ./public/shimbun_web/node_modules/onnxruntime-web/dist
+    - cp ./os3yew/wasm/shimbun/node_modules/onnxruntime-web/dist/*.jsep.* ./public/shimbun_web/node_modules/onnxruntime-web/dist
+    - cp ./os3yew/wasm/shimbun/node_modules/onnxruntime-web/dist/ort.min.mjs ./public/shimbun_web/node_modules/onnxruntime-web/dist
   artifacts:
     expire_in: 1 hour
