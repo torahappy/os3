@@ -43,7 +43,7 @@ build:
     - mkdir public/shimbun_web
     - ./os3yew/install-wasm-binaries.sh
     - sed -i.bak s/PUT_COMMIT_ID_HERE/"${CI_COMMIT_SHA}"/ ./os3yew/wasm/shimbun/index.html
-    - cd ./os3yew/wasm/shimbun; yarn; cd ../../../
+    - cd ./os3yew/wasm/shimbun; NODE_ENV=production yarn; cd ../../../
     - cp ./os3yew/wasm/shimbun/shimbun_bg.wasm public/shimbun_web
     - cp ./os3yew/wasm/shimbun/espeak-ng-slim.wasm public/shimbun_web
     - cp ./os3yew/wasm/shimbun/openjtalk-slim.wasm public/shimbun_web
