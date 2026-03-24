@@ -1,6 +1,6 @@
 wasm/*/*
 !wasm/*/*.html
-!wasm/shimbun/voice-worker-*
+!wasm/shimbun/*.js
 !wasm/*/package.json
 !wasm/*/yarn.lock
 dist/
