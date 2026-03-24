@@ -1,6 +1,6 @@
 use gloo_timers::callback::Timeout;
-use web_sys::HtmlAudioElement;
-use yew::{prelude::*, Html};
+use web_sys::{HtmlAudioElement, console};
+use yew::{Html, prelude::*};
 
 #[derive(PartialEq, Properties)]
 pub struct RenderWatchProps {
@@ -119,7 +119,10 @@ pub fn AudioPlayer(props: &AudioPlayerProps) -> Html {
                         .expect("audio element not found");
 
                     audio_element.set_src(&src.as_ref().unwrap());
-                    audio_element.set_current_time(0.0);
+                    if audio_element.ended() {
+                        audio_element.set_current_time(0.0);
+                        console::log_1(&"Play ended; Back to 0.0".into());
+                    };
 
                     match audio_element.play() {
                         Ok(_) => {}
