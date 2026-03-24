@@ -26,7 +26,12 @@ pre.scroll { overflow: scroll; white-space: pre; }
 id="使用ソフトウェアのリスト-list-of-softwares-used">使用ソフトウェアのリスト
 / List of Softwares Used in this Work</h2>
 <pre class="scroll"><code id="code-deps">
-os3svg v0.1.0 (/home/ta/externals/os3/os3yew) | URL:  | Licensed Under 
+├── ahash v0.8.12 | URL: https://github.com/tkaitchuck/ahash | Licensed Under MIT OR Apache-2.0
+│   ├── cfg-if v1.0.4 | URL: https://github.com/rust-lang/cfg-if | Licensed Under MIT OR Apache-2.0
+│   ├── once_cell v1.21.3 | URL: https://github.com/matklad/once_cell | Licensed Under MIT OR Apache-2.0
+│   └── zerocopy v0.8.40 | URL: https://github.com/google/zerocopy | Licensed Under BSD-2-Clause OR Apache-2.0 OR MIT
+│   [build-dependencies]
+│   └── version_check v0.9.5 | URL: https://github.com/SergioBenitez/version_check | Licensed Under MIT/Apache-2.0
 ├── askama v0.15.4 | URL: https://github.com/askama-rs/askama | Licensed Under MIT OR Apache-2.0
 │   ├── askama_macros v0.15.4 (proc-macro) | URL: https://github.com/askama-rs/askama | Licensed Under MIT OR Apache-2.0
 │   │   └── askama_derive v0.15.4 | URL: https://github.com/askama-rs/askama | Licensed Under MIT OR Apache-2.0
@@ -203,7 +208,12 @@ os3svg v0.1.0 (/home/ta/externals/os3/os3yew) | URL:  | Licensed Under
 │   ├── cfg-if v1.0.4 | URL: https://github.com/rust-lang/cfg-if | Licensed Under MIT OR Apache-2.0
 │   ├── rand_core v0.10.0 | URL: https://github.com/rust-random/rand_core | Licensed Under MIT OR Apache-2.0
 │   └── wasm-bindgen v0.2.108 | URL: https://github.com/wasm-bindgen/wasm-bindgen | Licensed Under MIT OR Apache-2.0 (*)
+├── gloo-timers v0.3.0 | URL: https://github.com/rustwasm/gloo/tree/master/crates/timers | Licensed Under MIT OR Apache-2.0
+│   ├── js-sys v0.3.85 | URL: https://github.com/wasm-bindgen/wasm-bindgen/tree/master/crates/js-sys | Licensed Under MIT OR Apache-2.0 (*)
+│   └── wasm-bindgen v0.2.108 | URL: https://github.com/wasm-bindgen/wasm-bindgen | Licensed Under MIT OR Apache-2.0 (*)
 ├── log v0.4.29 | URL: https://github.com/rust-lang/log | Licensed Under MIT OR Apache-2.0
+├── ordered-float v5.1.0 | URL: https://github.com/reem/rust-ordered-float | Licensed Under MIT
+│   └── num-traits v0.2.19 | URL: https://github.com/rust-num/num-traits | Licensed Under MIT OR Apache-2.0 (*)
 ├── rand v0.10.0 | URL: https://github.com/rust-random/rand | Licensed Under MIT OR Apache-2.0
 │   ├── chacha20 v0.10.0 | URL: https://github.com/RustCrypto/stream-ciphers | Licensed Under MIT OR Apache-2.0
 │   │   ├── cfg-if v1.0.4 | URL: https://github.com/rust-lang/cfg-if | Licensed Under MIT OR Apache-2.0
@@ -251,52 +261,48 @@ os3svg v0.1.0 (/home/ta/externals/os3/os3yew) | URL:  | Licensed Under
 │   │   │           └── typenum v1.19.0 | URL: https://github.com/paholg/typenum | Licensed Under MIT OR Apache-2.0
 │   │   └── walkdir v2.5.0 | URL: https://github.com/BurntSushi/walkdir | Licensed Under Unlicense/MIT (*)
 │   └── walkdir v2.5.0 | URL: https://github.com/BurntSushi/walkdir | Licensed Under Unlicense/MIT (*)
-├── rustybuzz v0.20.1 | URL: https://github.com/harfbuzz/rustybuzz | Licensed Under MIT
-│   ├── bitflags v2.10.0 | URL: https://github.com/bitflags/bitflags | Licensed Under MIT OR Apache-2.0
-│   ├── bytemuck v1.25.0 | URL: https://github.com/Lokathor/bytemuck | Licensed Under Zlib OR Apache-2.0 OR MIT
-│   ├── core_maths v0.1.1 | URL: https://github.com/robertbastian/core_maths | Licensed Under MIT
-│   │   └── libm v0.2.16 | URL: https://github.com/rust-lang/compiler-builtins | Licensed Under MIT
-│   ├── log v0.4.29 | URL: https://github.com/rust-lang/log | Licensed Under MIT OR Apache-2.0
-│   ├── smallvec v1.15.1 | URL: https://github.com/servo/rust-smallvec | Licensed Under MIT OR Apache-2.0
-│   ├── ttf-parser v0.25.1 | URL: https://github.com/harfbuzz/ttf-parser | Licensed Under MIT OR Apache-2.0
-│   │   └── core_maths v0.1.1 | URL: https://github.com/robertbastian/core_maths | Licensed Under MIT (*)
-│   ├── unicode-bidi-mirroring v0.4.0 | URL: https://github.com/RazrFalcon/unicode-bidi-mirroring | Licensed Under MIT/Apache-2.0
-│   ├── unicode-ccc v0.4.0 | URL: https://github.com/RazrFalcon/unicode-ccc | Licensed Under MIT/Apache-2.0
-│   ├── unicode-properties v0.1.4 | URL: https://github.com/unicode-rs/unicode-properties | Licensed Under MIT/Apache-2.0
-│   └── unicode-script v0.5.8 | URL: https://github.com/unicode-rs/unicode-script | Licensed Under MIT OR Apache-2.0
+├── serde v1.0.228 | URL: https://github.com/serde-rs/serde | Licensed Under MIT OR Apache-2.0 (*)
 ├── serde_json v1.0.149 | URL: https://github.com/serde-rs/json | Licensed Under MIT OR Apache-2.0 (*)
+├── wasm-bindgen v0.2.108 | URL: https://github.com/wasm-bindgen/wasm-bindgen | Licensed Under MIT OR Apache-2.0 (*)
+├── wasm-bindgen-futures v0.4.58 | URL: https://github.com/wasm-bindgen/wasm-bindgen/tree/master/crates/futures | Licensed Under MIT OR Apache-2.0
+│   ├── cfg-if v1.0.4 | URL: https://github.com/rust-lang/cfg-if | Licensed Under MIT OR Apache-2.0
+│   ├── futures-util v0.3.31 | URL: https://github.com/rust-lang/futures-rs | Licensed Under MIT OR Apache-2.0
+│   │   ├── futures-channel v0.3.31 | URL: https://github.com/rust-lang/futures-rs | Licensed Under MIT OR Apache-2.0
+│   │   │   ├── futures-core v0.3.31 | URL: https://github.com/rust-lang/futures-rs | Licensed Under MIT OR Apache-2.0
+│   │   │   └── futures-sink v0.3.31 | URL: https://github.com/rust-lang/futures-rs | Licensed Under MIT OR Apache-2.0
+│   │   ├── futures-core v0.3.31 | URL: https://github.com/rust-lang/futures-rs | Licensed Under MIT OR Apache-2.0
+│   │   ├── futures-io v0.3.31 | URL: https://github.com/rust-lang/futures-rs | Licensed Under MIT OR Apache-2.0
+│   │   ├── futures-macro v0.3.31 (proc-macro) | URL: https://github.com/rust-lang/futures-rs | Licensed Under MIT OR Apache-2.0
+│   │   │   ├── proc-macro2 v1.0.106 | URL: https://github.com/dtolnay/proc-macro2 | Licensed Under MIT OR Apache-2.0 (*)
+│   │   │   ├── quote v1.0.44 | URL: https://github.com/dtolnay/quote | Licensed Under MIT OR Apache-2.0 (*)
+│   │   │   └── syn v2.0.114 | URL: https://github.com/dtolnay/syn | Licensed Under MIT OR Apache-2.0 (*)
+│   │   ├── futures-sink v0.3.31 | URL: https://github.com/rust-lang/futures-rs | Licensed Under MIT OR Apache-2.0
+│   │   ├── futures-task v0.3.31 | URL: https://github.com/rust-lang/futures-rs | Licensed Under MIT OR Apache-2.0
+│   │   ├── memchr v2.7.6 | URL: https://github.com/BurntSushi/memchr | Licensed Under Unlicense OR MIT
+│   │   ├── pin-project-lite v0.2.16 | URL: https://github.com/taiki-e/pin-project-lite | Licensed Under Apache-2.0 OR MIT
+│   │   ├── pin-utils v0.1.0 | URL: https://github.com/rust-lang-nursery/pin-utils | Licensed Under MIT OR Apache-2.0
+│   │   └── slab v0.4.12 | URL: https://github.com/tokio-rs/slab | Licensed Under MIT
+│   ├── js-sys v0.3.85 | URL: https://github.com/wasm-bindgen/wasm-bindgen/tree/master/crates/js-sys | Licensed Under MIT OR Apache-2.0 (*)
+│   ├── once_cell v1.21.3 | URL: https://github.com/matklad/once_cell | Licensed Under MIT OR Apache-2.0
+│   └── wasm-bindgen v0.2.108 | URL: https://github.com/wasm-bindgen/wasm-bindgen | Licensed Under MIT OR Apache-2.0 (*)
 ├── wasm-logger v0.2.0 | URL: https://gitlab.com/limira-rs/wasm-logger | Licensed Under MIT/Apache-2.0
 │   ├── log v0.4.29 | URL: https://github.com/rust-lang/log | Licensed Under MIT OR Apache-2.0
 │   ├── wasm-bindgen v0.2.108 | URL: https://github.com/wasm-bindgen/wasm-bindgen | Licensed Under MIT OR Apache-2.0 (*)
 │   └── web-sys v0.3.85 | URL: https://github.com/wasm-bindgen/wasm-bindgen/tree/master/crates/web-sys | Licensed Under MIT OR Apache-2.0
 │       ├── js-sys v0.3.85 | URL: https://github.com/wasm-bindgen/wasm-bindgen/tree/master/crates/js-sys | Licensed Under MIT OR Apache-2.0 (*)
 │       └── wasm-bindgen v0.2.108 | URL: https://github.com/wasm-bindgen/wasm-bindgen | Licensed Under MIT OR Apache-2.0 (*)
+├── web-sys v0.3.85 | URL: https://github.com/wasm-bindgen/wasm-bindgen/tree/master/crates/web-sys | Licensed Under MIT OR Apache-2.0 (*)
 └── yew v0.22.0 | URL: https://github.com/yewstack/yew | Licensed Under MIT OR Apache-2.0
     ├── console_error_panic_hook v0.1.7 | URL: https://github.com/rustwasm/console_error_panic_hook | Licensed Under Apache-2.0/MIT
     │   ├── cfg-if v1.0.4 | URL: https://github.com/rust-lang/cfg-if | Licensed Under MIT OR Apache-2.0
     │   └── wasm-bindgen v0.2.108 | URL: https://github.com/wasm-bindgen/wasm-bindgen | Licensed Under MIT OR Apache-2.0 (*)
     ├── futures v0.3.31 | URL: https://github.com/rust-lang/futures-rs | Licensed Under MIT OR Apache-2.0
-    │   ├── futures-channel v0.3.31 | URL: https://github.com/rust-lang/futures-rs | Licensed Under MIT OR Apache-2.0
-    │   │   ├── futures-core v0.3.31 | URL: https://github.com/rust-lang/futures-rs | Licensed Under MIT OR Apache-2.0
-    │   │   └── futures-sink v0.3.31 | URL: https://github.com/rust-lang/futures-rs | Licensed Under MIT OR Apache-2.0
+    │   ├── futures-channel v0.3.31 | URL: https://github.com/rust-lang/futures-rs | Licensed Under MIT OR Apache-2.0 (*)
     │   ├── futures-core v0.3.31 | URL: https://github.com/rust-lang/futures-rs | Licensed Under MIT OR Apache-2.0
     │   ├── futures-io v0.3.31 | URL: https://github.com/rust-lang/futures-rs | Licensed Under MIT OR Apache-2.0
     │   ├── futures-sink v0.3.31 | URL: https://github.com/rust-lang/futures-rs | Licensed Under MIT OR Apache-2.0
     │   ├── futures-task v0.3.31 | URL: https://github.com/rust-lang/futures-rs | Licensed Under MIT OR Apache-2.0
-    │   └── futures-util v0.3.31 | URL: https://github.com/rust-lang/futures-rs | Licensed Under MIT OR Apache-2.0
-    │       ├── futures-channel v0.3.31 | URL: https://github.com/rust-lang/futures-rs | Licensed Under MIT OR Apache-2.0 (*)
-    │       ├── futures-core v0.3.31 | URL: https://github.com/rust-lang/futures-rs | Licensed Under MIT OR Apache-2.0
-    │       ├── futures-io v0.3.31 | URL: https://github.com/rust-lang/futures-rs | Licensed Under MIT OR Apache-2.0
-    │       ├── futures-macro v0.3.31 (proc-macro) | URL: https://github.com/rust-lang/futures-rs | Licensed Under MIT OR Apache-2.0
-    │       │   ├── proc-macro2 v1.0.106 | URL: https://github.com/dtolnay/proc-macro2 | Licensed Under MIT OR Apache-2.0 (*)
-    │       │   ├── quote v1.0.44 | URL: https://github.com/dtolnay/quote | Licensed Under MIT OR Apache-2.0 (*)
-    │       │   └── syn v2.0.114 | URL: https://github.com/dtolnay/syn | Licensed Under MIT OR Apache-2.0 (*)
-    │       ├── futures-sink v0.3.31 | URL: https://github.com/rust-lang/futures-rs | Licensed Under MIT OR Apache-2.0
-    │       ├── futures-task v0.3.31 | URL: https://github.com/rust-lang/futures-rs | Licensed Under MIT OR Apache-2.0
-    │       ├── memchr v2.7.6 | URL: https://github.com/BurntSushi/memchr | Licensed Under Unlicense OR MIT
-    │       ├── pin-project-lite v0.2.16 | URL: https://github.com/taiki-e/pin-project-lite | Licensed Under Apache-2.0 OR MIT
-    │       ├── pin-utils v0.1.0 | URL: https://github.com/rust-lang-nursery/pin-utils | Licensed Under MIT OR Apache-2.0
-    │       └── slab v0.4.12 | URL: https://github.com/tokio-rs/slab | Licensed Under MIT
+    │   └── futures-util v0.3.31 | URL: https://github.com/rust-lang/futures-rs | Licensed Under MIT OR Apache-2.0 (*)
     ├── gloo v0.11.0 | URL: https://github.com/rustwasm/gloo | Licensed Under MIT OR Apache-2.0
     │   ├── gloo-console v0.3.0 | URL: https://github.com/rustwasm/gloo/tree/master/crates/console | Licensed Under MIT OR Apache-2.0
     │   │   ├── gloo-utils v0.2.0 | URL: https://github.com/rustwasm/gloo/tree/master/crates/utils | Licensed Under MIT OR Apache-2.0
@@ -364,12 +370,7 @@ os3svg v0.1.0 (/home/ta/externals/os3/os3yew) | URL:  | Licensed Under
     │   │   ├── serde_json v1.0.149 | URL: https://github.com/serde-rs/json | Licensed Under MIT OR Apache-2.0 (*)
     │   │   ├── thiserror v1.0.69 | URL: https://github.com/dtolnay/thiserror | Licensed Under MIT OR Apache-2.0 (*)
     │   │   ├── wasm-bindgen v0.2.108 | URL: https://github.com/wasm-bindgen/wasm-bindgen | Licensed Under MIT OR Apache-2.0 (*)
-    │   │   ├── wasm-bindgen-futures v0.4.58 | URL: https://github.com/wasm-bindgen/wasm-bindgen/tree/master/crates/futures | Licensed Under MIT OR Apache-2.0
-    │   │   │   ├── cfg-if v1.0.4 | URL: https://github.com/rust-lang/cfg-if | Licensed Under MIT OR Apache-2.0
-    │   │   │   ├── futures-util v0.3.31 | URL: https://github.com/rust-lang/futures-rs | Licensed Under MIT OR Apache-2.0 (*)
-    │   │   │   ├── js-sys v0.3.85 | URL: https://github.com/wasm-bindgen/wasm-bindgen/tree/master/crates/js-sys | Licensed Under MIT OR Apache-2.0 (*)
-    │   │   │   ├── once_cell v1.21.3 | URL: https://github.com/matklad/once_cell | Licensed Under MIT OR Apache-2.0
-    │   │   │   └── wasm-bindgen v0.2.108 | URL: https://github.com/wasm-bindgen/wasm-bindgen | Licensed Under MIT OR Apache-2.0 (*)
+    │   │   ├── wasm-bindgen-futures v0.4.58 | URL: https://github.com/wasm-bindgen/wasm-bindgen/tree/master/crates/futures | Licensed Under MIT OR Apache-2.0 (*)
     │   │   └── web-sys v0.3.85 | URL: https://github.com/wasm-bindgen/wasm-bindgen/tree/master/crates/web-sys | Licensed Under MIT OR Apache-2.0 (*)
     │   ├── gloo-render v0.2.0 | URL: https://github.com/rustwasm/gloo/tree/master/crates/storage | Licensed Under MIT OR Apache-2.0
     │   │   ├── wasm-bindgen v0.2.108 | URL: https://github.com/wasm-bindgen/wasm-bindgen | Licensed Under MIT OR Apache-2.0 (*)
@@ -382,9 +383,7 @@ os3svg v0.1.0 (/home/ta/externals/os3/os3yew) | URL:  | Licensed Under
     │   │   ├── thiserror v1.0.69 | URL: https://github.com/dtolnay/thiserror | Licensed Under MIT OR Apache-2.0 (*)
     │   │   ├── wasm-bindgen v0.2.108 | URL: https://github.com/wasm-bindgen/wasm-bindgen | Licensed Under MIT OR Apache-2.0 (*)
     │   │   └── web-sys v0.3.85 | URL: https://github.com/wasm-bindgen/wasm-bindgen/tree/master/crates/web-sys | Licensed Under MIT OR Apache-2.0 (*)
-    │   ├── gloo-timers v0.3.0 | URL: https://github.com/rustwasm/gloo/tree/master/crates/timers | Licensed Under MIT OR Apache-2.0
-    │   │   ├── js-sys v0.3.85 | URL: https://github.com/wasm-bindgen/wasm-bindgen/tree/master/crates/js-sys | Licensed Under MIT OR Apache-2.0 (*)
-    │   │   └── wasm-bindgen v0.2.108 | URL: https://github.com/wasm-bindgen/wasm-bindgen | Licensed Under MIT OR Apache-2.0 (*)
+    │   ├── gloo-timers v0.3.0 | URL: https://github.com/rustwasm/gloo/tree/master/crates/timers | Licensed Under MIT OR Apache-2.0 (*)
     │   ├── gloo-utils v0.2.0 | URL: https://github.com/rustwasm/gloo/tree/master/crates/utils | Licensed Under MIT OR Apache-2.0 (*)
     │   └── gloo-worker v0.5.0 | URL: https://github.com/rustwasm/gloo/tree/master/crates/worker | Licensed Under MIT OR Apache-2.0
     │       ├── bincode v1.3.3 | URL: https://github.com/servo/bincode | Licensed Under MIT (*)
@@ -464,9 +463,9 @@ os3svg v0.1.0 (/home/ta/externals/os3/os3yew) | URL:  | Licensed Under
  </code></pre>
 
  <h3>Piper libritts_r pre-trained model</h3>
- <p>URL: <a aref="https://huggingface.co/rhasspy/piper-voices/tree/main/en/en_US/libritts_r/medium">here</a></p>
- <p>Trained on OpenSLR Dataset SLR141</p>
- <p>URL: <a aref="http://www.openslr.org/141/">here</a></p>
+ <p>URL: <a href="https://huggingface.co/rhasspy/piper-voices/tree/main/en/en_US/libritts_r/medium">here</a></p>
+ <p>Trained on OpenSLR Dataset SLR141 (URL: <a href="http://www.openslr.org/141/">here</a>)</p>
+ <p>Paper citations:</p>
  <pre>
 [1] Yuma Koizumi, Heiga Zen, Shigeki Karita, Yifan Ding, Kohei Yatabe, Nobuyuki Morioka, Michiel Bacchiani, Yu Zhang, Wei Han, and Ankur Bapna, "LibriTTS-R: A Restored Multi-Speaker Text-to-Speech Corpus," arXiv, 2023.
 [2] Yuma Koizumi, Heiga Zen, Shigeki Karita, Yifan Ding, Kohei Yatabe, Nobuyuki Morioka, Yu Zhang, Wei Han, Ankur Bapna, and Michiel Bacchiani, "Miipher: A Robust Speech Restoration Model Integrating Self-Supervised Speech and Text Representations," arXiv, 2023. 
@@ -714,7 +713,13 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
  <h3>Piper</h3>
  <p><a href="https://github.com/OHF-Voice/piper1-gpl">The Source Code can be obtained here</a></p>
- <pre>
+ <p>Licensed under GPL v3</p>
+
+<h2
+id="各ライセンス文書-license-documents-for-the-softwares">各ライセンス文書
+/ License Documents for the Softwares</h2>
+<h3 id="gplv3">GPL v3</h3>
+<pre><code>
                     GNU GENERAL PUBLIC LICENSE
                        Version 3, 29 June 2007
 
@@ -1389,11 +1394,7 @@ may consider it more useful to permit linking proprietary applications with
 the library.  If this is what you want to do, use the GNU Lesser General
 Public License instead of this License.  But first, please read
 &lt;http://www.gnu.org/philosophy/why-not-lgpl.html&gt;. 
- </pre>
-
-<h2
-id="各ライセンス文書-license-documents-for-the-softwares">各ライセンス文書
-/ License Documents for the Softwares</h2>
+</code><pre>
 <h3 id="mit">MIT</h3>
 <p>URL: <a href="https://opensource.org/license/mit"
 class="uri">https://opensource.org/license/mit</a></p>
