@@ -1,7 +1,10 @@
 wasm/*/*
 !wasm/*/*.html
-!wasm/shimbun/*.js
+!wasm/shimbun/electron-main.js
+!wasm/shimbun/forge.config.js
+!wasm/shimbun/voice-worker-*.js
 !wasm/*/package.json
+!wasm/*/package-electron.json
 !wasm/*/yarn.lock
 dist/
 
