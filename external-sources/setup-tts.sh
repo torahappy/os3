@@ -52,28 +52,30 @@ emsdk activate 5.0.3
 
 if [ ! -d ../external-apps/open_jtalk-wasm ] && [ $BUILD_WASM -eq 1 ]; then
   pushd ./hts_engine_api-$HTS_ENGINE_API_VERSION
-  patch -Np1 < ../patches/hts_engine_wasm.patch || true
-  git clean -dfx
+    patch -Np1 < ../patches/hts_engine_wasm.patch || true
+    git clean -dfx
 
-  autoreconf
+    autoreconf
 
-  emconfigure ./configure --prefix="$SCRIPT_DIR/../external-apps/open_jtalk-wasm"
-  make -j$NPR
-  make install
-  cp bin/hts_engine.wasm "$SCRIPT_DIR/../external-apps/open_jtalk-wasm/bin/hts_engine.wasm"
-  git restore .
+    emconfigure ./configure --prefix="$SCRIPT_DIR/../external-apps/open_jtalk-wasm"
+    make -j$NPR
+    make install
+    cp bin/hts_engine.wasm "$SCRIPT_DIR/../external-apps/open_jtalk-wasm/bin/hts_engine.wasm"
+    git restore .
   popd
 
   pushd ./open_jtalk-$OPEN_JTALK_VERSION/src
-  git clean -dfx
+    git clean -dfx
 
-  mkdir build
-  pushd build
-  emcmake cmake -DBUILD_PROGRAMS=1 -DCMAKE_INSTALL_PREFIX="$SCRIPT_DIR/../external-apps/open_jtalk-wasm" -DHTS_ENGINE_LIB="$SCRIPT_DIR/../external-apps/open_jtalk-wasm/lib/libHTSEngine.a" -DHTS_ENGINE_INCLUDE_DIR="$SCRIPT_DIR/../external-apps/open_jtalk-wasm/include" ..
-  make -j$NPR
-  make install
-  cp bin/open_jtalk.wasm "$SCRIPT_DIR/../external-apps/open_jtalk-wasm/bin"
-  popd
+    mkdir build
+    pushd build
+      emcmake cmake -DBUILD_PROGRAMS=1 -DCMAKE_INSTALL_PREFIX="$SCRIPT_DIR/../external-apps/open_jtalk-wasm" -DHTS_ENGINE_LIB="$SCRIPT_DIR/../external-apps/open_jtalk-wasm/lib/libHTSEngine.a" -DHTS_ENGINE_INCLUDE_DIR="$SCRIPT_DIR/../external-apps/open_jtalk-wasm/include" ..
+      make -j$NPR
+      make install
+      pushd $SCRIPT_DIR/../external-apps/open_jtalk-wasm/
+        em++ "lib/libopenjtalk.a" -O3 --embed-file "$SCRIPT_DIR"/open_jtalk_dic-1.11/@/dic --embed-file "$SCRIPT_DIR"/mmdagent_voice-1.8/takumi/takumi_happy.htsvoice@/takumi_happy.htsvoice -o openjtalk-slim
+      popd
+    popd
   popd
 fi
 
