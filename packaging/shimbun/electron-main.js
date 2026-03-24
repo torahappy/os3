@@ -7,7 +7,7 @@ function createWindow () {
     fullscreen: true
   })
 
-  win.loadURL('select.html')
+  win.loadFile('data/select.html')
 }
 
 app.whenReady().then(() => {
