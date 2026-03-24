@@ -1,3 +1,5 @@
+configure~
+*.cache
 */build/
 *.o
 *.wasm

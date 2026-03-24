@@ -294,10 +294,17 @@ export async function prepareSpeech(lang) {
         workers.push(worker_obj);
 
         worker.addEventListener("message", (e) => {
-          if (e.data.type === "init_ort") {
+          if (e.data.type === "init_all_finished") {
             worker_obj.is_init_completed = true;
           } else if (e.data.type === "runInference_result") {
-            playArray(e.data.data, 22050, volume);
+	    if (e.data.dataType === "Float32Array") {
+	      playArray(e.data.data, 22050, volume);
+	    } else if (e.data.dataType === "dataurl") {
+	      const audio = document.createElement("audio")
+	      audio.src = e.data.data;
+	      audio.volume = volume;
+	      audio.play();
+	    }
             worker_obj.queue = worker_obj.queue.filter(
                 (x) => (x.relation !== e.data.relation),
             );

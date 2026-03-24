@@ -73,7 +73,27 @@ if [ ! -d ../external-apps/open_jtalk-wasm ] && [ $BUILD_WASM -eq 1 ]; then
       make -j$NPR
       make install
       pushd $SCRIPT_DIR/../external-apps/open_jtalk-wasm/
-        em++ "lib/libopenjtalk.a" -O3 --embed-file "$SCRIPT_DIR"/open_jtalk_dic-1.11/@/dic --embed-file "$SCRIPT_DIR"/mmdagent_voice-1.8/takumi/takumi_happy.htsvoice@/takumi_happy.htsvoice -o openjtalk-slim
+        EXFUNCS='["_malloc",
+"_free",
+"_fopen",
+"_fclose",
+"_Open_JTalk_initialize", 
+"_Open_JTalk_clear", 
+"_Open_JTalk_load", 
+"_Open_JTalk_set_sampling_frequency", 
+"_Open_JTalk_set_fperiod", 
+"_Open_JTalk_set_alpha", 
+"_Open_JTalk_set_beta", 
+"_Open_JTalk_set_speed", 
+"_Open_JTalk_add_half_tone", 
+"_Open_JTalk_set_msd_threshold", 
+"_Open_JTalk_set_gv_weight", 
+"_Open_JTalk_set_volume", 
+"_Open_JTalk_set_audio_buff_size", 
+"_Open_JTalk_synthesis",
+"_get_struct_metrics",
+"FS" ]'
+	emcc $SCRIPT_DIR/open_jtalk_custom_lib/open_jtalk_custom_lib.c ./lib/libopenjtalk.a ./lib/libHTSEngine.a "-I$PWD/include/openjtalk" "-I$PWD/include" -O3 -sALLOW_MEMORY_GROWTH=1 -sEXPORTED_FUNCTIONS="$EXFUNCS" -sEXPORTED_RUNTIME_METHODS=stringToUTF8,UTF8ToString,AsciiToString,intArrayFromString,intArrayToString,writeArrayToMemory,setValue,getValue,HEAP8,HEAP16,HEAP32,HEAPU8,HEAPU16,HEAPU32 -sMODULARIZE=1 -sEXPORT_ES6=1 --embed-file "$SCRIPT_DIR"/open_jtalk_dic-1.11/@/dic --embed-file "$SCRIPT_DIR"/mmdagent_voice-1.8/takumi/takumi_happy.htsvoice@/takumi_happy.htsvoice -o openjtalk-slim
       popd
     popd
   popd
