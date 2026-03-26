@@ -23,8 +23,6 @@ cd "$SCRIPT_DIR"
 
 . sources
 
-emsdk install 4.0.10
-emsdk activate 4.0.10
 
 if [ ! -d ../external-apps/tesseract ] && [ $BUILD_NATIVE -eq 1 ]; then
 
@@ -44,6 +42,11 @@ pushd ./tesseract-$TESSERACT_VERSION
 
 popd
 
+fi
+
+if [ $BUILD_WASM -eq 1 ]; then
+  emsdk install 4.0.10
+  emsdk activate 4.0.10
 fi
 
 if [ ! -d ../external-apps/zlibng-wasm ] && [ $BUILD_WASM -eq 1 ]; then

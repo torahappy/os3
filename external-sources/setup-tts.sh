@@ -47,8 +47,10 @@ if [ ! -d ../external-apps/open_jtalk ] && [ $BUILD_NATIVE -eq 1 ]; then
   popd
 fi
 
-emsdk install 5.0.3
-emsdk activate 5.0.3
+if [ $BUILD_WASM -eq 1 ]; then
+  emsdk install 5.0.3
+  emsdk activate 5.0.3
+fi
 
 if [ ! -d ../external-apps/open_jtalk-wasm ] && [ $BUILD_WASM -eq 1 ]; then
   pushd ./hts_engine_api-$HTS_ENGINE_API_VERSION
