@@ -327,7 +327,18 @@ export async function prepareSpeech(lang) {
  * @param {number} volume - The volume of the sound.
  */
 function playArray(myArray, rate, volume) {
-  const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  let audioCtx;
+  if (window.AUDIO_CONTEXT_CACHE === undefined) {
+    window.AUDIO_CONTEXT_CACHE = { ctx: [], idx: 0 };
+    for (let i = 0; i < 20; i++) {
+      window.AUDIO_CONTEXT_CACHE.ctx.push(new (window.AudioContext || window.webkitAudioContext)());
+    }
+  }
+  audioCtx = window.AUDIO_CONTEXT_CACHE.ctx[window.AUDIO_CONTEXT_CACHE.idx];
+  window.AUDIO_CONTEXT_CACHE.idx += 1
+  if (window.AUDIO_CONTEXT_CACHE.idx === window.AUDIO_CONTEXT_CACHE.ctx.length) {
+    window.AUDIO_CONTEXT_CACHE.idx = 0;
+  }
   const frameCount = myArray.length;
 
   const audioBuffer = audioCtx.createBuffer(1, frameCount, rate);
