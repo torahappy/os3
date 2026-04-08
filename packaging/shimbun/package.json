@@ -1,6 +1,6 @@
 {
   "name": "shimbun-wa-jibun",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "daydreaming newspaper simulator",
   "main": "electron-main.js",
   "devDependencies": {
