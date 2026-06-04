@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <title>Axum WS Test Client</title>
+    <style>
+        body{font-family:Arial,sans-serif;padding:20px;}
+        #log{height:200px;width:100%;border:1px solid #ccc;padding:5px;overflow:auto;}
+    </style>
+</head>
+<body>
+    <h2>Axum WebSocket Test Client</h2>
+
+    <label>Client type:
+        <select id="client-type">
+            <option value="screen" selected>Screen</option>
+            <option value="phone">Phone</option>
+        </select>
+    </label>
+    <br/><br/>
+
+    <label>Channel:
+        <input type="text" id="channel" placeholder="room1" value="room1"/>
+    </label>
+    <br/><br/>
+
+    <button id="connect">Connect</button>
+    <button id="disconnect" disabled>Disconnect</button>
+
+    <h3>Log</h3>
+    <div id="log"></div>
+
+    <script>
+        /* ---------------  Code starts here --------------- */
+
+        // ----------------------------------------------------
+        // Utility: append a line to the log pane
+        const logDiv = document.getElementById('log') || (()=>{});
+        function log(msg) {
+            const d = document.createElement('div');
+            d.textContent = msg;
+            logDiv.appendChild(d);
+        }
+
+        // ----------------------------------------------------
+        // Variables that will be defined after the user clicks “Connect”
+        let ws;
+        let keepAliveTimer;
+        let clientId;          // <-- set by the server
+        let clientType;        // from the <select>
+        let channel;           // from the <input>
+
+        // ----------------------------------------------------
+        // Send a JSON payload over the WebSocket
+        function send(json) {
+            if(ws && ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify(json));
+            }
+        }
+
+        // ----------------------------------------------------
+        // When the user clicks the “Connect” button
+        document.getElementById('connect').addEventListener('click', () => {
+            clientType = document.getElementById('client-type').value;
+            channel = document.getElementById('channel').value;
+
+            // 1️⃣  Open the socket
+            ws = new WebSocket('ws://localhost:6543/ws');
+
+            ws.addEventListener('open', () => {
+                log('>>> WebSocket opened');
+                document.getElementById('connect').disabled = true;
+                document.getElementById('disconnect').disabled = false;
+            });
+
+            // 2️⃣  Handle incoming messages
+            ws.addEventListener('message', e => {
+                try {
+                    const data = JSON.parse(e.data);
+                    log('<< Received: ' + JSON.stringify(data));
+
+                    // 3️⃣  If server sent "initialize", reply
+                    if(data.type === 'initialize') {
+                        clientId = data.client_id;
+                        send({
+                            type: 'initialize_response',
+                            channel: channel,
+                            client_type: clientType
+                        });
+                    }
+
+                    // 4️⃣  For a phone client, we may want to
+                    //      emulate user scrolling – here we just log
+                    if(clientType === 'phone' && data.type === 'scroll_y') {
+                        // Usually a phone would ignore this; we just log.
+                        log(`Phone got own scroll? ${JSON.stringify(data)}`);
+                    }
+                } catch (err) {
+                    log('!!! Error parsing: ' + e.data);
+                }
+            });
+
+            // 5️⃣  Handle connection close
+            ws.addEventListener('close', () => {
+                log('>>> WebSocket closed');
+                document.getElementById('connect').disabled = false;
+                document.getElementById('disconnect').disabled = true;
+                clearInterval(keepAliveTimer);
+            });
+
+            // 6️⃣  Handle errors
+            ws.addEventListener('error', e => log('>>> WebSocket error'));
+
+            // 7️⃣  Send keep‑alive every 1 s
+            keepAliveTimer = setInterval(() => {
+                send({ type: 'keepalive' });
+                log('>> Sent keepalive');
+            }, 1000);
+
+            // 8️⃣  If this is a phone client, send random scroll events
+            if(clientType === 'phone') {
+                // Randomly generate a scroll value every 2–5 s
+                setInterval(() => {
+                    const value = Math.random() * 1000;   // arbitrary number
+                    send({ type: 'scroll_y', value: value });
+                    log(`>> Sent scroll_y: ${value.toFixed(2)}`);
+                }, 3000);
+            }
+        });
+
+        // ----------------------------------------------------
+        // “Disconnect” button
+        document.getElementById('disconnect').addEventListener('click', () => {
+            ws.close();
+        });
+
+        /* ---------------  Code ends here --------------- */
+    </script>
+</body>
+</html>
+
