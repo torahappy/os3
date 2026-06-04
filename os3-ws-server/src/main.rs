@@ -28,6 +28,8 @@ enum Incoming {
     },
     #[serde(rename = "scroll_y")]
     ScrollY { value: f64 },
+    #[serde(rename = "list_clients")]
+    ListClients,
 }
 
 #[derive(Debug, Serialize)]
@@ -41,6 +43,9 @@ enum Outgoing {
         client_id: String,
         value: f64,
     },
+
+    #[serde(rename = "list_clients")]
+    ListClients { clients: Vec<String> },
 }
 
 /// ---------- 2️⃣  Client representation ----------
@@ -133,6 +138,16 @@ impl AppState {
             .collect()
     }
 
+    fn broadcast_to_screen(&self, out_text: &str, channel: &str) {
+                        if let Some(memo) = self.screen_clients_in_channel_memo.get(channel) {
+                            memo.iter().for_each(|screen_id| {
+                                let screen = self.clients.get(screen_id);
+                                if let Some(screen) = screen {
+                                    let _ = screen.tx.send(Message::Text(out_text.clone().into()));
+                                }
+                            })
+                        }
+    }
 
 }
 
@@ -188,6 +203,16 @@ async fn handle_socket(socket: WebSocket, state: Arc<RwLock<AppState>>) {
                 // Parse the incoming JSON
                 let parsed: Result<Incoming, _> = serde_json::from_str(&txt);
                 match parsed {
+                    Ok(Incoming::ListClients) => {
+                        if !matches!(client.client_type, ClientType::Screen) {
+                            continue;
+                        }
+                        // Broadcast to all screen clients in the same channel
+                        let guard = state.read().await;
+                        let out_msg = Outgoing::ListClients { clients: guard.clients.keys().map(|x|{x.clone()}).collect() };
+                        let out_text = serde_json::to_string(&out_msg).unwrap();
+                        guard.broadcast_to_screen(&out_text, &client.channel);
+                    }
                     Ok(Incoming::KeepAlive) => {
                         // Update heartbeat
                         let mut guard = state.write().await;
@@ -221,16 +246,9 @@ async fn handle_socket(socket: WebSocket, state: Arc<RwLock<AppState>>) {
 
                         // Broadcast to all screen clients in the same channel
                         let guard = state.read().await;
-                        if let Some(memo) = guard.screen_clients_in_channel_memo.get(&client.channel) {
-                            memo.iter().for_each(|screen_id| {
-                                let screen = guard.clients.get(screen_id);
-                                if let Some(screen) = screen {
-                                    let _ = screen.tx.send(Message::Text(out_text.clone().into()));
-                                }
-                            })
-                        }
+                        guard.broadcast_to_screen(&out_text, &client.channel);
                     }
-                    _ => {}
+                    Err(_) => todo!(),
                 }
             }
             Message::Close(_) => {
