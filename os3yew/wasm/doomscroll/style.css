@@ -1,7 +1,7 @@
 body {
   background-color: #0238f9;
 }
-.root > img {
+.root > .stack > img {
   width: 100%;
 }
 
@@ -13,15 +13,28 @@ body {
   width: 33.33333%;
 }
 
+
 html,
 body,
 .root {
   width: 100%;
+  height: 100%;
+}
+
+.stack {
+  width: 100%;
+}
+
+.root {
+  overflow: scroll;
 }
 
 @media (min-width: 768px) {
   .root {
+    display: flex;
+    justify-content: center;
+  }
+  .stack {
     width: 768px;
-    margin-left: calc(50vw - 768px / 2);
   }
 }
