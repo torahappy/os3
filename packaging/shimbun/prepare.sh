@@ -17,4 +17,4 @@ rm -rf ./data/node_modules
 mkdir -p ./data/node_modules/onnxruntime-web/dist/
 cp -r ../../os3yew/wasm/shimbun/node_modules/onnxruntime-web/dist/ort.min.mjs ./data/node_modules/onnxruntime-web/dist/
 cp -r ../../os3yew/wasm/shimbun/node_modules/onnxruntime-web/dist/*.jsep.* ./data/node_modules/onnxruntime-web/dist/
-cp -r ../../os3yew/assets data/
+cp -r ../../os3yew/assets/shimbun data/assets

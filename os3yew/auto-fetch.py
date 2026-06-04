@@ -35,7 +35,7 @@ def get_notes() -> List[Tuple[str, str, str]]:
     return [(title, body, note_id) for (title, body, deleted_time, note_id, is_conflict) in notes if deleted_time == 0 and not is_conflict]
 
 assets_dir_texts = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'templates')
-assets_dir_images = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'assets', 'images')
+assets_dir_images = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'assets', 'shimbun', 'images')
 assets_dir_metadata = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'metadata')
 
 def gen_files(notes: List[Tuple[str, str, str]], dimensions: dict[str, list[int]] | None):

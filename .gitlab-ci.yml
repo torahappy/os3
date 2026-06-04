@@ -53,7 +53,7 @@ build:
     - cp ./os3yew/wasm/shimbun/*.lock public/shimbun_web
     - cp ./os3yew/wasm/shimbun/*.js public/shimbun_web
     - cp -r ./os3yew/wasm/shimbun/snippets public/shimbun_web
-    - cp -r ./os3yew/assets public/shimbun_web
+    - cp -r ./os3yew/assets/shimbun public/shimbun_web/assets
     - mkdir -p ./public/shimbun_web/node_modules/onnxruntime-web/dist
     - cp ./os3yew/wasm/shimbun/node_modules/onnxruntime-web/dist/*.jsep.* ./public/shimbun_web/node_modules/onnxruntime-web/dist
     - cp ./os3yew/wasm/shimbun/node_modules/onnxruntime-web/dist/ort.min.mjs ./public/shimbun_web/node_modules/onnxruntime-web/dist
