@@ -1,4 +1,4 @@
-body {
+body, .root {
   background-color: #0238f9;
 }
 .root > .stack > img {
@@ -37,4 +37,10 @@ body,
   .stack {
     width: 768px;
   }
+}
+
+.root.desktop {
+  overflow: hidden;
+  display: block;
+  background-color: black;
 }
