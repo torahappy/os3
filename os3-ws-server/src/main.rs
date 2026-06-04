@@ -209,7 +209,7 @@ async fn handle_socket(socket: WebSocket, state: Arc<RwLock<AppState>>) {
                         }
                         // Broadcast to all screen clients in the same channel
                         let guard = state.read().await;
-                        let out_msg = Outgoing::ListClients { clients: guard.clients.keys().map(|x|{x.clone()}).collect() };
+                        let out_msg = Outgoing::ListClients { clients: guard.clients.iter().filter(|(_, v)| v.client_type == ClientType::Phone).map(|(x, _)|{x.clone()}).collect() };
                         let out_text = serde_json::to_string(&out_msg).unwrap();
                         guard.broadcast_to_screen(&out_text, &client.channel);
                     }

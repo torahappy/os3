@@ -3,9 +3,10 @@
 use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
 use gloo_timers::callback::Interval;
+use os3yew::components::ClockComponent;
 use rust_embed::RustEmbed;
-use wasm_bindgen::{JsCast, JsValue, prelude::Closure};
-use web_sys::{HtmlElement, MessageEvent, WebSocket, console, js_sys::Function, window};
+use wasm_bindgen::{prelude::Closure, JsCast, JsValue};
+use web_sys::{console, js_sys::Function, window, HtmlElement, MessageEvent, WebSocket};
 use yew::prelude::*;
 
 use serde::{Deserialize, Serialize};
@@ -30,6 +31,8 @@ enum Outgoing {
     },
     #[serde(rename = "scroll_y")]
     ScrollY { value: f64 },
+    #[serde(rename = "list_clients")]
+    ListClients,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -40,6 +43,8 @@ enum Incoming {
 
     #[serde(rename = "scroll_y")]
     ScrollY { client_id: String, value: f64 },
+    #[serde(rename = "list_clients")]
+    ListClients { clients: Vec<String> },
 }
 
 #[derive(RustEmbed)]
@@ -90,6 +95,7 @@ struct WsClient {
     interval: Interval,
     mode: ClientMode,
     scroll_listener: Rc<RefCell<Option<Box<dyn FnMut((String, f64)) -> ()>>>>,
+    clients: Rc<RefCell<Vec<String>>>,
 }
 
 impl WsClient {
@@ -103,6 +109,7 @@ impl WsClient {
         *self.scroll_listener.borrow_mut() = Some(Box::new(f));
     }
     fn new(mode: ClientMode) -> WsClient {
+        let clients_rc = Rc::new(RefCell::new(Vec::new()));
         let scroll_listener: Rc<RefCell<Option<Box<dyn FnMut((String, f64)) -> ()>>>> =
             Rc::new(RefCell::new(None));
         let socket = Rc::new(WebSocket::new(&"ws://localhost:6543/ws").unwrap());
@@ -112,9 +119,13 @@ impl WsClient {
         let onmessage = {
             let scroll_listener = scroll_listener.clone();
             let client_id_rc = client_id_rc.clone();
+            let clients_rc = clients_rc.clone();
             Closure::new(Box::new(move |m: MessageEvent| {
                 if let Some(data) = m.data().as_string() {
                     match serde_json::from_str::<Incoming>(&data) {
+                        Ok(Incoming::ListClients { clients }) => {
+                            *clients_rc.borrow_mut() = clients;
+                        }
                         Ok(Incoming::Initialize { client_id }) => {
                             *client_id_rc.borrow_mut() = Some(client_id);
                         }
@@ -171,6 +182,7 @@ impl WsClient {
             client_id: client_id_rc,
             mode,
             scroll_listener,
+            clients: clients_rc,
         };
     }
     fn scroll(&self, value: f64, scroll_width: f64) {
@@ -191,6 +203,17 @@ impl WsClient {
         ) {
             console::error_2(&"Message Send Error (Scroll): ".into(), &e);
         }
+    }
+    fn query_list_clients(&self) {
+        if self.mode != ClientMode::Screen {
+            return;
+        }
+        if let Err(e) = self
+            .socket
+            .send_with_str(&serde_json::to_string(&Outgoing::ListClients).unwrap())
+        {
+            console::error_2(&"Message Send Error (ListClients): ".into(), &e);
+        };
     }
 }
 
@@ -343,8 +366,7 @@ fn DesktopApp() -> Html {
     let inquire_metrics = use_ref(|| get_metrics("inquire"));
     let ws = use_ref(|| {
         let ws = RefCell::new(WsClient::new(ClientMode::Screen));
-        ws.borrow_mut().listen_scroll(|(id, scroll_y)| {
-        });
+        ws.borrow_mut().listen_scroll(|(id, scroll_y)| {});
         ws
     });
     let enter_fullscreen = |e: MouseEvent| {
@@ -356,9 +378,15 @@ fn DesktopApp() -> Html {
             .unwrap()
             .request_fullscreen();
     };
-    use_effect_with((), |()| {});
+    let clock_callback = {
+        let ws = ws.clone();
+        move |(delta, culmative)| {
+            ws.borrow().query_list_clients();
+        }
+    };
     html! {
         <div class="root desktop" onclick={ enter_fullscreen }>
+            <ClockComponent interval={1000} callback={clock_callback}/>
         </div>
     }
 }
