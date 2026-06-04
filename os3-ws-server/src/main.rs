@@ -270,7 +270,9 @@ async fn inactivity_checker(state: Arc<RwLock<AppState>>) {
             .collect();
 
         for id in timed_out {
+            let _ = guard.clients.get(&id).unwrap().tx.send(Message::Close(None));
             guard.remove_client(&id);
+            println!("Removed due to inactivity: {}", &id);
         }
     }
 }
