@@ -21,7 +21,7 @@ pub enum GameStage {
 }
 
 #[derive(RustEmbed)]
-#[folder = "metadata"]
+#[folder = "metadata/shimbun"]
 pub struct Asset;
 
 #[derive(Template, Debug, Clone, PartialEq)]

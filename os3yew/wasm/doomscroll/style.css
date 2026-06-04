@@ -11,17 +11,17 @@ body {
 
 .komagire-wrap > img {
   width: 33.33333%;
-  height: 100%;
 }
 
-
-html, body, .root {
+html,
+body,
+.root {
   width: 100%;
 }
 
 @media (min-width: 768px) {
-.root {
-  width: 768px;
-  margin-left: calc(50vw - 768px / 2);
-}
+  .root {
+    width: 768px;
+    margin-left: calc(50vw - 768px / 2);
+  }
 }
