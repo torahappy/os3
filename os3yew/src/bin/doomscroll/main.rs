@@ -443,10 +443,10 @@ fn DesktopApp() -> Html {
         clients
             .clone()
             .iter()
-            .enumerate()
-            .map(|(idx, (id, scr))| {
+            .map(|(id, scr)| {
                 let mut out = Vec::new();
-                let segment = ranges.iter().for_each(|pr| {
+                let segment = ranges.iter().enumerate().for_each(|(idx, pr)| {
+                    let rotation = (idx as f64).sin() * 1.1;
                     if pr.start <= *scr && *scr <= pr.end {
                         let t = (scr - pr.start) / (pr.end - pr.start);
                         console::log_1(&format!("{}", t).into());
@@ -479,7 +479,7 @@ fn DesktopApp() -> Html {
                         let mut h =  DefaultHasher::new();
                         id.hash(&mut h);
                         out.push(html! {
-                            <div class="picture-wrap" style={ format!("opacity: {}; color: white; z-index: {};", tt, ((h.finish() % 10000) as f64) + tt) }>
+                            <div class="picture-wrap" style={ format!("opacity: {}; color: white; z-index: {}; transform: rotate({:.4}deg);", tt, ((h.finish() % 10000) as f64) + tt, rotation) }>
                                 <div class="picture">
                                     {main_html}
                                 </div>
