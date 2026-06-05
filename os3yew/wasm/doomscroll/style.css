@@ -54,16 +54,16 @@ body,
   align-items: center;
 	  height: 100%;
 	  width:100%;
+  mix-blend-mode: difference;
 }
 
 .picture {
   width: 100%;
   font-size: 3vw;
-  mix-blend-mode: multiply;
 }
-.picture > img {
-  width: 100%;
-  height: 100%;
+.picture > img, .picture > video {
+  width: 100vw;
+  height: 100vh;
   object-fit: contain;
   object-position: center;
 }

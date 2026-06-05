@@ -1,6 +1,6 @@
 // ふむふむこういうのもあるのね
 
-use std::{cell::RefCell, collections::HashMap, hash::Hash, rc::Rc};
+use std::{cell::RefCell, collections::HashMap, hash::{DefaultHasher, Hash, Hasher}, rc::Rc};
 
 use gloo_timers::callback::Interval;
 use os3yew::{components::ClockComponent, util::md};
@@ -68,6 +68,12 @@ fn get_komagire_html(metrics: &HashMap<String, (u32, u32)>, src: &str) -> Html {
     let ratio = (*w as f64) / (*h as f64);
     html! {
         <img src={ "assets/komagire/".to_string() + src } style={ "aspect-ratio: ".to_string() + &format!("{:.10}", ratio) } />
+    }
+}
+
+fn get_video_html(src: &str) -> Html {
+    html! {
+        <video src={ "assets/inquire/".to_string() + src } autoplay={true} muted={true} playsinline={true} loop={true}></video>
     }
 }
 
@@ -263,6 +269,7 @@ fn PhoneApp() -> Html {
             { komagire_three(&komagire_metrics, ("ni1.webp", "nkr11-1.webp", "nkr11-2.webp")) }
             { get_komagire_html(&komagire_metrics, &"tushin.webp") }
             { komagire_three(&komagire_metrics, ("nkr11-3.webp", "nkr14-2.webp", "nkr16.webp")) }
+            { (1..6).map(|_| get_komagire_html(&komagire_metrics, "tushin.webp")).collect::<Vec<_>>() }
         </div>
         </div>
     }
@@ -364,6 +371,18 @@ Program::new(16000.0, 19000.0, Slideshow::Markdown { text: "
 
 などほか2穣4748𥝱9623垓385京3181兆1921億5412万190こ
 "}, Curve::Daikei),
+        Program::new(19000.0, 23200.0, Slideshow::Image { src: "IMG_3011.webp" }, Curve::Daikei),
+        Program::new(23200.0, 26200.0, Slideshow::Image { src: "IMG_2891.webp" }, Curve::Daikei),
+        Program::new(24145.0, 27800.0, Slideshow::Image { src: "IMG_2893.webp" }, Curve::Daikei),
+        Program::new(28000.0, 30000.0, Slideshow::Image { src: "IMG_2956.webp" }, Curve::Daikei),
+        Program::new(30000.0, 31250.0, Slideshow::Image { src: "IMG_2916.webp" }, Curve::Daikei),
+        Program::new(30000.0, 33250.0, Slideshow::Image { src: "IMG_2917.webp" }, Curve::Daikei),
+        Program::new(33250.0, 36250.0, Slideshow::Image { src: "IMG_2867.webp" }, Curve::Daikei),
+        Program::new(36250.0, 43000.0, Slideshow::Movie { src: "KONOYOWAJIGOKU.webm" }, Curve::Daikei),
+        Program::new(43000.0, 45000.0, Slideshow::Image { src: "IMG_3012.webp" }, Curve::Daikei),
+        Program::new(45000.0, 46000.0, Slideshow::Image { src: "IMG_3037.webp" }, Curve::Daikei),
+        Program::new(46000.0, 47000.0, Slideshow::Image { src: "IMG_3038.webp" }, Curve::Daikei),
+        Program::new(47000.0, 50000.0, Slideshow::Image { src: "uchu.webp" }, Curve::Daikei),
     ];
 }
 
@@ -419,7 +438,8 @@ fn DesktopApp() -> Html {
         clients
             .clone()
             .iter()
-            .map(|(id, scr)| {
+            .enumerate()
+            .map(|(idx, (id, scr))| {
                 let mut out = Vec::new();
                 let segment = ranges.iter().for_each(|pr| {
                     if pr.start <= *scr && *scr <= pr.end {
@@ -439,7 +459,7 @@ fn DesktopApp() -> Html {
 
                         let main_html = match pr.slideshow {
                             Slideshow::Movie { src } => {
-                                html!{}
+                                get_video_html(src)
                             },
                             Slideshow::Image { src } => {
                                 get_inquire_html(&inquire_metrics, src)
@@ -451,8 +471,10 @@ fn DesktopApp() -> Html {
                                 html!{}
                             },
                         };
+                        let mut h =  DefaultHasher::new();
+                        id.hash(&mut h);
                         out.push(html! {
-                            <div class="picture-wrap" style={ format!("opacity: {}; color: white;", tt) }>
+                            <div class="picture-wrap" style={ format!("opacity: {}; color: white; z-index: {};", tt, ((h.finish() % 10000) as f64) + tt) }>
                                 <div class="picture">
                                     {main_html}
                                 </div>
