@@ -114,7 +114,7 @@ impl WsClient {
         let clients_rc = Rc::new(RefCell::new(Vec::new()));
         let scroll_listener: Rc<RefCell<Option<Box<dyn FnMut((String, f64)) -> ()>>>> =
             Rc::new(RefCell::new(None));
-        let socket = Rc::new(WebSocket::new(&"ws://localhost:6543/ws").unwrap());
+        let socket = Rc::new(WebSocket::new(&"/ws").unwrap());
 
         let client_id_rc = Rc::new(RefCell::new(None));
 
@@ -323,7 +323,9 @@ fn get_ranges_data() -> Vec<Program> {
 
 "}, Curve::Daikei),
 Program::new(11111.0, 13000.0, Slideshow::Markdown { text: 
-"## 「内容証明アート」の規格定義 (ISO-0001)
+"## 「内容証明アート」の規格定義
+
+(ISO / IKITEIKOU STANDARD OPERATIONS -0001)
 
 - 蓄積すること
     
@@ -361,10 +363,6 @@ Program::new(16000.0, 19000.0, Slideshow::Markdown { text: "
 ウタタネ　ゼネスト
 
 などほか2穣4748𥝱9623垓385京3181兆1921億5412万190こ
-
-\\* ISO = IKITEIKOU STANDARD OPERATIONS！
-
-## 付録1: 送付する請願書の例
 "}, Curve::Daikei),
     ];
 }

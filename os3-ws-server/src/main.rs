@@ -4,9 +4,7 @@ use axum::{
 use futures::{SinkExt, StreamExt, stream::SplitSink};
 use serde::{Deserialize, Serialize};
 use std::{
-    collections::HashMap,
-    sync::{Arc},
-    time::{Duration, Instant},
+    collections::HashMap, path::Path, sync::Arc, time::{Duration, Instant}
 };
 use tokio::{
     sync::mpsc::{unbounded_channel, UnboundedReceiver, UnboundedSender},
@@ -14,6 +12,7 @@ use tokio::{
     time::sleep,
 };
 use uuid::Uuid;
+use tower_http::services::ServeDir;
 
 /// ---------- 1️⃣  Message types ----------
 #[derive(Debug, Serialize, Deserialize)]
@@ -306,6 +305,7 @@ async fn main() {
 
     let app = Router::new()
         .route("/ws", get(ws_handler))
+        .fallback_service(ServeDir::new(Path::new("../os3yew/wasm/doomscroll/")))
         .with_state(shared_state);
 
     // Listen on 0.0.0.0:3000

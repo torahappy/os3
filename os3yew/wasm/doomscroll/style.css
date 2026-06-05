@@ -64,3 +64,9 @@ body,
 .picture > img {
   width: 100%;
 }
+h1,  h2,  h3, p {
+  margin-top: 0.4em;
+  margin-bottom: 0.4em;
+  margin-left: 2vw;
+  margin-right: 2vw;
+}
