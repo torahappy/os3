@@ -468,7 +468,7 @@ fn DesktopApp() -> Html {
 
     html! {
         <div class="root desktop" onclick={ enter_fullscreen }>
-            <ClockComponent interval={100} callback={clock_callback}/>
+            <ClockComponent interval={10000} callback={clock_callback}/>
             { pictures }
         </div>
     }
