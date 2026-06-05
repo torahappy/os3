@@ -1,6 +1,6 @@
 // ふむふむこういうのもあるのね
 
-use std::{cell::RefCell, collections::HashMap, hash::{DefaultHasher, Hash, Hasher}, rc::Rc};
+use std::{cell::RefCell, collections::{HashMap, HashSet}, hash::{DefaultHasher, Hash, Hasher}, rc::Rc};
 
 use gloo_timers::callback::Interval;
 use os3yew::{components::ClockComponent, util::md};
@@ -389,7 +389,6 @@ Program::new(16000.0, 19000.0, Slideshow::Markdown { text: "
 // 47678
 #[component]
 fn DesktopApp() -> Html {
-    let listener_update_trigger = use_state(|| 0 as u32);
     let clients: UseStateHandle<HashMap<String, f64>> = use_state(|| HashMap::new());
     let ranges = use_ref(|| get_ranges_data());
     let inquire_metrics = use_ref(|| get_metrics("inquire"));
@@ -421,16 +420,22 @@ fn DesktopApp() -> Html {
     let clock_callback = {
         let ws = ws.clone();
         let clients = clients.clone();
-        let counter = listener_update_trigger.clone();
         move |(delta, culmative)| {
             ws.borrow().query_list_clients();
             let cl = ws.borrow().clients.borrow().clone();
             let mut clients_copy = (*clients).clone();
-            clients_copy.retain(|k, _| cl.contains(k));
-            clients.set(clients_copy);
 
-            // trigger listener update
-            counter.set(*counter + 1);
+            // response from server
+            let hs: HashSet<String> = HashSet::from_iter(cl.into_iter());
+
+            // current set of client ids
+            let hs2: HashSet<String> = HashSet::from_iter(clients_copy.keys().into_iter().cloned());
+
+            // if there are changes in membership... Delete the clients that left the session.
+            if hs != hs2 {
+                clients_copy.retain(|k, _| hs.contains(k));
+                clients.set(clients_copy);
+            }
         }
     };
 
@@ -490,7 +495,7 @@ fn DesktopApp() -> Html {
 
     html! {
         <div class="root desktop" onclick={ enter_fullscreen }>
-            <ClockComponent interval={10000} callback={clock_callback}/>
+            <ClockComponent interval={100} callback={clock_callback}/>
             { pictures }
         </div>
     }
