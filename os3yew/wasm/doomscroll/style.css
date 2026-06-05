@@ -44,3 +44,23 @@ body,
   display: block;
   background-color: black;
 }
+
+
+.picture-wrap {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: flex;
+  align-items: center;
+	  height: 100%;
+	  width:100%;
+}
+
+.picture {
+  width: 100%;
+  font-size: 3vw;
+  mix-blend-mode: multiply;
+}
+.picture > img {
+  width: 100%;
+}

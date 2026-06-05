@@ -1,15 +1,17 @@
 // ふむふむこういうのもあるのね
 
-use std::{cell::RefCell, collections::HashMap, rc::Rc};
+use std::{cell::RefCell, collections::HashMap, hash::Hash, rc::Rc};
 
 use gloo_timers::callback::Interval;
-use os3yew::components::ClockComponent;
+use os3yew::{components::ClockComponent, util::md};
 use rust_embed::RustEmbed;
 use wasm_bindgen::{prelude::Closure, JsCast, JsValue};
 use web_sys::{console, js_sys::Function, window, HtmlElement, MessageEvent, WebSocket};
 use yew::prelude::*;
 
 use serde::{Deserialize, Serialize};
+
+use crate::Curve::Daikei;
 
 #[derive(Debug, PartialEq, Serialize, Deserialize, Clone, Copy)]
 enum ClientMode {
@@ -308,8 +310,8 @@ impl Program {
 
 fn get_ranges_data() -> Vec<Program> {
     return vec![
-        Program::new(0.0, 2100.0, Slideshow::Image { src: "uchu.webp" }, Curve::Daikei),
-        Program::new(6000.0, 7000.0, Slideshow::Markdown { text: "# 「内容証明アート」宣言
+        Program::new(2100.0, 7990.0, Slideshow::Image { src: "uchu.webp" }, Curve::Daikei),
+        Program::new(8100.0, 11000.0, Slideshow::Markdown { text: "# 「内容証明アート」宣言
 
 少しでも違和感を感じることがあったらそれを文書にしたためて関係各所に送付しまくるのだ！
 
@@ -319,7 +321,9 @@ fn get_ranges_data() -> Vec<Program> {
 
 いま最も美しいアートの形態は、将来の国際人権裁判に提出される証拠集になるであろう。
 
-## 「内容証明アート」の規格定義 (ISO-0001)
+"}, Curve::Daikei),
+Program::new(11111.0, 13000.0, Slideshow::Markdown { text: 
+"## 「内容証明アート」の規格定義 (ISO-0001)
 
 - 蓄積すること
     
@@ -328,6 +332,8 @@ fn get_ranges_data() -> Vec<Program> {
 
 真面目な訴えかけの間に、絵文字や叫び声、ゆるふわな言葉たちを散りばめよう。決して、ふざけているのではない。そもそも、真面目であるとかふざけているとか、そうした判断基準は私たちを黙らせるための道具でしかないのだから。
 
+"}, Curve::Daikei),
+Program::new(13000.0, 16000.0, Slideshow::Markdown { text: "
 - マクロとミクロを接続すること
 
 できるだけ、日々のちょっとした違和感、日常のなかの憤りの全てを拾い上げていく。最も洗練された監査請求は、小咄、独白、アネクドート、落語、の形式で行われる。
@@ -339,7 +345,9 @@ fn get_ranges_data() -> Vec<Program> {
 
 私たちを規定して、縛り付ける名前なんて、もうおさらば。色々な名前を作り続け、色々な名前で署名しよう。
 
-わたしの　なまえ　一覧
+"}, Curve::Daikei),
+Program::new(16000.0, 19000.0, Slideshow::Markdown { text: "
+## わたしの　なまえ　一覧
 
 〇〇　〇〇  
 〇〇　〇〇  
@@ -347,7 +355,7 @@ fn get_ranges_data() -> Vec<Program> {
 
 などほか2穣4748𥝱9623垓385京3181兆1921億5412万189こ
 
-あなたの　なまえ　一覧
+## あなたの　なまえ　一覧
 
 色紙　うごぬ  
 ウタタネ　ゼネスト
@@ -356,19 +364,33 @@ fn get_ranges_data() -> Vec<Program> {
 
 \\* ISO = IKITEIKOU STANDARD OPERATIONS！
 
-## 付録1: 送付する請願書の例"}, Curve::Daikei)
+## 付録1: 送付する請願書の例
+"}, Curve::Daikei),
     ];
 }
 
 // 47678
 #[component]
 fn DesktopApp() -> Html {
+    let listener_update_trigger = use_state(|| 0 as u32);
+    let clients: UseStateHandle<HashMap<String, f64>> = use_state(|| HashMap::new());
+    let ranges = use_ref(|| get_ranges_data());
     let inquire_metrics = use_ref(|| get_metrics("inquire"));
     let ws = use_ref(|| {
         let ws = RefCell::new(WsClient::new(ClientMode::Screen));
-        ws.borrow_mut().listen_scroll(|(id, scroll_y)| {});
         ws
     });
+    {
+        let ws = ws.clone();
+        let clients = clients.clone();
+        use_effect(move || {
+            ws.borrow_mut().listen_scroll(move |(id, scroll_y)| {
+                let mut new_clients = (*clients).clone();
+                new_clients.insert(id, scroll_y);
+                clients.set(new_clients);
+            });
+        });
+    };
     let enter_fullscreen = |e: MouseEvent| {
         window()
             .unwrap()
@@ -378,15 +400,78 @@ fn DesktopApp() -> Html {
             .unwrap()
             .request_fullscreen();
     };
+
     let clock_callback = {
         let ws = ws.clone();
+        let clients = clients.clone();
+        let counter = listener_update_trigger.clone();
         move |(delta, culmative)| {
             ws.borrow().query_list_clients();
+            let cl = ws.borrow().clients.borrow().clone();
+            let mut clients_copy = (*clients).clone();
+            clients_copy.retain(|k, _| cl.contains(k));
+            clients.set(clients_copy);
+
+            // trigger listener update
+            counter.set(*counter + 1);
         }
     };
+
+    let pictures = {
+        clients
+            .clone()
+            .iter()
+            .map(|(id, scr)| {
+                let mut out = Vec::new();
+                let segment = ranges.iter().for_each(|pr| {
+                    if pr.start <= *scr && *scr <= pr.end {
+                        let t = (scr - pr.start) / (pr.end - pr.start);
+                        console::log_1(&format!("{}", t).into());
+                        let tt = match pr.curve {
+                            Daikei => {
+                                if t < 1.0 / 3.0 {
+                                    t * 3.0
+                                } else if t < 2.0 / 3.0 {
+                                    0.99
+                                } else {
+                                    ((1.0 - t) * 3.0)
+                                }
+                            }
+                        };
+
+                        let main_html = match pr.slideshow {
+                            Slideshow::Movie { src } => {
+                                html!{}
+                            },
+                            Slideshow::Image { src } => {
+                                get_inquire_html(&inquire_metrics, src)
+                            },
+                            Slideshow::Markdown { text } => {
+                                md(text.to_string())
+                            },
+                            Slideshow::Nothing => {
+                                html!{}
+                            },
+                        };
+                        out.push(html! {
+                            <div class="picture-wrap" style={ format!("opacity: {}; color: white;", tt) }>
+                                <div class="picture">
+                                    {main_html}
+                                </div>
+                            </div>
+                        });
+                    }
+                });
+                out
+            })
+            .flatten()
+            .collect::<Vec<_>>()
+    };
+
     html! {
         <div class="root desktop" onclick={ enter_fullscreen }>
-            <ClockComponent interval={1000} callback={clock_callback}/>
+            <ClockComponent interval={100} callback={clock_callback}/>
+            { pictures }
         </div>
     }
 }
