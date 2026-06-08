@@ -1,6 +1,6 @@
 // ふむふむこういうのもあるのね
 
-use std::{cell::RefCell, collections::HashMap, hash::Hash, rc::Rc};
+use std::{cell::RefCell, collections::{HashMap, HashSet}, hash::{DefaultHasher, Hash, Hasher}, rc::Rc};
 
 use gloo_timers::callback::Interval;
 use os3yew::{components::ClockComponent, util::md};
@@ -71,6 +71,12 @@ fn get_komagire_html(metrics: &HashMap<String, (u32, u32)>, src: &str) -> Html {
     }
 }
 
+fn get_video_html(src: &str) -> Html {
+    html! {
+        <video src={ "assets/inquire/".to_string() + src } autoplay={true} muted={true} playsinline={true} loop={true}></video>
+    }
+}
+
 fn get_inquire_html(metrics: &HashMap<String, (u32, u32)>, src: &str) -> Html {
     let (w, h) = metrics.get(src).unwrap_or(&(1, 1));
     let ratio = (*w as f64) / (*h as f64);
@@ -114,7 +120,7 @@ impl WsClient {
         let clients_rc = Rc::new(RefCell::new(Vec::new()));
         let scroll_listener: Rc<RefCell<Option<Box<dyn FnMut((String, f64)) -> ()>>>> =
             Rc::new(RefCell::new(None));
-        let socket = Rc::new(WebSocket::new(&"/ws").unwrap());
+        let socket = Rc::new(WebSocket::new(&"/doomscroll_web/ws").unwrap());
 
         let client_id_rc = Rc::new(RefCell::new(None));
 
@@ -263,6 +269,7 @@ fn PhoneApp() -> Html {
             { komagire_three(&komagire_metrics, ("ni1.webp", "nkr11-1.webp", "nkr11-2.webp")) }
             { get_komagire_html(&komagire_metrics, &"tushin.webp") }
             { komagire_three(&komagire_metrics, ("nkr11-3.webp", "nkr14-2.webp", "nkr16.webp")) }
+            { (1..6).map(|_| get_komagire_html(&komagire_metrics, "tushin.webp")).collect::<Vec<_>>() }
         </div>
         </div>
     }
@@ -364,13 +371,24 @@ Program::new(16000.0, 19000.0, Slideshow::Markdown { text: "
 
 などほか2穣4748𥝱9623垓385京3181兆1921億5412万190こ
 "}, Curve::Daikei),
+        Program::new(19000.0, 23200.0, Slideshow::Image { src: "IMG_3011.webp" }, Curve::Daikei),
+        Program::new(23200.0, 26200.0, Slideshow::Image { src: "IMG_2891.webp" }, Curve::Daikei),
+        Program::new(24145.0, 27800.0, Slideshow::Image { src: "IMG_2893.webp" }, Curve::Daikei),
+        Program::new(28000.0, 30000.0, Slideshow::Image { src: "IMG_2956.webp" }, Curve::Daikei),
+        Program::new(30000.0, 31250.0, Slideshow::Image { src: "IMG_2916.webp" }, Curve::Daikei),
+        Program::new(30000.0, 33250.0, Slideshow::Image { src: "IMG_2917.webp" }, Curve::Daikei),
+        Program::new(33250.0, 36250.0, Slideshow::Image { src: "IMG_2867.webp" }, Curve::Daikei),
+        Program::new(36250.0, 43000.0, Slideshow::Movie { src: "KONOYOWAJIGOKU.webm" }, Curve::Daikei),
+        Program::new(43000.0, 45000.0, Slideshow::Image { src: "IMG_3012.webp" }, Curve::Daikei),
+        Program::new(45000.0, 46000.0, Slideshow::Image { src: "IMG_3037.webp" }, Curve::Daikei),
+        Program::new(46000.0, 47000.0, Slideshow::Image { src: "IMG_3038.webp" }, Curve::Daikei),
+        Program::new(47000.0, 50000.0, Slideshow::Image { src: "uchu.webp" }, Curve::Daikei),
     ];
 }
 
 // 47678
 #[component]
 fn DesktopApp() -> Html {
-    let listener_update_trigger = use_state(|| 0 as u32);
     let clients: UseStateHandle<HashMap<String, f64>> = use_state(|| HashMap::new());
     let ranges = use_ref(|| get_ranges_data());
     let inquire_metrics = use_ref(|| get_metrics("inquire"));
@@ -402,16 +420,22 @@ fn DesktopApp() -> Html {
     let clock_callback = {
         let ws = ws.clone();
         let clients = clients.clone();
-        let counter = listener_update_trigger.clone();
         move |(delta, culmative)| {
             ws.borrow().query_list_clients();
             let cl = ws.borrow().clients.borrow().clone();
             let mut clients_copy = (*clients).clone();
-            clients_copy.retain(|k, _| cl.contains(k));
-            clients.set(clients_copy);
 
-            // trigger listener update
-            counter.set(*counter + 1);
+            // response from server
+            let hs: HashSet<String> = HashSet::from_iter(cl.into_iter());
+
+            // current set of client ids
+            let hs2: HashSet<String> = HashSet::from_iter(clients_copy.keys().into_iter().cloned());
+
+            // if there are changes in membership... Delete the clients that left the session.
+            if hs != hs2 {
+                clients_copy.retain(|k, _| hs.contains(k));
+                clients.set(clients_copy);
+            }
         }
     };
 
@@ -421,7 +445,8 @@ fn DesktopApp() -> Html {
             .iter()
             .map(|(id, scr)| {
                 let mut out = Vec::new();
-                let segment = ranges.iter().for_each(|pr| {
+                let segment = ranges.iter().enumerate().for_each(|(idx, pr)| {
+                    let rotation = (idx as f64).sin() * 1.1;
                     if pr.start <= *scr && *scr <= pr.end {
                         let t = (scr - pr.start) / (pr.end - pr.start);
                         console::log_1(&format!("{}", t).into());
@@ -439,7 +464,7 @@ fn DesktopApp() -> Html {
 
                         let main_html = match pr.slideshow {
                             Slideshow::Movie { src } => {
-                                html!{}
+                                get_video_html(src)
                             },
                             Slideshow::Image { src } => {
                                 get_inquire_html(&inquire_metrics, src)
@@ -451,8 +476,10 @@ fn DesktopApp() -> Html {
                                 html!{}
                             },
                         };
+                        let mut h =  DefaultHasher::new();
+                        id.hash(&mut h);
                         out.push(html! {
-                            <div class="picture-wrap" style={ format!("opacity: {}; color: white;", tt) }>
+                            <div class="picture-wrap" style={ format!("opacity: {}; color: white; z-index: {}; transform: rotate({:.4}deg);", tt, ((h.finish() % 10000) as f64) + tt, rotation) }>
                                 <div class="picture">
                                     {main_html}
                                 </div>
@@ -468,7 +495,7 @@ fn DesktopApp() -> Html {
 
     html! {
         <div class="root desktop" onclick={ enter_fullscreen }>
-            <ClockComponent interval={10000} callback={clock_callback}/>
+            <ClockComponent interval={100} callback={clock_callback}/>
             { pictures }
         </div>
     }

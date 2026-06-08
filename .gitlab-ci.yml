@@ -23,7 +23,7 @@ build:
   before_script: []
   script:
     - apt update
-    - apt install -y cmake make autoconf automake g++ gcc m4 dc
+    - apt install -y cmake make autoconf automake g++ gcc m4 dc git-lfs
     - if [ ! -d .emsdk ]; then git clone https://github.com/emscripten-core/emsdk .emsdk; fi
     - cd .emsdk && git pull && ./emsdk install 5.0.3 && ./emsdk activate 5.0.3 && cd ..
     - . .emsdk/emsdk_env.sh;  BUILD_NATIVE=0 ./external-sources/setup-tts.sh
@@ -57,5 +57,13 @@ build:
     - mkdir -p ./public/shimbun_web/node_modules/onnxruntime-web/dist
     - cp ./os3yew/wasm/shimbun/node_modules/onnxruntime-web/dist/*.jsep.* ./public/shimbun_web/node_modules/onnxruntime-web/dist
     - cp ./os3yew/wasm/shimbun/node_modules/onnxruntime-web/dist/ort.min.mjs ./public/shimbun_web/node_modules/onnxruntime-web/dist
+    - . "${CI_PROJECT_DIR}/.cargo/env"; ./build_scripts/wasm-once.sh os3yew doomscroll
+    - mkdir ./public/doomscroll_web
+    - sed -i.bak s/PUT_COMMIT_ID_HERE/"${CI_COMMIT_SHA}"/ ./os3yew/wasm/doomscroll/index.html
+    - cp -r ./os3yew/assets/doomscroll public/doomscroll_web/assets
+    - cp ./os3yew/wasm/doomscroll/doomscroll_bg.wasm public/doomscroll_web
+    - cp ./os3yew/wasm/doomscroll/*.html public/doomscroll_web
+    - cp ./os3yew/wasm/doomscroll/*.css public/doomscroll_web
+    - cp ./os3yew/wasm/doomscroll/*.js public/doomscroll_web
   artifacts:
     expire_in: 1 hour
