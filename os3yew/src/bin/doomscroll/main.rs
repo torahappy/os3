@@ -120,7 +120,7 @@ impl WsClient {
         let clients_rc = Rc::new(RefCell::new(Vec::new()));
         let scroll_listener: Rc<RefCell<Option<Box<dyn FnMut((String, f64)) -> ()>>>> =
             Rc::new(RefCell::new(None));
-        let socket = Rc::new(WebSocket::new(&"/ws").unwrap());
+        let socket = Rc::new(WebSocket::new(&"/doomscroll_web/ws").unwrap());
 
         let client_id_rc = Rc::new(RefCell::new(None));
 

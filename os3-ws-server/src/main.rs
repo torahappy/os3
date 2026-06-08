@@ -304,7 +304,7 @@ async fn main() {
     tokio::spawn(async move { inactivity_checker(state_clone).await });
 
     let app = Router::new()
-        .route("/ws", get(ws_handler))
+        .route("/doomscroll_web/ws", get(ws_handler))
         .fallback_service(ServeDir::new(Path::new("../os3yew/wasm/doomscroll/")))
         .with_state(shared_state);
 
