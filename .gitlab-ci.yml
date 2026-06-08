@@ -61,5 +61,9 @@ build:
     - mkdir ./public/doomscroll_web
     - sed -i.bak s/PUT_COMMIT_ID_HERE/"${CI_COMMIT_SHA}"/ ./os3yew/wasm/doomscroll/index.html
     - cp -r ./os3yew/assets/doomscroll public/doomscroll_web/assets
+    - cp ./os3yew/wasm/doomscroll/doomscroll_bg.wasm public/doomscroll_web
+    - cp ./os3yew/wasm/doomscroll/*.html public/doomscroll_web
+    - cp ./os3yew/wasm/doomscroll/*.css public/doomscroll_web
+    - cp ./os3yew/wasm/doomscroll/*.js public/doomscroll_web
   artifacts:
     expire_in: 1 hour
