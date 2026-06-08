@@ -308,7 +308,6 @@ async fn main() {
         .fallback_service(ServeDir::new(Path::new("../os3yew/wasm/doomscroll/")))
         .with_state(shared_state);
 
-    // Listen on 0.0.0.0:3000
-    axum::serve(tokio::net::TcpListener::bind("127.0.0.1:6543").await.unwrap(), app.into_make_service()).await.unwrap();
+    axum::serve(tokio::net::TcpListener::bind("0.0.0.0:6543").await.unwrap(), app.into_make_service()).await.unwrap();
 }
 
