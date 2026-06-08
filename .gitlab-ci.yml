@@ -23,7 +23,7 @@ build:
   before_script: []
   script:
     - apt update
-    - apt install -y cmake make autoconf automake g++ gcc m4 dc
+    - apt install -y cmake make autoconf automake g++ gcc m4 dc git-lfs
     - if [ ! -d .emsdk ]; then git clone https://github.com/emscripten-core/emsdk .emsdk; fi
     - cd .emsdk && git pull && ./emsdk install 5.0.3 && ./emsdk activate 5.0.3 && cd ..
     - . .emsdk/emsdk_env.sh;  BUILD_NATIVE=0 ./external-sources/setup-tts.sh
