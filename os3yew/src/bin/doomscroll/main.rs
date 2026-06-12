@@ -81,7 +81,7 @@ fn get_inquire_html(metrics: &HashMap<String, (u32, u32)>, src: &str) -> Html {
     let (w, h) = metrics.get(src).unwrap_or(&(1, 1));
     let ratio = (*w as f64) / (*h as f64);
     html! {
-        <img src={ "assets/inquire/".to_string() + src } style={ "aspect-ratio: ".to_string() + &format!("{:.10}", ratio) } />
+        <div class="inquire-image" style={ format!("aspect-ratio: {:.10}; background-image: url('assets/inquire/{}');", ratio, src) } />
     }
 }
 

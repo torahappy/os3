@@ -57,6 +57,13 @@ body,
   mix-blend-mode: difference;
 }
 
+.inquire-image {
+  background-position: center;
+  width: 100vw;
+  height: 100vh;
+  background-size: contain;
+}
+
 .picture {
   width: 100%;
   font-size: 3vw;
