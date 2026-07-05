@@ -25,29 +25,6 @@
 #include <fstream>
 #include <filesystem>          // C++17
 #include <cassert>
-extern "C" {
-    int read_rpg_var(const char* filename,
-                      int32_t offset,
-                      int32_t count,
-                      int32_t* ret);
-
-    int write_rpg_var(const char* in_filename,
-                       const char* out_filename,
-                       int32_t offset,
-                       int32_t count,
-                       const int32_t* variables);
-
-    int read_rpg_switch(const char* filename,
-                        int32_t offset,
-                        int32_t count,
-                        int8_t* ret);
-
-    int write_rpg_switch(const char* in_filename,
-                         const char* out_filename,
-                         int32_t offset,
-                         int32_t count,
-                         const int8_t* switches);
-}
 #include "lcf/rpg/save.h"
 #include "lcf/rpg/savesystem.h"
 #include "lcf/lsd/reader.h"
