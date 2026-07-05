@@ -37,3 +37,6 @@ OPEN_JTALK_DIC_VERSION=1.11
 
 ESPEAK_NG_URL=https://github.com/espeak-ng/espeak-ng/archive/80f7d5d5869584913b03760db302b6ca0dda9f55.zip
 ESPEAK_NG_VERSION=80f7d5d5869584913b03760db302b6ca0dda9f55
+
+LCF_URL=https://github.com/EasyRPG/liblcf/archive/refs/tags/0.8.1.tar.gz
+LCF_VERSION=0.8.1
