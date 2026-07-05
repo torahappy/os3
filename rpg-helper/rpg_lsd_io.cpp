@@ -22,7 +22,7 @@
 #include "lcf/lsd/reader.h"
 #include "lcf/rpg/save.h"
 #include "lcf/rpg/savesystem.h"
-#include "lcf/engine_version.h"   // defines lcf::EngineVersion
+#include "lcf/saveopt.h"   // defines lcf::EngineVersion
 
 // ---------------  C interface -----------------------------------
 extern "C" {
@@ -93,7 +93,7 @@ extern "C" {
         // Write the modified file
         if (!lcf::LSD_Reader::Save(std::string_view(out_filename),
                                    *savePtr,
-                                   lcf::EngineVersion::EasyRPG,   // choose a valid engine
+                                   lcf::EngineVersion::e2k3,   // choose a valid engine
                                    "")) return -1;                // default encoding
 
         return 0;
@@ -163,7 +163,7 @@ extern "C" {
 
         if (!lcf::LSD_Reader::Save(std::string_view(out_filename),
                                    *savePtr,
-                                   lcf::EngineVersion::EasyRPG,
+                                   lcf::EngineVersion::e2k3,
                                    "")) return -1;
 
         return 0;
