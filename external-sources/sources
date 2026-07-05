@@ -40,3 +40,6 @@ ESPEAK_NG_VERSION=80f7d5d5869584913b03760db302b6ca0dda9f55
 
 LCF_URL=https://github.com/EasyRPG/liblcf/archive/refs/tags/0.8.1.tar.gz
 LCF_VERSION=0.8.1
+
+INIH_URL=https://github.com/benhoyt/inih/archive/refs/tags/r62.tar.gz
+INIH_VERSION=r62
