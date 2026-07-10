@@ -85,11 +85,17 @@ if [ ! -d "${SCRIPT_DIR}/dist" ] && [ $BUILD_WASM -eq 1 ]; then
 "_write_rpg_var",
 "_read_rpg_switch",
 "_write_rpg_switch",
+"_read_rpg_var_lgs",
+"_write_rpg_var_lgs",
+"_read_rpg_switch_lgs",
+"_write_rpg_switch_lgs",
 "FS"]'
+  
+  cp ../test1.lgs ../test1.lsd .
 
   em++ ../rpg_lsd_io.cpp ../../external-apps/lcf-wasm/lib/liblcf.a -O3 -o rpg_lsd_io -sALLOW_MEMORY_GROWTH=1 -sMODULARIZE=1 -sEXPORT_ES6=1 -sEXPORTED_FUNCTIONS="$EXFUNCS" -sEXPORTED_RUNTIME_METHODS=stringToUTF8,UTF8ToString,AsciiToString,intArrayFromString,intArrayToString,writeArrayToMemory,setValue,getValue,HEAP8,HEAP16,HEAP32,HEAPU8,HEAPU16,HEAPU32 -I"../../external-apps/lcf-wasm/include" -sUSE_ICU=1
 
-  em++ ../rpg_lsd_io.cpp ../rpg_lsd_io_test.cpp ../../external-apps/lcf-wasm/lib/liblcf.a -O3 -o rpg_lsd_io_test -sALLOW_MEMORY_GROWTH=1 -sEXPORTED_RUNTIME_METHODS=stringToUTF8,UTF8ToString,AsciiToString,intArrayFromString,intArrayToString,writeArrayToMemory,setValue,getValue,HEAP8,HEAP16,HEAP32,HEAPU8,HEAPU16,HEAPU32 -I"../../external-apps/lcf-wasm/include" -sUSE_ICU=1
+  em++ ../catch_amalgamated.cpp ../rpg_lsd_io.cpp ../rpg_lsd_io_test.cpp ../../external-apps/lcf-wasm/lib/liblcf.a -O3 -o rpg_lsd_io_test -sALLOW_MEMORY_GROWTH=1 -sEXPORTED_RUNTIME_METHODS=stringToUTF8,UTF8ToString,AsciiToString,intArrayFromString,intArrayToString,writeArrayToMemory,setValue,getValue,HEAP8,HEAP16,HEAP32,HEAPU8,HEAPU16,HEAPU32 --embed-file test1.lgs --embed-file test1.lsd -I"../../external-apps/lcf-wasm/include" -sUSE_ICU=1
 
   mv rpg_lsd_io rpg_lsd_io.js
   

@@ -1,196 +1,267 @@
-/*********************************************************************
- *  rpg_lsd_io_test.cpp
- *
- *  Test harness for the four C‑exported functions that were
- *  implemented in *rpg_lsd_io.cpp*.  The test does the following
- *
- *    1.  Builds a minimal .lsd file with known variables / switches.
- *    2.  Calls read_rpg_var / read_rpg_switch to verify that the
- *        original values are returned correctly.
- *    3.  Calls write_rpg_var / write_rpg_switch to change those
- *        values.
- *    4.  Reads them back again to make sure the changes were
- *        written.
- *
- *  The file is written to a temporary location under the current
- *  working directory; the program cleans it up before exiting.
- *********************************************************************/
+//  test_rpg_lsd_io.cpp
+//
+//  Compile with something like:
+//
+//      g++ -std=c++20 -I<path-to-lcf-headers> -L<path-to-lcf-lib>
+//          -lrpg_lsd_io -lrpg_lcf -o test_rpg_lsd_io test_rpg_lsd_io.cpp
+//
+//  (The `lcf` library is required – the code below only uses its
+//   public writer API to generate the test files.)
 
-#include <cstdint>
-#include <cstdio>
-#include <cstdlib>
+#define CATCH_CONFIG_ENABLE_EXCEPTIONS
+#include "catch_amalgamated.hpp"
+
+#include <cstdint>          // int8_t, int32_t
 #include <cstring>
-#include <vector>
-#include <iostream>
 #include <fstream>
-#include <filesystem>          // C++17
-#include <cassert>
+#include <vector>
+#include <filesystem>
+#include <string_view>
+#include <iostream>
+
+// -------------  library includes --------------------------------
+#include "lcf/lsd/reader.h"
+#include "lcf/reader_lcf.h"
+#include "lcf/reader_util.h"
 #include "lcf/rpg/save.h"
 #include "lcf/rpg/savesystem.h"
-#include "lcf/lsd/reader.h"
+#include "lcf/saveopt.h"
+#include "lcf/writer_lcf.h"
 
+// -------------  exported C interface --------------------------------
 extern "C" {
-    int read_rpg_var(const char* filename,
-                      int32_t offset,
-                      int32_t count,
-                      int32_t* ret);
+    int read_rpg_var_lgs(const char *filename, int32_t offset, int32_t count, int32_t *ret);
+    int write_rpg_var_lgs(const char *in_filename, const char *out_filename, int32_t offset,
+                           int32_t count, const int32_t *variables);
 
-    int write_rpg_var(const char* in_filename,
-                       const char* out_filename,
-                       int32_t offset,
-                       int32_t count,
-                       const int32_t* variables);
+    int read_rpg_switch_lgs(const char *filename, int32_t offset, int32_t count,
+                             int8_t *ret);
+    int write_rpg_switch_lgs(const char *in_filename, const char *out_filename, int32_t offset,
+                              int32_t count, const int8_t *switches);
 
-    int read_rpg_switch(const char* filename,
-                        int32_t offset,
-                        int32_t count,
-                        int8_t* ret);
+    int read_rpg_var(const char *filename, int32_t offset, int32_t count, int32_t *ret);
+    int write_rpg_var(const char *in_filename, const char *out_filename, int32_t offset,
+                       int32_t count, const int32_t *variables);
 
-    int write_rpg_switch(const char* in_filename,
-                         const char* out_filename,
-                         int32_t offset,
-                         int32_t count,
-                         const int8_t* switches);
+    int read_rpg_switch(const char *filename, int32_t offset, int32_t count,
+                         int8_t *ret);
+    int write_rpg_switch(const char *in_filename, const char *out_filename,
+                          int32_t offset, int32_t count, const int8_t *switches);
 }
 
+// -------------  helpers for generating the test files --------------------------------
+namespace {
 
-/*  ------------------------------------------------------------   */
-/*  Helper to create a simple .lsd file that contains the following
- *  data (all other fields are left at their default values):
- *
- *        system.variables = { 10, 20, 30, 40, 50 }
- *        system.switches  = { true, false, true }
- *
- *  The file is written to *path* and the function returns true
- *  on success.                                                   */
-bool create_test_lsd(const std::filesystem::path& path)
+    //  Create a minimal .lgs file containing the test data
+    void create_test_lgs(const std::string &path)
+    {
+        std::ofstream out(path, std::ios::binary);
+        REQUIRE(out.is_open());   // helper will abort test if we fail
+
+        lcf::LcfWriter writer(out, lcf::EngineVersion::e2k3);
+        writer.WriteInt(13);                     // magic header size
+        writer.Write("LcfGlobalSave");           // magic string
+
+        // --- Switch chunk ---------------------------------
+        std::vector<bool> sw = {true, false, true, true};
+        writer.WriteInt(1);                       // chunk ID
+        writer.WriteInt(static_cast<int32_t>(sw.size()));
+        writer.Write(sw);
+
+        // --- Variable chunk --------------------------------
+        std::vector<int32_t> vars = {10, 20, 30, 40};
+        writer.WriteInt(2);                       // chunk ID
+        writer.WriteInt(static_cast<int32_t>(vars.size() * sizeof(int32_t)));
+        writer.Write(vars);
+    }
+
+    //  Create a minimal .lsd file containing the same test data
+    void create_test_lsd(const std::string &path)
+    {
+        lcf::rpg::Save save;
+        //  variables
+        save.system.variables = {10, 20, 30, 40};
+        //  switches
+        save.system.switches   = {true, false, true, true};
+
+        bool ok = lcf::LSD_Reader::Save(
+            std::string_view(path), save,
+            lcf::EngineVersion::e2k3, /* encoding */ "");
+        REQUIRE(ok);
+    }
+
+}   // anonymous namespace
+
+// -------------  test cases --------------------------------
+TEST_CASE("lgs functions – read variables", "[lgs][var]")
 {
+    const char *fname = "test1.lgs";
+    int32_t vals[4];
 
-    lcf::rpg::Save save;
-    /*  variables – 5 32‑bit ints  */
-    save.system.variables = {10, 20, 30, 40, 50};
-    /*  switches – 3 bools  */
-    save.system.switches   = {true, false, true};
-
-    /*  Write the file   */
-    return lcf::LSD_Reader::Save(path.string(),
-                                   save,
-                                   lcf::EngineVersion::e2k3,
-                                   "");
+    int rc = read_rpg_var_lgs(fname, 0, 4, vals);
+    REQUIRE(rc == 0);
+    REQUIRE(vals[0] == 10);
+    REQUIRE(vals[1] == 20);
+    REQUIRE(vals[2] == 30);
+    REQUIRE(vals[3] == 40);
 }
 
-/*  ------------------------------------------------------------   */
-/*  Helper that prints a failure message and aborts the test   */
-[[noreturn]] void fail(const char* msg)
+TEST_CASE("lgs functions – read switches", "[lgs][switch]")
 {
-    std::cerr << "FAIL: " << msg << '\n';
-    std::_Exit(1);
+    const char *fname = "test1.lgs";
+    int8_t sw[4];
+
+    int rc = read_rpg_switch_lgs(fname, 0, 4, sw);
+    REQUIRE(rc == 0);
+    REQUIRE(sw[0] == 1);   // true
+    REQUIRE(sw[1] == 0);   // false
+    REQUIRE(sw[2] == 1);   // true
+    REQUIRE(sw[3] == 1);   // true
 }
 
-/*  ------------------------------------------------------------   */
-/*  Test the read_rpg_var function.  It should return the 5
- *  values we stored in the temporary file.              */
-void test_read_rpg_var(const std::filesystem::path& lsd_path)
+TEST_CASE("lgs functions – write variables and re‑read", "[lgs][write]")
 {
-    const int32_t expected[5] = {10,20,30,40,50};
-    int32_t got[5];
+    const char *in  = "test1.lgs";
+    const char *out = "test1.lgs.tmp";
+    int32_t newVals[4] = {100, 200, 300, 400};
 
-    int rc = read_rpg_var(lsd_path.string().c_str(),
-                          0,            // offset
-                          5,            // count
-                          got);
-    if (rc != 0) fail("read_rpg_var returned non‑zero");
+    int rc = write_rpg_var_lgs(in, out, 0, 4, newVals);
+    REQUIRE(rc == 0);
 
-    for (int i=0;i<5;++i)
-        if (got[i] != expected[i])
-            fail("read_rpg_var returned wrong value");
-}
+    // read back
+    int32_t vals[4];
+    rc = read_rpg_var_lgs(out, 0, 4, vals);
+    REQUIRE(rc == 0);
+    REQUIRE(vals[0] == 100);
+    REQUIRE(vals[1] == 200);
+    REQUIRE(vals[2] == 300);
+    REQUIRE(vals[3] == 400);
 
-/*  ------------------------------------------------------------   */
-/*  Test the write_rpg_var function.  We change the values to
- *  51,52,53,54,55, write the file to *new.lsd* and read it back. */
-void test_write_rpg_var(const std::filesystem::path& src,
-                       const std::filesystem::path& dst)
-{
-    const int32_t new_vals[5] = {51,52,53,54,55};
-    int rc = write_rpg_var(src.string().c_str(),
-                           dst.string().c_str(),
-                           0, 5, new_vals);
-    if (rc != 0) fail("write_rpg_var returned non‑zero");
-
-    /*  Verify by reading the new file   */
-    int32_t got[5];
-    rc = read_rpg_var(dst.string().c_str(), 0, 5, got);
-    if (rc != 0) fail("read after write_rpg_var failed");
-
-    for (int i=0;i<5;++i)
-        if (got[i] != new_vals[i])
-            fail("write_rpg_var produced wrong data");
-}
-
-/*  ------------------------------------------------------------   */
-/*  Test the read_rpg_switch function.  It should return
- *  {1,0,1}. */
-void test_read_rpg_switch(const std::filesystem::path& lsd_path)
-{
-    int8_t expected[3] = {1,0,1};
-    int8_t got[3];
-
-    int rc = read_rpg_switch(lsd_path.string().c_str(),
-                             0, 3, got);
-    if (rc != 0) fail("read_rpg_switch returned non‑zero");
-
-    for (int i=0;i<3;++i)
-        if (got[i] != expected[i])
-            fail("read_rpg_switch returned wrong value");
-}
-
-/*  ------------------------------------------------------------   */
-/*  Test the write_rpg_switch function.  We flip the values to
- *  {0,1,0}, write to *new_switch.lsd* and read back.   */
-void test_write_rpg_switch(const std::filesystem::path& src,
-                           const std::filesystem::path& dst)
-{
-    int8_t new_vals[3] = {0,1,0};
-    int rc = write_rpg_switch(src.string().c_str(),
-                              dst.string().c_str(),
-                              0, 3, new_vals);
-    if (rc != 0) fail("write_rpg_switch returned non‑zero");
-
-    int8_t got[3];
-    rc = read_rpg_switch(dst.string().c_str(), 0, 3, got);
-    if (rc != 0) fail("read after write_rpg_switch failed");
-
-    for (int i=0;i<3;++i)
-        if (got[i] != new_vals[i])
-            fail("write_rpg_switch produced wrong data");
-}
-
-/*  ------------------------------------------------------------   */
-/*  Main – create a temp file, run all tests, delete files.  */
-int main()
-{
-    const std::filesystem::path tmp = "temp_test.lsd";
-    const std::filesystem::path out = "temp_out.lsd";
-    const std::filesystem::path out_sw = "temp_switch_out.lsd";
-
-    /*  1.  Create the original lsd file   */
-    if (!create_test_lsd(tmp))
-        return 1;
-
-    /*  2.  Run tests   */
-    test_read_rpg_var(tmp);
-    test_write_rpg_var(tmp, out);
-
-    test_read_rpg_switch(tmp);
-    test_write_rpg_switch(tmp, out_sw);
-
-    /*  3.  Clean up   */
-    std::filesystem::remove(tmp);
+    // cleanup
     std::filesystem::remove(out);
-    std::filesystem::remove(out_sw);
-
-    std::cout << "All tests passed.\n";
-    return 0;
 }
+
+TEST_CASE("lgs functions – write switches and re‑read", "[lgs][write]")
+{
+    const char *in  = "test1.lgs";
+    const char *out = "test1.lgs.tmp";
+    int8_t newSw[4] = {0, 1, 0, 1};   // false, true, false, true
+
+    int rc = write_rpg_switch_lgs(in, out, 0, 4, newSw);
+    REQUIRE(rc == 0);
+
+    int8_t sw[4];
+    rc = read_rpg_switch_lgs(out, 0, 4, sw);
+    REQUIRE(rc == 0);
+    REQUIRE(sw[0] == 0);
+    REQUIRE(sw[1] == 1);
+    REQUIRE(sw[2] == 0);
+    REQUIRE(sw[3] == 1);
+
+    std::filesystem::remove(out);
+}
+
+TEST_CASE("lgs functions – partial read (offset=1)", "[lgs][partial]")
+{
+    const char *fname = "test1.lgs";
+    int32_t vals[2];
+
+    int rc = read_rpg_var_lgs(fname, 1, 2, vals);
+    REQUIRE(rc == 0);
+    REQUIRE(vals[0] == 20);   // var[2]
+    REQUIRE(vals[1] == 30);   // var[3]
+}
+
+TEST_CASE("lgs functions – out‑of‑range read returns error", "[lgs][error]")
+{
+    const char *fname = "test1.lgs";
+    int32_t vals[1];
+    int rc = read_rpg_var_lgs(fname, 4000, 1, vals);   // offset 4000 is past the last var
+    REQUIRE(rc == -1);
+}
+
+TEST_CASE("lsd functions – read variables", "[lsd][var]")
+{
+    const char *fname = "test1.lsd";
+    int32_t vals[4];
+    int rc = read_rpg_var(fname, 0, 4, vals);
+    REQUIRE(rc == 0);
+    REQUIRE(vals[0] == 10);
+    REQUIRE(vals[1] == 20);
+    REQUIRE(vals[2] == 30);
+    REQUIRE(vals[3] == 40);
+}
+
+TEST_CASE("lsd functions – read switches", "[lsd][switch]")
+{
+    const char *fname = "test1.lsd";
+    int8_t sw[4];
+    int rc = read_rpg_switch(fname, 0, 4, sw);
+    REQUIRE(rc == 0);
+    REQUIRE(sw[0] == 1);
+    REQUIRE(sw[1] == 0);
+    REQUIRE(sw[2] == 1);
+    REQUIRE(sw[3] == 1);
+}
+
+TEST_CASE("lsd functions – write variables and re‑read", "[lsd][write]")
+{
+    const char *in  = "test1.lsd";
+    const char *out = "test1.lsd.tmp";
+    int32_t newVals[4] = {1000, 2000, 3000, 4000};
+
+    int rc = write_rpg_var(in, out, 0, 4, newVals);
+    REQUIRE(rc == 0);
+
+    int32_t vals[4];
+    rc = read_rpg_var(out, 0, 4, vals);
+    REQUIRE(rc == 0);
+    REQUIRE(vals[0] == 1000);
+    REQUIRE(vals[1] == 2000);
+    REQUIRE(vals[2] == 3000);
+    REQUIRE(vals[3] == 4000);
+
+    std::filesystem::remove(out);
+}
+
+TEST_CASE("lsd functions – write switches and re‑read", "[lsd][write]")
+{
+    const char *in  = "test1.lsd";
+    const char *out = "test1.lsd.tmp";
+    int8_t newSw[4] = {1, 0, 1, 0};
+
+    int rc = write_rpg_switch(in, out, 0, 4, newSw);
+    REQUIRE(rc == 0);
+
+    int8_t sw[4];
+    rc = read_rpg_switch(out, 0, 4, sw);
+    REQUIRE(rc == 0);
+    REQUIRE(sw[0] == 1);
+    REQUIRE(sw[1] == 0);
+    REQUIRE(sw[2] == 1);
+    REQUIRE(sw[3] == 0);
+
+    std::filesystem::remove(out);
+}
+
+TEST_CASE("lsd functions – partial read (offset=1)", "[lsd][partial]")
+{
+    const char *fname = "test1.lsd";
+    int32_t vals[2];
+    int rc = read_rpg_var(fname, 1, 2, vals);
+    REQUIRE(rc == 0);
+    REQUIRE(vals[0] == 20);
+    REQUIRE(vals[1] == 30);
+}
+
+TEST_CASE("lsd functions – out‑of‑range read returns error", "[lsd][error]")
+{
+    const char *fname = "test1.lsd";
+    int32_t vals[1];
+    int rc = read_rpg_var(fname, 4, 1, vals);   // offset 4 is past the last var
+    REQUIRE(rc == -1);
+}
+
+// -------------  main entry point (Catch2 generates it automatically) --------------------------------
+
 

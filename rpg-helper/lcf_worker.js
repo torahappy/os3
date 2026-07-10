@@ -1,5 +1,5 @@
 /*  lcf_worker.js  */
-import {LcfModule} from './dist/rpg_lsd_io.js'; // the exported factory
+import LcfModule from './dist/rpg_lsd_io.js'; // the exported factory
 
 // ---------------------------------------------------------------------------
 // 1️⃣  Instantiate the module the first time the worker receives a message
@@ -18,8 +18,8 @@ async function ensureModule() {
     });
 
     // Grab the exported helpers for convenience
-    malloc = Module.cwrap('_malloc', 'number', [ 'number' ]);
-    free = Module.cwrap('_free', 'void', [ 'number' ]);
+    malloc = Module._malloc;
+    free = Module._free;
     moduleInstance = Module;
 
     // The FS helpers are on the Module object itself
@@ -31,11 +31,12 @@ async function ensureModule() {
 // 2️⃣  Helper: write a JavaScript string into wasm memory
 // ---------------------------------------------------------------------------
 function writeString(Module, str) {
-  const ptr = malloc(str.length + 1); // +1 for the terminating NUL
-  const view = new Uint8Array(Module.memory.buffer, ptr, str.length + 1);
-  for (let i = 0; i < str.length; ++i)
-    view[i] = str.charCodeAt(i);
-  view[str.length] = 0; // NUL‑terminator
+  const encoded = (new TextEncoder()).encode(str)
+  const ptr = malloc(encoded.length + 1); // +1 for the terminating NUL
+  for (let i = 0; i < encoded.length; i++) {
+    Module.HEAPU8[ptr + i] = encoded[i];
+  }
+  Module.HEAPU8[ptr + encoded.length] = 0; // NUL‑terminator
   return ptr;
 }
 
@@ -43,16 +44,97 @@ function writeString(Module, str) {
 // 3️⃣  Helper: read an Int32Array from wasm memory
 // ---------------------------------------------------------------------------
 function readInt32(Module, ptr, len) {
-  const arr = Array.from(new Int32Array(Module.memory.buffer, ptr, len));
-  return Array.from(arr);
+  return Module.HEAP32.slice(ptr >> 2, (ptr >> 2) + len);
 }
 
 // ---------------------------------------------------------------------------
 // 4️⃣  Helper: read an Int8Array from wasm memory
 // ---------------------------------------------------------------------------
 function readInt8(Module, ptr, len) {
-  const arr = Array.from(new Int8Array(Module.memory.buffer, ptr, len));
-  return Array.from(arr);
+  return Module.HEAP8.slice(ptr, ptr + len);
+}
+
+function read_rpg_var_generic(args, call_func, Module) {
+  const {filename, offset, count} = args;
+  const ptrName = writeString(Module, filename);
+  const retPtr = malloc(count * 4); // 4 bytes per int32
+
+  const retCode = call_func(ptrName, offset, count, retPtr);
+  const return_data = readInt32(Module, retPtr, count);
+  free(ptrName);
+  free(retPtr);
+
+  if (retCode !== 0)
+    throw new Error(`read_rpg_var failed: ${retCode}`);
+  return return_data;
+}
+
+function write_rpg_var_generic(args, call_func, Module) {
+  const {in_filename, out_filename, offset, count, variables} = args;
+  if (!((Array.isArray(variables) && variables.every(Number.isInteger)) ||
+        variables instanceof Int32Array)) {
+    throw new Error(`The argument "Variables" is not an integer array!`);
+  }
+  if (variables.length !== count) {
+    throw new Error(`Variable Length is Invalid`);
+  }
+  const ptrIn = writeString(Module, in_filename);
+  const ptrOut = writeString(Module, out_filename);
+  const ptrVar = malloc(count * 4);
+  Module.HEAP32.set(variables, ptrVar >> 2)
+
+  const retCode = call_func(ptrIn, ptrOut, offset, count, ptrVar);
+  free(ptrIn);
+  free(ptrOut);
+  free(ptrVar);
+
+  if (retCode !== 0)
+    throw new Error(`write_rpg_var failed: ${retCode}`);
+  return null; // nothing to return
+}
+
+function read_rpg_switch_generic(args, call_func, Module) {
+  const {filename, offset, count} = args;
+  const ptrName = writeString(Module, filename);
+  const retPtr = malloc(count); // 1 byte per int8
+
+  const retCode = call_func(ptrName, offset, count, retPtr);
+  const return_data = readInt8(Module, retPtr, count);
+  free(ptrName);
+  free(retPtr);
+
+  if (retCode !== 0)
+    throw new Error(`read_rpg_switch failed: ${retCode}`);
+  return return_data.map((x) => (Boolean(x)));
+}
+
+function write_rpg_switch_generic(args, call_func, Module) {
+
+  const {in_filename, out_filename, offset, count, switches} = args;
+  if (!((Array.isArray(variables) &&
+         switches.every(x => (typeof x === 'boolean'))))) {
+    throw new Error(`The argument "Switches" is not an switches array!`);
+  }
+  if (switches.length !== count) {
+    throw new Error(`Switches Array Length is Invalid`);
+  }
+  const ptrIn = writeString(Module, in_filename);
+  const ptrOut = writeString(Module, out_filename);
+  const ptrSw = malloc(count);
+  if (!switches.every((x) => (typeof x === 'boolean')))
+    throw new Error(
+        `write_rpg_switch failed: Input vector must be a list of booleans`);
+
+  Module.HEAPU8.set(switches.map((x) => (Number(x))), ptrSw);
+
+  const retCode = call_func(ptrIn, ptrOut, offset, count, ptrSw);
+  free(ptrIn);
+  free(ptrOut);
+  free(ptrSw);
+
+  if (retCode !== 0)
+    throw new Error(`write_rpg_switch failed: ${retCode}`);
+  return null;
 }
 
 // ---------------------------------------------------------------------------
@@ -60,75 +142,36 @@ function readInt8(Module, ptr, len) {
 // ---------------------------------------------------------------------------
 async function callExported(Module, name, args) {
   switch (name) {
+  case 'read_rpg_var_lgs': {
+    return read_rpg_var_generic(args, Module._read_rpg_var_lgs, Module)
+  }
+
+  case 'write_rpg_var_lgs': {
+    return write_rpg_var_generic(args, Module._write_rpg_var_lgs, Module)
+  }
+
+  case 'read_rpg_switch_lgs': {
+    return read_rpg_switch_generic(args, Module._read_rpg_switch_lgs, Module)
+  }
+
+  case 'write_rpg_switch_lgs': {
+    return write_rpg_switch_generic(args, Module._write_rpg_switch_lgs, Module)
+  }
   case 'read_rpg_var': {
-    const {filename, offset, count} = args;
-    const ptrName = writeString(Module, filename);
-    const retPtr = malloc(count * 4); // 4 bytes per int32
-
-    const retCode = Module._read_rpg_var(ptrName, offset, count, retPtr);
-    const return_data = readInt32(Module, retPtr, count);
-    free(ptrName);
-    free(retPtr);
-
-    if (retCode !== 0)
-      throw new Error(`read_rpg_var failed: ${retCode}`);
-    return return_data;
+    return read_rpg_var_generic(args, Module._read_rpg_var, Module)
   }
 
   case 'write_rpg_var': {
-    const {in_filename, out_filename, offset, count, variables} = args;
-    const ptrIn = writeString(Module, in_filename);
-    const ptrOut = writeString(Module, out_filename);
-    const ptrVar = malloc(count * 4);
-    new Int32Array(Module.memory.buffer, ptrVar, count).set(variables);
-
-    const retCode = Module._write_rpg_var(ptrIn, ptrOut, offset, count, ptrVar);
-    free(ptrIn);
-    free(ptrOut);
-    free(ptrVar);
-
-    if (retCode !== 0)
-      throw new Error(`write_rpg_var failed: ${retCode}`);
-    return null; // nothing to return
+    return write_rpg_var_generic(args, Module._write_rpg_var, Module)
   }
 
   case 'read_rpg_switch': {
-    const {filename, offset, count} = args;
-    const ptrName = writeString(Module, filename);
-    const retPtr = malloc(count); // 1 byte per int8
-
-    const retCode = Module._read_rpg_switch(ptrName, offset, count, retPtr);
-    const return_data = readInt8(Module, retPtr, count);
-    free(ptrName);
-    free(retPtr);
-
-    if (retCode !== 0)
-      throw new Error(`read_rpg_switch failed: ${retCode}`);
-    return return_data.map((x) => (Boolean(x)));
+    return read_rpg_switch_generic(args, Module._read_rpg_switch, Module)
   }
 
   case 'write_rpg_switch': {
-    const {in_filename, out_filename, offset, count, switches} = args;
-    const ptrIn = writeString(Module, in_filename);
-    const ptrOut = writeString(Module, out_filename);
-    const ptrSw = malloc(count);
-    if (!switches.every((x) => (typeof x === 'boolean')))
-      throw new Error(
-          `write_rpg_switch failed: Input vector must be a list of booleans`);
-    new Int8Array(Module.memory.buffer, ptrSw, count)
-        .set(switches.map((x) => (Number(x))));
-
-    const retCode =
-        Module._write_rpg_switch(ptrIn, ptrOut, offset, count, ptrSw);
-    free(ptrIn);
-    free(ptrOut);
-    free(ptrSw);
-
-    if (retCode !== 0)
-      throw new Error(`write_rpg_switch failed: ${retCode}`);
-    return null;
+    return write_rpg_switch_generic(args, Module._write_rpg_switch, Module)
   }
-
   // ---------------------------------------------------------------------
   // File helpers – not part of the C API, but useful for the worker
   // ---------------------------------------------------------------------
@@ -136,17 +179,14 @@ async function callExported(Module, name, args) {
     const {filename, data} = args;
     // `FS_createDataFile` expects a Uint8Array – we store the JSON string
     // verbatim
-    Module.FS_createDataFile('/', filename,
-                             new Uint8Array(new TextEncoder().encode(data)),
-                             true, true);
+    Module.FS.writeFile(filename, data);
     return null;
   }
 
   case 'read_file': {
     const {filename} = args;
-    const data = Module.FS_readFile(
-        '/', filename, {encoding : 'utf8'}); // returns a Uint8Array
-    return new TextDecoder().decode(data);
+    const data = Module.FS.readFile(filename); // returns a Uint8Array
+    return data;
   }
 
   default:
