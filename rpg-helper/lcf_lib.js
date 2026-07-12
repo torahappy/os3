@@ -5,7 +5,7 @@ export async function call_lcf_lib(function_name, args) {
   // -----------------------------------------------------------------------
   if (!call_lcf_lib.worker) {
     call_lcf_lib.worker = new Worker(
-        new URL('./lcf_worker.js', import.meta.url), {type : 'module'});
+        './lcf_worker.js', {type : 'module'});
     call_lcf_lib.pending = new Map(); // transaction_id → {resolve, reject}
     call_lcf_lib.worker.addEventListener('message', (e) => {
       const {type, transaction_id, data, error} = e.data;
@@ -54,3 +54,5 @@ export async function call_lcf_lib(function_name, args) {
 call_lcf_lib.lastId = 0;
 call_lcf_lib.pending = null;
 call_lcf_lib.worker = null;
+
+window.call_lcf_lib = call_lcf_lib;
