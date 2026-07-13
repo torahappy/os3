@@ -6,7 +6,8 @@ import {call_lcf_lib} from './lcf_lib.js';
   // path of the save file inside the game's FS
   const SAVE_PATH = 'Save/Save.lgs';          // ← use .lsd if that is the real extension
   const SAVE_PATH_TMP = 'tmp.lgs';          // ← use .lsd if that is the real extension
-  const POLL_MS   = 1000;                     // poll every 1 s
+  const POLL_MS   = 5000;                     // poll every 1 s
+  let isLocked = false;
 
   /* -------------------------------------------------------------
      helper: write a string into the wasm module's FS
@@ -87,14 +88,15 @@ import {call_lcf_lib} from './lcf_lib.js';
      main polling loop
      ------------------------------------------------------------- */
   setInterval(async () => {
+    if (isLocked) { return; }
+    isLocked = true;
     try {
       /* 1️⃣  Copy the current save file into the wasm FS  */
       await copyToWasmFS();
-
-      console.log("write ok")
+      console.log("copy ok")
 
       /* 2️⃣  Read variable #100 to #109  */
-      const cur = await getVarMulti(100, 10);
+      const cur = await getVarMulti(100, 100);
       console.log("read ok")
 
       /* 3️⃣  If #100 is 1 → reset it to 0  */
@@ -112,6 +114,7 @@ import {call_lcf_lib} from './lcf_lib.js';
     } catch (err) {
       console.error('Error while polling the save file:', err);
     }
+    isLocked = false;
   }, POLL_MS);
 })();
 
