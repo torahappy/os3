@@ -1,3 +1,5 @@
 *.ldb filter=lfs diff=lfs merge=lfs -text
 *.lmt filter=lfs diff=lfs merge=lfs -text
 *.lmu filter=lfs diff=lfs merge=lfs -text
+*.ogg filter=lfs diff=lfs merge=lfs -text
+*.PNG filter=lfs diff=lfs merge=lfs -text
