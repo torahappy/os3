@@ -137,7 +137,7 @@ fi
 if [ ! -d "${SCRIPT_DIR}/dist-wasm" ] && [ $BUILD_WASM -eq 1 ]; then
   mkdir "${SCRIPT_DIR}/dist-wasm"
 
-  pushd "${SCRIPT_DIR}/dist"
+  pushd "${SCRIPT_DIR}/dist-wasm"
 
   git clean -dfx
 
