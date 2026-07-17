@@ -19,7 +19,7 @@ This script does the following:
         – if the first number is `2` updates the progression table
         – if the first number is `3` triggers the data‑input stage
 * 4.  Handles the optional data‑input stage
-        – launches `zbarimg` and parses a line like
+        – launches `zbarcam` and parses a line like
               QR-Code:<data1> <data2> … <dataN> <signature>
         – validates the signature
         – runs the required `./dist/rpg_lsd_io` write command
@@ -261,7 +261,8 @@ def verify_signature(
 # --------------------------------------------------------------------------- #
 
 def rpg_write_generic(
-    data: list[int]
+    data: list[int],
+    target: int = 199
 ) -> None:
     """
     Run the command:
@@ -274,7 +275,7 @@ def rpg_write_generic(
         "write_rpg_var_lgs",
         "games/default/Save.lgs",
         "games/default/Save.lgs",
-        "199",
+        str(target),
         str(len(data)),
         f"[ {" ".join([str(i) for i in data])} ]"
     ]
@@ -320,7 +321,7 @@ def do_login(db: DB, signing_key: str) -> Tuple[int, int]:
     Returns a tuple (user_id, current_progression).
     """
     # 1. launch zbarcam
-    out = run_cmd("zbarcam")
+    out = run_cmd("zbarcam", "-1", "--nodisplay")
     # 2. find a matching QR‑code line
     user_id: int
     signature_b64: str
@@ -372,7 +373,7 @@ def do_data_input(
     command returns a line that starts with the number 3.
     """
     # Launch zbarimg
-    out = run_cmd("zbarimg")
+    out = run_cmd("zbarcam" , "-1", "--nodisplay")
     # Find a line that looks like our QR‑code
     data: List[int] = []
     signature_b64: str
@@ -410,35 +411,35 @@ def progression_loop(db: DB, signing_key: str, user_id: int, current_progression
     """
     Run the continuous progression loop.
     """
-    pinged = False
     ping_start = None
+    processed = True
 
     while True:
         # 1. read the ping / status
-        lines = rpg_read_generic(1)
-        if not lines:
+        data = rpg_read_generic(1)
+
+        if len(data) == 0:
             time.sleep(SYNC_WINDOW)
             continue
 
-        last_line = lines[-1]
-        if last_line == "1":
-            # We have a ping
-            pinged = True
+        # We have a ping
+        if data[0] == 1 and processed == True:
             ping_start = time.time()
+            rpg_write_generic([0], 99)
+            processed = False
 
         # 1a. if we have a ping and we have waited enough
-        if pinged and ping_start is not None and (time.time() - ping_start >= WRITE_WINDOW):
+        if ping_start is not None and processed == False and (time.time() - ping_start >= WRITE_WINDOW):
+            processed = True
             # 2. read the 100‑th
             out = rpg_read_generic(100)
             # 2a. parse the result
-            if not out:
+            if len(out) == 0:
+                print("[DEBUG] No command from RPG")
                 continue
             # The first number is the *command* indicator
             cmd = out[0]
-            # 1.   2 = (the & “…”..)
-            # 2.   4 = (…....)
-            # 3.   4‑…..? etc.
-            if cmd == "2":
+            if cmd == 2:
                 # The second number is the next progression
                 next_prog = out[1]
                 # Update DB
@@ -446,13 +447,9 @@ def progression_loop(db: DB, signing_key: str, user_id: int, current_progression
                 # Also update the current progression in the users table
                 db.update_user_progression(user_id, next_prog)
                 current_progression = next_prog
-                #  ... and we finished
-                pinged = None
-            elif cmd == "3":
+            elif cmd == 3:
                 # data‑input required
                 do_data_input(db, user_id, current_progression, signing_key)
-            # … other commands can be handled here
-            pinged = None
 
         # 2.   100ms loop – re‑run
         time.sleep(SYNC_WINDOW)
