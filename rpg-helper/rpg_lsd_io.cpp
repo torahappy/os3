@@ -13,11 +13,15 @@
  *********************************************************************/
 
 #include <cstdint> // int8_t, int32_t, etc.
+#include <cstdlib>
 #include <cstring> // memcpy
 #include <fstream>
 #include <iostream>
 #include <memory>
+#include <sstream>
+#include <string>
 #include <string_view>
+#include <vector>
 
 // ---------------  liblcf headers --------------------------------
 #include "lcf/lsd/reader.h"
@@ -27,6 +31,8 @@
 #include "lcf/rpg/savesystem.h"
 #include "lcf/saveopt.h" // defines lcf::EngineVersion
 #include "lcf/writer_lcf.h"
+
+#include "./rpg_lsd_io.hpp"
 
 // ---------------  C interface -----------------------------------
 extern "C" {
@@ -490,6 +496,7 @@ int write_rpg_switch(const char *in_filename, const char *out_filename,
   return 0;
 }
 }
+
 
 /*********************************************************************
  *  End of rpg_lsd_io.cpp

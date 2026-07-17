@@ -6,6 +6,10 @@ if [ "$BUILD_WASM" == "" ]; then
   BUILD_WASM=1
 fi
 
+if [ "$BUILD_NATIVE" == "" ]; then
+  BUILD_NATIVE=1
+fi
+
 set -euo pipefail
 
 case "$OSTYPE" in
@@ -22,6 +26,28 @@ cd "$SCRIPT_DIR"
 if [ $BUILD_WASM -eq 1 ]; then
   emsdk install 4.0.10
   emsdk activate 4.0.10
+fi
+
+if [ ! -d ../external-apps/inih ] && [ $BUILD_NATIVE -eq 1 ]; then
+
+pushd ../external-sources/inih-$INIH_VERSION
+
+  git clean -dfx
+
+  mkdir build
+
+  pushd build
+
+    meson --prefix="${SCRIPT_DIR}/../external-apps/inih" ..
+
+    ninja
+
+    ninja install
+
+  popd
+
+popd
+
 fi
 
 if [ ! -d ../external-apps/inih-wasm ] && [ $BUILD_WASM -eq 1 ]; then
@@ -41,6 +67,28 @@ pushd ../external-sources/inih-$INIH_VERSION
     ninja install
 
   popd
+
+popd
+
+fi
+
+if [ ! -d ../external-apps/lcf ] && [ $BUILD_NATIVE -eq 1 ]; then
+
+pushd ../external-sources/liblcf-$LCF_VERSION
+
+  git clean -dfx
+
+  cmake -B build  -DCMAKE_INSTALL_PREFIX="${SCRIPT_DIR}/../external-apps/lcf"
+
+  cmake --build build --config Release -j$NPR
+
+  pushd build
+
+    make install -j$NPR
+
+  popd
+
+  git restore .
 
 popd
 
@@ -70,8 +118,24 @@ popd
 
 fi
 
-if [ ! -d "${SCRIPT_DIR}/dist" ] && [ $BUILD_WASM -eq 1 ]; then
+
+if [ ! -d "${SCRIPT_DIR}/dist" ] && [ $BUILD_NATIVE -eq 1 ]; then
   mkdir "${SCRIPT_DIR}/dist"
+
+  pushd "${SCRIPT_DIR}/dist"
+
+  git clean -dfx
+  
+  g++ ../rpg_lsd_io.cpp ../rpg_lsd_io_main.cpp $(find ../../external-apps/lcf -name "liblcf.so") -I"../../external-apps/lcf/include" -O3 -o rpg_lsd_io
+
+  g++ ../catch_amalgamated.cpp ../rpg_lsd_io.cpp ../rpg_lsd_io_test.cpp $(find ../../external-apps/lcf -name "liblcf.so") -I"../../external-apps/lcf/include" -O3 -o rpg_lsd_io_test
+
+  popd
+
+fi
+
+if [ ! -d "${SCRIPT_DIR}/dist-wasm" ] && [ $BUILD_WASM -eq 1 ]; then
+  mkdir "${SCRIPT_DIR}/dist-wasm"
 
   pushd "${SCRIPT_DIR}/dist"
 
