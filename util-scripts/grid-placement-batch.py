@@ -46,7 +46,7 @@ __all__ = ["main"]
 
 def _collect_svg_files(cells_dir: Path) -> list[Path]:
     """Return a sorted list of all *.svg files in *cells_dir*."""
-    return sorted(cells_dir.glob("*.svg"))
+    return sorted(cells_dir.glob("*.svg"), key=lambda x: int(x.name.split(".")[0]))
 
 
 def _run_batch(
