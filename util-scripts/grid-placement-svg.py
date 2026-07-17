@@ -78,24 +78,30 @@ def get_svg_dim(root: ET.Element) -> Tuple[float, float, float, float, float | N
     Return (width, height) from the root element.
     Returns: (vb_width, vb_height, vb_x, vb_y, width, height, width_unit, height_unit)
     """
-    viewbox = root.attrib.get("viewBox")
+
     vb_w, vb_h, vb_x, vb_y, width, height, w_unit, h_unit = [None] * 8
+
+    attr_w = root.attrib.get("width")
+    attr_h = root.attrib.get("height")
+    if attr_h is not None and attr_w is not None:
+        width, w_unit = separate_unit(attr_w)
+        height, h_unit = separate_unit(attr_h)
+
+    viewbox = root.attrib.get("viewBox")
     if viewbox:
         # viewBox is "minX minY width height"
         vb_x, vb_y, vb_w, vb_h = map(float, viewbox.split())
     else:
-        attr_w = root.attrib.get("width")
-        attr_h = root.attrib.get("height")
-        if attr_h is None or attr_w is None:
-            raise ValueError("Base SVG must declare width and height (or viewBox)")
-        width, w_unit = separate_unit(attr_w)
-        height, h_unit = separate_unit(attr_h)
-        if vb_x is None or vb_y is None or vb_w is None or vb_h is None:
+        if width is not None and height is not None:
             vb_x = 0.
             vb_y = 0.
             vb_w = width
             vb_h = height
+        else:
+            raise ValueError("SVG Parse error: No width/height metrics nor viewbox metrics!")
     return vb_w, vb_h, vb_x, vb_y, width, height, w_unit, h_unit
+
+import math
 
 def tile_cells(
     base_root: ET.Element,
@@ -125,8 +131,8 @@ def tile_cells(
         raise ValueError(f"Unable to read base dimensions: {exc}")
 
     # How many columns and rows fit?
-    ncols = int((base_w - start_x) // interval_w) if base_w >= start_x else 0
-    nrows = int((base_h - start_y) // interval_h) if base_h >= start_y else 0
+    ncols = math.ceil((base_w - start_x) / interval_w) if base_w >= start_x else 0
+    nrows = math.ceil((base_h - start_y) / interval_h) if base_h >= start_y else 0
     total_grid = ncols * nrows
 
     # --------------------------------------------------------------------- #
