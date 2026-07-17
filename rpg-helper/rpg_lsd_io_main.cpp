@@ -1,4 +1,3 @@
-
 #include <cstdint> // int8_t, int32_t, etc.
 #include <cstdlib>
 #include <cstring> // memcpy
@@ -12,6 +11,66 @@
 
 #include "./rpg_lsd_io.hpp"
 
+/*  The functions are defined in the same file (rpg_lsd_io.cpp) – they are
+ *extern “C”* exported, so we can call them directly.  No additional header
+ *is required.  */
+
+/* -----------------------------------------------------------------------------
+ */
+/*  Helper – split a string into tokens                                */
+/* -----------------------------------------------------------------------------
+ */
+static std::vector<std::string> split(const std::string &s) {
+  std::istringstream iss(s);
+  std::string token;
+  std::vector<std::string> tokens;
+  while (iss >> token)
+    tokens.push_back(token);
+  return tokens;
+}
+
+/* -----------------------------------------------------------------------------
+ */
+/*  Parse an array that is written like "[ 1 2 3 4 ]"  */
+/* -----------------------------------------------------------------------------
+ */
+template <typename T>
+static bool parse_array(const std::string &s, std::vector<T> &out) {
+  std::string str = s;
+  // Trim leading/trailing whitespace
+  auto start = str.find_first_not_of(" \t\r\n");
+  auto end = str.find_last_not_of(" \t\r\n");
+  if (start == std::string::npos || end == std::string::npos)
+    return false;
+  str = str.substr(start, end - start + 1);
+
+  // Must start with '[' and end with ']'
+  if (str.front() != '[' || str.back() != ']')
+    return false;
+  str = str.substr(1, str.size() - 2); // strip brackets
+
+  std::vector<std::string> toks = split(str);
+  out.clear();
+  out.reserve(toks.size());
+  for (const auto &tok : toks) {
+    if constexpr (std::is_same_v<T, int32_t>) {
+      char *endptr = nullptr;
+      long val = std::strtol(tok.c_str(), &endptr, 10);
+      if (*endptr != '\0')
+        return false;
+      out.push_back(static_cast<int32_t>(val));
+    } else if constexpr (std::is_same_v<T, int8_t>) {
+      if (tok == "1" || tok == "T" || tok == "t")
+        out.push_back(1);
+      else if (tok == "0" || tok == "F" || tok == "f")
+        out.push_back(0);
+      else
+        return false;
+    } else
+      return false;
+  }
+  return true;
+}
 
 /* -----------------------------------------------------------------------------
  */
@@ -60,7 +119,7 @@ int main(int argc, char **argv) {
       }
       std::cout << '\n';
     } else {
-      int8_t* bools = (int8_t *)malloc(count);
+      int8_t *bools = (int8_t *)malloc(count);
       if (func == "read_rpg_switch_lgs") {
         rc = read_rpg_switch_lgs(filename, offset, count, bools);
       } else {
@@ -71,13 +130,14 @@ int main(int argc, char **argv) {
         return 1;
       }
       for (int i = 0; i < count; ++i) {
-        std::cout << ((bool*)bools)[i];
+        std::cout << ((bool *)bools)[i];
         if (i + 1 < count)
           std::cout << ' ';
       }
       std::cout << '\n';
       free(bools);
     }
+    return 0;
   }
 
   /* ------------------------------------------------------------ */
@@ -161,9 +221,8 @@ int main(int argc, char **argv) {
       return 1;
     }
     return 0;
+  } else {
+    std::cerr << "Unknown function: " << func << '\n';
+    return 1;
   }
-
-  std::cerr << "Unknown function: " << func << '\n';
-  return 1;
 }
-
