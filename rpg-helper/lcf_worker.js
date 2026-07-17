@@ -1,5 +1,5 @@
 /*  lcf_worker.js  */
-import LcfModule from './dist/rpg_lsd_io.js'; // the exported factory
+import LcfModule from './dist-wasm/rpg_lsd_io.js'; // the exported factory
 
 // ---------------------------------------------------------------------------
 // 1️⃣  Instantiate the module the first time the worker receives a message
