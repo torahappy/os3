@@ -117,6 +117,12 @@ class DB:
                 progression INTEGER NOT NULL
             );
 
+            CREATE TABLE IF NOT EXISTS logouts (
+                user_id INTEGER NOT NULL,
+                login_date TEXT NOT NULL,
+                progression INTEGER NOT NULL
+            );
+
             CREATE TABLE IF NOT EXISTS progressions (
                 user_id INTEGER NOT NULL,
                 progression_date TEXT NOT NULL,
@@ -171,6 +177,17 @@ class DB:
         cur = self.conn.cursor()
         cur.execute(
             "INSERT INTO logins(user_id,login_date,progression) "
+            "VALUES (?,?,?)",
+            (user_id, now, progression),
+        )
+        self.conn.commit()
+
+    def insert_logout(self, user_id: int, progression: int) -> None:
+        """Insert a logout record."""
+        now = datetime.datetime.now(datetime.timezone.utc).isoformat()
+        cur = self.conn.cursor()
+        cur.execute(
+            "INSERT INTO logouts(user_id,login_date,progression) "
             "VALUES (?,?,?)",
             (user_id, now, progression),
         )
@@ -307,7 +324,10 @@ def rpg_read_generic(count: int) -> list[int]:
         for l in out.stdout.splitlines()
         if l.strip() and not l.strip().startswith("Debug:")
     ]
-    return [int(x) for x in results[0].split(' ')]
+    if len(results) > 0:
+        return [int(x) for x in results[0].split(' ')]
+    else:
+        return []
 
 
 # --------------------------------------------------------------------------- #
@@ -399,6 +419,8 @@ def do_data_input(
         rpg_write_error(2)  # 10002
         raise RuntimeError("Invalid data‑input QR‑code signature")
 
+    db.insert_choice(user_id, current_progression, f"(data input) {path} {signature_b64}")
+
     # 1. Build the write command
     # Count the arguments that are passed to the write command
     rpg_write_generic([2, user_id, current_progression, *data])
@@ -439,7 +461,7 @@ def progression_loop(db: DB, signing_key: str, user_id: int, current_progression
                 continue
             # The first number is the *command* indicator
             cmd = out[0]
-            if cmd == 2:
+            if cmd == 2: # Progression command
                 # The second number is the next progression
                 next_prog = out[1]
                 # Update DB
@@ -447,9 +469,11 @@ def progression_loop(db: DB, signing_key: str, user_id: int, current_progression
                 # Also update the current progression in the users table
                 db.update_user_progression(user_id, next_prog)
                 current_progression = next_prog
-            elif cmd == 3:
+            elif cmd == 3: # Data-Input command
                 # data‑input required
                 do_data_input(db, user_id, current_progression, signing_key)
+            elif cmd == 4: # Logout command
+                break
 
         # 2.   100ms loop – re‑run
         time.sleep(SYNC_WINDOW)
