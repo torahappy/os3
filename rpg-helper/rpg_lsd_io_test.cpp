@@ -10,6 +10,7 @@
 
 #define CATCH_CONFIG_ENABLE_EXCEPTIONS
 #include "catch_amalgamated.hpp"
+#include "rpg_lsd_io.hpp"
 
 #include <cstdint>          // int8_t, int32_t
 #include <cstring>
@@ -29,25 +30,6 @@
 #include "lcf/writer_lcf.h"
 
 // -------------  exported C interface --------------------------------
-extern "C" {
-    int read_rpg_var_lgs(const char *filename, int32_t offset, int32_t count, int32_t *ret);
-    int write_rpg_var_lgs(const char *in_filename, const char *out_filename, int32_t offset,
-                           int32_t count, const int32_t *variables);
-
-    int read_rpg_switch_lgs(const char *filename, int32_t offset, int32_t count,
-                             int8_t *ret);
-    int write_rpg_switch_lgs(const char *in_filename, const char *out_filename, int32_t offset,
-                              int32_t count, const int8_t *switches);
-
-    int read_rpg_var(const char *filename, int32_t offset, int32_t count, int32_t *ret);
-    int write_rpg_var(const char *in_filename, const char *out_filename, int32_t offset,
-                       int32_t count, const int32_t *variables);
-
-    int read_rpg_switch(const char *filename, int32_t offset, int32_t count,
-                         int8_t *ret);
-    int write_rpg_switch(const char *in_filename, const char *out_filename,
-                          int32_t offset, int32_t count, const int8_t *switches);
-}
 
 // -------------  helpers for generating the test files --------------------------------
 namespace {
