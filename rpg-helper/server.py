@@ -398,8 +398,6 @@ def process_qr_data_input(
         signature_b64 = m.group(3)
         break
     else:
-        #rpg_write_error(2)  # 10002
-        #raise RuntimeError("No QR‑code data line found while data‑input")
         data_input_queue.put_nowait((None, 2, "No QR‑code data line found while data‑input"))
         return False
 
@@ -410,13 +408,9 @@ def process_qr_data_input(
     # Verify the signature
     path = "/".join( [str(x) for x in data])
     if not verify_signature(path, signature_b64, signing_key, "ikiteikou_os_v0.0002_data_input"):
-        # rpg_write_error(2)  # 10002
-        # raise RuntimeError("Invalid data‑input QR‑code signature")
         data_input_queue.put_nowait((None, 2, "Invalid data‑input QR‑code signature"))
         return False
 
-    # db.insert_choice(user_id, current_progression, f"(data input) {path} {signature_b64}")
-    # rpg_write_generic([2, user_id, current_progression, *data])
     data_input_queue.put_nowait((data, None, None))
     return True
 
@@ -554,6 +548,7 @@ def progression_loop(db: DB, signing_key: str) -> None:
                     except queue.Empty:
                         pass
 
+
                 # 2. read the 100-199 (Internally, 99-198)
                 out = rpg_read_generic(100)
                 debug("Command ID from RPG : %s" % out[0])
@@ -561,17 +556,23 @@ def progression_loop(db: DB, signing_key: str) -> None:
                 # The first number is the *command* indicator
                 cmd = out[0]
                 if cmd == 2: # Progression command
-                    # The second number is the next progression
-                    next_prog = out[1]
+                    # The third number is the next progression
+                    if user_id != out[1]:
+                        raise RuntimeError("User ID desync from RPG!!")
+                    next_prog = out[2]
                     # Update DB
                     db.insert_progression(user_id, next_prog)
                     # Also update the current progression in the users table
                     db.update_user_progression(user_id, next_prog)
                     current_progression = next_prog
                 elif cmd == 3: # Data-Input command
+                    if user_id != out[1]:
+                        raise RuntimeError("User ID desync from RPG!!")
                     # data‑input required
                     current_qr_state = "data-input"
                 elif cmd == 4: # Logout command
+                    if user_id != out[1]:
+                        raise RuntimeError("User ID desync from RPG!!")
                     debug(f"{user_id} Logout")
                     user_id = None
                     current_progression = None
