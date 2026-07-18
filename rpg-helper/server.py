@@ -58,13 +58,16 @@ RPG_BIN = Path("./dist/rpg_lsd_io")
 # The maximum amount of data that can be supplied by the user
 MAX_DATA = 10
 
-# The sync interval – 100 ms
-SYNC_WINDOW = 0.1  # seconds
+# The sync interval – 50 ms
+SYNC_WINDOW = 0.05  # seconds
 
 # The timeout for the ping → read‑100 loop
-WRITE_WINDOW = 2.5  # seconds
+WRITE_WINDOW = 0.5  # seconds
 
-RPG_TIMEOUT_WINDOW = 30
+RPG_TIMEOUT_WINDOW = 10
+
+# prevents immense amount of zbarcam launching attempt due to camera device blocking etc.
+QR_APP_WINDOW = 2.0
 
 # --------------------------------------------------------------------------- #
 #  Helper functions
@@ -310,7 +313,7 @@ def rpg_write_error(code: int) -> None:
     """Run the error command, e.g. 199 1 [ 10001 ]."""
     rpg_write_generic([10000 + code])
 
-def rpg_read_generic(count: int) -> list[int]:
+def rpg_read_generic(count: int, target = 99) -> list[int]:
     """
     Run the command
 
@@ -322,7 +325,7 @@ def rpg_read_generic(count: int) -> list[int]:
         str(RPG_BIN),
         "read_rpg_var_lgs",
         "games/default/Save.lgs",
-        "99",
+        str(target),
         str(count),
     )
     # Split into lines, strip, drop empty & debug lines
@@ -349,8 +352,6 @@ login_queue: Queue[tuple[int | None, int | None, str | None]] = Queue(maxsize=1)
 # data, error_code, error_msg
 data_input_queue: Queue[tuple[list[int] | None, int | None, str | None]] = Queue(maxsize=1)
 
-# prevents immense amount of zbarcam launching attempt due to camera device blocking etc.
-QR_APP_WINDOW = 5.0
 
 def process_qr_login(data: str, signing_key: str) -> bool:
     # 2. find a matching QR‑code line
@@ -452,6 +453,15 @@ def flush_queue(q: Queue):
 #  Progression loop
 # --------------------------------------------------------------------------- #
 
+def sanitize_queues():
+    if current_qr_state == "":
+        flush_queue(login_queue)
+        flush_queue(data_input_queue)
+    elif current_qr_state == "login":
+        flush_queue(data_input_queue)
+    elif current_qr_state == "data-input":
+        flush_queue(login_queue)
+
 def progression_loop(db: DB, signing_key: str) -> None:
     """
     Run the continuous progression loop.
@@ -464,7 +474,7 @@ def progression_loop(db: DB, signing_key: str) -> None:
 
     while True:
         # 1. read the ping / status
-        data = rpg_read_generic(1)
+        data = rpg_read_generic(1, 98)
 
         if len(data) == 0:
             time.sleep(SYNC_WINDOW)
@@ -473,7 +483,7 @@ def progression_loop(db: DB, signing_key: str) -> None:
         # We have a ping
         if data[0] == 1 and processed == True:
             ping_start = time.time()
-            rpg_write_generic([0], 99)
+            rpg_write_generic([0], 98)
             processed = False
         
         if ping_start is not None and (time.time() - ping_start >= RPG_TIMEOUT_WINDOW):
@@ -482,6 +492,7 @@ def progression_loop(db: DB, signing_key: str) -> None:
         # 1a. if we have a ping and we have waited enough
         if ping_start is not None and processed == False and (time.time() - ping_start >= WRITE_WINDOW):
             processed = True
+            sanitize_queues()
 
             if user_id is None:
                 # ===================================
@@ -490,7 +501,6 @@ def progression_loop(db: DB, signing_key: str) -> None:
 
                 # Get login data, erase other queue
                 current_qr_state = "login"
-                flush_queue(data_input_queue)
 
                 try:
                     data = login_queue.get_nowait()
@@ -545,6 +555,7 @@ def progression_loop(db: DB, signing_key: str) -> None:
                         else:
                             raise RuntimeError("something wrong happened")
                         data_input_queue.task_done()
+                        current_qr_state = ""
                     except queue.Empty:
                         pass
 
@@ -574,8 +585,11 @@ def progression_loop(db: DB, signing_key: str) -> None:
                     if user_id != out[1]:
                         raise RuntimeError("User ID desync from RPG!!")
                     debug(f"{user_id} Logout")
+                    db.insert_logout(user_id, current_progression or 0)
                     user_id = None
                     current_progression = None
+                elif cmd >= 10000:
+                    raise RuntimeError(f"Desync from RPG with Error Code: {cmd}")
 
         # 2.   100ms loop – re‑run
         time.sleep(SYNC_WINDOW)
