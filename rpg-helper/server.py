@@ -30,6 +30,7 @@ from __future__ import annotations
 import base64
 import hashlib
 import os
+import queue
 import re
 import sqlite3
 import subprocess
@@ -38,7 +39,11 @@ import threading
 import time
 import datetime
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Optional, Tuple
+from typing import Any, Dict, Iterable, List, Literal, Optional, Tuple
+from queue import Queue
+import os
+
+os.chdir(Path(__file__).parent.absolute())
 
 # --------------------------------------------------------------------------- #
 # Configuration
@@ -58,6 +63,8 @@ SYNC_WINDOW = 0.1  # seconds
 
 # The timeout for the ping → read‑100 loop
 WRITE_WINDOW = 2.5  # seconds
+
+RPG_TIMEOUT_WINDOW = 30
 
 # --------------------------------------------------------------------------- #
 #  Helper functions
@@ -331,21 +338,25 @@ def rpg_read_generic(count: int) -> list[int]:
 
 
 # --------------------------------------------------------------------------- #
-#  Login flow
+#  QR Processing Flow
 # --------------------------------------------------------------------------- #
 
-def do_login(db: DB, signing_key: str) -> Tuple[int, int]:
-    """
-    Perform the login flow.
+current_qr_state: Literal["login"] | Literal["data-input"] = "login"
 
-    Returns a tuple (user_id, current_progression).
-    """
-    # 1. launch zbarcam
-    out = run_cmd("zbarcam", "-1", "--nodisplay")
+# user_id, error_code, error_msg
+login_queue: Queue[tuple[int | None, int | None, str | None]] = Queue(maxsize=1)
+
+# data, error_code, error_msg
+data_input_queue: Queue[tuple[list[int] | None, int | None, str | None]] = Queue(maxsize=1)
+
+# prevents immense amount of zbarcam launching attempt due to camera device blocking etc.
+QR_APP_WINDOW = 5.0
+
+def process_qr_login(data: str, signing_key: str) -> bool:
     # 2. find a matching QR‑code line
     user_id: int
     signature_b64: str
-    for l in out.stdout.splitlines():
+    for l in data.splitlines():
         try:
             user_id, signature_b64 = parse_qr_code_line(l)
             break
@@ -353,87 +364,94 @@ def do_login(db: DB, signing_key: str) -> Tuple[int, int]:
             continue
     else:
         # No QR‑code line
-        rpg_write_error(1)  # 10001
-        raise RuntimeError("No QR‑code line found while logging in")
+        login_queue.put_nowait((None, 1, "No QR‑code line found while logging in"))
+        return False
 
     # 3. validate
     if not verify_signature(str(user_id), signature_b64, signing_key, "ikiteikou_os_v0.0002_aone_cards"):
-        rpg_write_error(1)  # 10001
-        raise RuntimeError(f"Invalid QR‑code signature for user {user_id}")
+        login_queue.put_nowait((None, 1, f"Invalid QR‑code signature for user {user_id}"))
+        return False
 
-    # 4. create / update DB
-    user = db.get_user(user_id)
-    if user is None:
-        db.create_user(user_id)
-        progression = 1
+    login_queue.put_nowait((user_id, None, None))
+    return True
+
+def process_qr_data_input(
+    qr_data: str,
+    signing_key: str,
+) -> bool:
+    """
+    Handle the data‑input stage that is triggered when the last read
+    command returns a line that starts with the number 3.
+    """
+    data: List[int] = []
+    signature_b64: str
+    for l in qr_data.splitlines():
+        # Expected format:
+        #   QR-Code:2 5 3 7 <signature>
+        m = re.search(r"QR-Code:((\d+ )+)([A-Za-z0-9+/=]+)", l)
+        if not m:
+            continue
+
+        # Split the data part
+        data_part = m.group(1)
+        data = [int(x) for x in data_part.split()]
+        signature_b64 = m.group(3)
+        break
     else:
-        progression = user["current_progression"]
+        #rpg_write_error(2)  # 10002
+        #raise RuntimeError("No QR‑code data line found while data‑input")
+        data_input_queue.put_nowait((None, 2, "No QR‑code data line found while data‑input"))
+        return False
 
-    # 5. log the login
-    db.insert_login(user_id, progression)
+    # Verify the signature
+    path = "/".join( [str(x) for x in data])
+    if not verify_signature(path, signature_b64, signing_key, "ikiteikou_os_v0.0002_data_input"):
+        # rpg_write_error(2)  # 10002
+        # raise RuntimeError("Invalid data‑input QR‑code signature")
+        data_input_queue.put_nowait((None, 2, "Invalid data‑input QR‑code signature"))
+        return False
 
-    # 6. write the required command
-    rpg_write_generic([1, user_id, progression])
+    # db.insert_choice(user_id, current_progression, f"(data input) {path} {signature_b64}")
+    # rpg_write_generic([2, user_id, current_progression, *data])
+    data_input_queue.put_nowait((data, None, None))
+    return True
 
-    return user_id, progression
+def qr_reader(signing_key: str):
+    """
+    Perform the login flow or data insersion flow.
 
+    Returns a tuple (user_id, current_progression).
+    """
+    while True:
+        time.sleep(QR_APP_WINDOW)
+
+        # 1. launch zbarcam
+        out = run_cmd("zbarcam", "-1", "--nodisplay")
+        try:
+            if current_qr_state == "login":
+                process_qr_login(out.stdout, signing_key)
+            elif current_qr_state == "data-input":
+                process_qr_data_input(out.stdout, signing_key)
+        except queue.Full:
+            debug("Full queue; disregarding the newest input")
 
 # --------------------------------------------------------------------------- #
 #  Data‑input handling
 # --------------------------------------------------------------------------- #
 
-def do_data_input(
-    db: DB,
-    user_id: int,
-    current_progression: int,
-    signing_key: str,
-) -> None:
-    """
-    Handle the data‑input stage that is triggered when the last read
-    command returns a line that starts with the number 3.
-    """
-    # Launch zbarimg
-    out = run_cmd("zbarcam" , "-1", "--nodisplay")
-    # Find a line that looks like our QR‑code
-    data: List[int] = []
-    signature_b64: str
-    for l in out.stdout.splitlines():
-        # Expected format:
-        #   QR-Code:2 5 3 7 <signature>
-        m = re.search(r"QR-Code:(\d+(?: \d+)*)\s+([A-Za-z0-9+/=]+)", l)
-        if not m:
-            continue
-        # Split the data part
-        data_part = m.group(1)
-        data = [int(x) for x in data_part.split()]
-        signature_b64 = m.group(2)
-        break
-    else:
-        rpg_write_error(2)  # 10002
-        raise RuntimeError("No QR‑code data line found while data‑input")
-
-    # Verify the signature
-    # Build the path string that the QR‑code contains
-    path = "/".join( [str(x) for x in data])
-    if not verify_signature(path, signature_b64, signing_key, "ikiteikou_os_v0.0002_data_input"):
-        rpg_write_error(2)  # 10002
-        raise RuntimeError("Invalid data‑input QR‑code signature")
-
-    db.insert_choice(user_id, current_progression, f"(data input) {path} {signature_b64}")
-
-    # 1. Build the write command
-    # Count the arguments that are passed to the write command
-    rpg_write_generic([2, user_id, current_progression, *data])
 
 # --------------------------------------------------------------------------- #
 #  Progression loop
 # --------------------------------------------------------------------------- #
 
-def progression_loop(db: DB, signing_key: str, user_id: int, current_progression: int) -> None:
+def progression_loop(db: DB, signing_key: str) -> None:
     """
     Run the continuous progression loop.
     """
-    ping_start = None
+    global current_qr_state
+    user_id: None | int = None
+    current_progression: None | int = None
+    ping_start: None | float = None
     processed = True
 
     while True:
@@ -449,16 +467,54 @@ def progression_loop(db: DB, signing_key: str, user_id: int, current_progression
             ping_start = time.time()
             rpg_write_generic([0], 99)
             processed = False
+        
+        if ping_start is not None and (time.time() - ping_start >= RPG_TIMEOUT_WINDOW):
+            raise RuntimeError("Lost connection from RPG!")
 
         # 1a. if we have a ping and we have waited enough
         if ping_start is not None and processed == False and (time.time() - ping_start >= WRITE_WINDOW):
             processed = True
-            # 2. read the 100‑th
+
+            # ===================================
+            # BEFORE LOGIN
+            # ===================================
+
+            try:
+                data = login_queue.get_nowait()
+
+                if data[0] is None:
+                    if data[1] is not None:
+                        rpg_write_error(data[1])
+                    else:
+                        raise RuntimeError("Error code is not provided on login failure!")
+                else:
+                    user_id = data[0]
+        
+                    # 4. create / update DB
+                    user = db.get_user(user_id)
+                    if user is None:
+                        db.create_user(user_id)
+                        progression = 1
+                    else:
+                        progression = user["current_progression"]
+                
+                    # 5. log the login
+                    db.insert_login(user_id, progression)
+                
+                    # 6. write the required command
+                    rpg_write_generic([1, user_id, progression])
+                login_queue.task_done()
+            except queue.Empty:
+                pass
+
+            # ===================================
+            # AFTER_LOGIN
+            # ===================================
+
+            # 2. read the 100-199 (Internally, 99-198)
             out = rpg_read_generic(100)
-            # 2a. parse the result
-            if len(out) == 0:
-                print("[DEBUG] No command from RPG")
-                continue
+            debug("Command ID from RPG : %s" % out[0])
+
             # The first number is the *command* indicator
             cmd = out[0]
             if cmd == 2: # Progression command
@@ -471,6 +527,7 @@ def progression_loop(db: DB, signing_key: str, user_id: int, current_progression
                 current_progression = next_prog
             elif cmd == 3: # Data-Input command
                 # data‑input required
+                current_qr_state = "data-input"
                 do_data_input(db, user_id, current_progression, signing_key)
             elif cmd == 4: # Logout command
                 break
@@ -488,16 +545,12 @@ def main() -> None:
     db = DB(DB_PATH)
     signing_key = read_signing_key()
 
-    # The login flow – it will raise if something goes wrong
-    try:
-        user_id, current_progression = do_login(db, signing_key)
-    except Exception as exc:
-        print(f"[ERROR] {exc}", file=sys.stderr)
-        sys.exit(1)
+    thread_qr = threading.Thread(target=qr_reader, args=(signing_key,))
+    thread_qr.start()
 
     # Start the progression loop – this will never return
     try:
-        progression_loop(db, signing_key, user_id, current_progression)
+        progression_loop(db, signing_key)
     except KeyboardInterrupt:
         print("\n[INFO] Stopping…", file=sys.stderr)
         sys.exit(0)
