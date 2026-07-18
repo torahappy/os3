@@ -341,7 +341,7 @@ def rpg_read_generic(count: int) -> list[int]:
 #  QR Processing Flow
 # --------------------------------------------------------------------------- #
 
-current_qr_state: Literal["login"] | Literal["data-input"] = "login"
+current_qr_state: Literal["login"] | Literal["data-input"] | Literal[""] = "login"
 
 # user_id, error_code, error_msg
 login_queue: Queue[tuple[int | None, int | None, str | None]] = Queue(maxsize=1)
@@ -403,6 +403,10 @@ def process_qr_data_input(
         data_input_queue.put_nowait((None, 2, "No QR‑code data line found while data‑input"))
         return False
 
+    if len(data) > MAX_DATA:
+        data_input_queue.put_nowait((None, 2, "Too many data provided"))
+        return False
+
     # Verify the signature
     path = "/".join( [str(x) for x in data])
     if not verify_signature(path, signature_b64, signing_key, "ikiteikou_os_v0.0002_data_input"):
@@ -432,13 +436,23 @@ def qr_reader(signing_key: str):
                 process_qr_login(out.stdout, signing_key)
             elif current_qr_state == "data-input":
                 process_qr_data_input(out.stdout, signing_key)
+            else:
+                debug("qr code provided but no use")
         except queue.Full:
-            debug("Full queue; disregarding the newest input")
+            debug("Full queue; discarding the newest input")
 
 # --------------------------------------------------------------------------- #
-#  Data‑input handling
+#  Queue misc
 # --------------------------------------------------------------------------- #
 
+def flush_queue(q: Queue):
+    # Flush the queue
+    while not q.empty():
+        try:
+            q.get_nowait()
+            q.task_done()
+        except queue.Empty:
+            break
 
 # --------------------------------------------------------------------------- #
 #  Progression loop
@@ -475,62 +489,92 @@ def progression_loop(db: DB, signing_key: str) -> None:
         if ping_start is not None and processed == False and (time.time() - ping_start >= WRITE_WINDOW):
             processed = True
 
-            # ===================================
-            # BEFORE LOGIN
-            # ===================================
+            if user_id is None:
+                # ===================================
+                # BEFORE LOGIN
+                # ===================================
 
-            try:
-                data = login_queue.get_nowait()
+                # Get login data, erase other queue
+                current_qr_state = "login"
+                flush_queue(data_input_queue)
 
-                if data[0] is None:
-                    if data[1] is not None:
-                        rpg_write_error(data[1])
+                try:
+                    data = login_queue.get_nowait()
+    
+                    if data[0] is None:
+                        if data[1] is not None:
+                            rpg_write_error(data[1])
+                        else:
+                            raise RuntimeError("Error code is not provided on login failure!")
                     else:
-                        raise RuntimeError("Error code is not provided on login failure!")
-                else:
-                    user_id = data[0]
-        
-                    # 4. create / update DB
-                    user = db.get_user(user_id)
-                    if user is None:
-                        db.create_user(user_id)
-                        progression = 1
-                    else:
-                        progression = user["current_progression"]
-                
-                    # 5. log the login
-                    db.insert_login(user_id, progression)
-                
-                    # 6. write the required command
-                    rpg_write_generic([1, user_id, progression])
-                login_queue.task_done()
-            except queue.Empty:
-                pass
+                        user_id = data[0]
+            
+                        # 4. create / update DB
+                        user = db.get_user(user_id)
+                        if user is None:
+                            db.create_user(user_id)
+                            current_progression = 1
+                        else:
+                            current_progression = user["current_progression"]
 
-            # ===================================
-            # AFTER_LOGIN
-            # ===================================
+                        if current_progression is None:
+                            raise RuntimeError("SQL data type error; perhaps Database structure is malformed")
+                    
+                        # 5. log the login
+                        db.insert_login(user_id, current_progression)
+                    
+                        # 6. write the required command
+                        rpg_write_generic([1, user_id, current_progression])
+                        
+                        # On success Login, disable qr input
+                        current_qr_state = ""
+    
+                    login_queue.task_done()
+                except queue.Empty:
+                    pass
+            else:
+                # ===================================
+                # AFTER_LOGIN
+                # ===================================
 
-            # 2. read the 100-199 (Internally, 99-198)
-            out = rpg_read_generic(100)
-            debug("Command ID from RPG : %s" % out[0])
+                if current_qr_state == "data-input":
+                    try:
+                        data = data_input_queue.get_nowait()
+                        if data[0] is None:
+                            if data[1] is not None:
+                                rpg_write_error(data[1])
+                            else:
+                                raise RuntimeError("Error code is not provided on data input!")
+                        elif current_progression is not None:
+                            db.insert_choice(user_id, current_progression, f"(data input) {data[0]}")
+                            rpg_write_generic([2, user_id, current_progression, *data[0]])
+                        else:
+                            raise RuntimeError("something wrong happened")
+                        data_input_queue.task_done()
+                    except queue.Empty:
+                        pass
 
-            # The first number is the *command* indicator
-            cmd = out[0]
-            if cmd == 2: # Progression command
-                # The second number is the next progression
-                next_prog = out[1]
-                # Update DB
-                db.insert_progression(user_id, next_prog)
-                # Also update the current progression in the users table
-                db.update_user_progression(user_id, next_prog)
-                current_progression = next_prog
-            elif cmd == 3: # Data-Input command
-                # data‑input required
-                current_qr_state = "data-input"
-                do_data_input(db, user_id, current_progression, signing_key)
-            elif cmd == 4: # Logout command
-                break
+                # 2. read the 100-199 (Internally, 99-198)
+                out = rpg_read_generic(100)
+                debug("Command ID from RPG : %s" % out[0])
+    
+                # The first number is the *command* indicator
+                cmd = out[0]
+                if cmd == 2: # Progression command
+                    # The second number is the next progression
+                    next_prog = out[1]
+                    # Update DB
+                    db.insert_progression(user_id, next_prog)
+                    # Also update the current progression in the users table
+                    db.update_user_progression(user_id, next_prog)
+                    current_progression = next_prog
+                elif cmd == 3: # Data-Input command
+                    # data‑input required
+                    current_qr_state = "data-input"
+                elif cmd == 4: # Logout command
+                    debug(f"{user_id} Logout")
+                    user_id = None
+                    current_progression = None
 
         # 2.   100ms loop – re‑run
         time.sleep(SYNC_WINDOW)
