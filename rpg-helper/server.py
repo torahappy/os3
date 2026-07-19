@@ -87,7 +87,7 @@ def run_cmd(
     """Run a subprocess and return the completed process."""
     if cwd is None:
         cwd = Path.cwd()
-    debug(f"Running command: {args}")
+    # debug(f"Running command: {args}")
     return subprocess.run(
         args,
         cwd=cwd,
@@ -509,6 +509,8 @@ def progression_loop(db: DB, signing_key: str) -> None:
                     if data[0] is None:
                         if data[1] is not None:
                             rpg_write_error(data[1])
+                            db.insert_choice(0, 0, f"(before login) Login Error: {data[2]}")
+                            debug(f"Login Error: {data[2]}" )
                         else:
                             raise RuntimeError("Error code is not provided on login failure!")
                     else:
@@ -533,6 +535,8 @@ def progression_loop(db: DB, signing_key: str) -> None:
                         
                         # On success Login, disable qr input
                         current_qr_state = ""
+                        sanitize_queues()
+                        debug(f"Login Ok: {user_id} {current_progression}" )
     
                     login_queue.task_done()
                 except queue.Empty:
@@ -548,6 +552,8 @@ def progression_loop(db: DB, signing_key: str) -> None:
                         if data[0] is None:
                             if data[1] is not None:
                                 rpg_write_error(data[1])
+                                db.insert_choice(user_id, current_progression or 0, f"(before login) Login Error: {data[2]}")
+                                debug(f"Login Error: {data[2]}" )
                             else:
                                 raise RuntimeError("Error code is not provided on data input!")
                         elif current_progression is not None:
@@ -557,31 +563,35 @@ def progression_loop(db: DB, signing_key: str) -> None:
                             raise RuntimeError("something wrong happened")
                         data_input_queue.task_done()
                         current_qr_state = ""
+                        sanitize_queues()
                     except queue.Empty:
                         pass
 
 
                 # 2. read the 100-199 (Internally, 99-198)
                 out = rpg_read_generic(100)
-                debug("Command ID from RPG : %s" % out[0])
     
                 # The first number is the *command* indicator
                 cmd = out[0]
+                debug("Command ID from RPG : %s" % cmd)
                 if cmd == 2: # Progression command
                     # The third number is the next progression
                     if user_id != out[1]:
                         raise RuntimeError("User ID desync from RPG!!")
                     next_prog = out[2]
+                    debug(f"{user_id} Progression to {next_prog}")
                     # Update DB
                     db.insert_progression(user_id, next_prog)
                     # Also update the current progression in the users table
                     db.update_user_progression(user_id, next_prog)
                     current_progression = next_prog
                 elif cmd == 3: # Data-Input command
+                    debug(f"{user_id} Data Input Request")
                     if user_id != out[1]:
                         raise RuntimeError("User ID desync from RPG!!")
                     # data‑input required
                     current_qr_state = "data-input"
+                    sanitize_queues()
                 elif cmd == 4: # Logout command
                     if user_id != out[1]:
                         raise RuntimeError("User ID desync from RPG!!")
@@ -589,6 +599,8 @@ def progression_loop(db: DB, signing_key: str) -> None:
                     db.insert_logout(user_id, current_progression or 0)
                     user_id = None
                     current_progression = None
+                    current_qr_state = "login"
+                    sanitize_queues()
                 elif cmd >= 10000:
                     raise RuntimeError(f"Desync from RPG with Error Code: {cmd}")
 
