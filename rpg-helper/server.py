@@ -75,8 +75,7 @@ QR_APP_WINDOW = 2.0
 
 def debug(msg: str) -> None:
     """Print a debug line if the script is run interactively."""
-    if sys.stdout.isatty():
-        print(f"[DEBUG] {msg}", file=sys.stderr)
+    print(f"[DEBUG] {msg}", file=sys.stderr)
 
 
 def run_cmd(
