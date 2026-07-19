@@ -501,6 +501,7 @@ def progression_loop(db: DB, signing_key: str) -> None:
 
                 # Get login data, erase other queue
                 current_qr_state = "login"
+                sanitize_queues()
 
                 try:
                     data = login_queue.get_nowait()
