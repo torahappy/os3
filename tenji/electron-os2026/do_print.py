@@ -1,11 +1,19 @@
 #!/usr/bin/env python3
+
 import sys
 import os
 import sys
 import time
 import hashlib
 import base64
+from pathlib import Path
+import subprocess
 
+sys.path.append(str((Path(__file__).parent / "venv" / "lib" / f"python{sys.version_info[0]}.{sys.version_info[1]}" / "site-packages").absolute()))
+
+if not 'SUDO_USER' in os.environ:
+    subprocess.run(["sudo", __file__] + sys.argv[1:])
+    sys.exit()
 
 # ------------------------------------------------------------------
 #  1.  Load the password
@@ -53,7 +61,6 @@ signature = base64.b64encode(sha256_digest).decode().rstrip("\n")
 qr_data = f"{" ".join(sys.argv[1:])} {timestamp} {signature}"
 
 from escpos.printer import Usb
-from pathlib import Path
 
 p = Usb(0x28e9, 0x0289, in_ep=0, out_ep=0x03)
 
@@ -62,3 +69,4 @@ p.image(Path(__file__).parent.absolute() / "jouhou_a.png")
 p.qr(qr_data, size=10)
 
 p.text('\n\n\n\n')
+
