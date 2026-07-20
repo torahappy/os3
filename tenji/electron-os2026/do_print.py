@@ -64,7 +64,12 @@ from escpos.printer import Usb
 
 p = Usb(0x28e9, 0x0289, in_ep=0, out_ep=0x03)
 
-p.image(Path(__file__).parent.absolute() / "jouhou_a.png")
+if sys.argv[1] == "2":
+    picture = "jouhou_a.png"
+else:
+    picture = "jouhou_b.png"
+
+p.image(Path(__file__).parent.absolute() / picture)
 
 p.qr(qr_data, size=10)
 
