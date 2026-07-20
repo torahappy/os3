@@ -1,0 +1,13 @@
+{
+  "name": "my-doomscroll-app",
+  "version": "1.0.0",
+  "description": "Hello World!",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron ."
+  },
+  "author": "tora",
+  "dependencies": {
+    "electron": "^43.1.1"
+  }
+}

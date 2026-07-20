@@ -1,4 +1,11 @@
+@font-face {
+  font-family: "Zen Old Mincho";
+  src: url('assets/ZenOldMincho-Medium.woff2') format('woff2');
+}
+
+
 body, .root {
+  font-family: "Zen Old Mincho";
   background-color: #0238f9;
 }
 .root > .stack > img {
