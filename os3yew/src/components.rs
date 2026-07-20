@@ -1,6 +1,11 @@
 use gloo_timers::callback::Timeout;
-use web_sys::{HtmlAudioElement, console};
+use std::cell::RefCell;
+use std::rc::Rc;
+use web_sys::{HtmlAudioElement, HtmlVideoElement, console};
+use yew::prelude::*;
 use yew::{Html, prelude::*};
+
+use crate::components::_VideoWrapperProps::current_seek;
 
 #[derive(PartialEq, Properties)]
 pub struct RenderWatchProps {
@@ -143,5 +148,34 @@ pub fn AudioPlayer(props: &AudioPlayerProps) -> Html {
 
     html! {
         <audio ref={audio_ref} style="display:none" />
+    }
+}
+
+#[derive(Properties, PartialEq)]
+pub struct VideoWrapperProps {
+    pub src: String,
+    pub current_seek: f64,
+}
+
+/// Create a video wrapper which is immune to the seeking back to the beginning
+/// effect on re-rendering.
+#[function_component(VideoWrapper)]
+pub fn video_wrapper(props: &VideoWrapperProps) -> Html {
+    let video_ref = use_node_ref();
+
+    {
+        let video_ref = video_ref.clone();
+        let current_seek_copy = props.current_seek;
+        use_effect(move || {
+            if let Some(v) = video_ref.cast::<HtmlVideoElement>() {
+                if (v.current_time() - current_seek_copy).abs() > 0.5 {
+                    v.set_current_time(current_seek_copy);
+                }
+            };
+        });
+    }
+
+    html! {
+        <video ref={video_ref} src={ props.src.clone() } autoplay={true} muted={true} playsinline={true} loop={true}></video>
     }
 }
