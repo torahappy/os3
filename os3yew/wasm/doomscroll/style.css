@@ -39,12 +39,17 @@ body,
   }
 }
 
+body:has(.root.desktop) {
+  overflow: hidden;
+}
+
 .root.desktop {
   overflow: hidden;
+  width: 100vw;
+  height: 100vw;
   display: block;
   background-color: black;
 }
-
 
 .picture-wrap {
   position: absolute;
@@ -55,6 +60,11 @@ body,
 	  height: 100%;
 	  width:100%;
   mix-blend-mode: difference;
+}
+
+* {
+  transition: 0.5s;
+  transition-property: opacity;
 }
 
 .inquire-image {

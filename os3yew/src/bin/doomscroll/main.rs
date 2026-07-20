@@ -1,12 +1,12 @@
 // ふむふむこういうのもあるのね
 
-use std::{cell::RefCell, collections::{HashMap, HashSet}, hash::{DefaultHasher, Hash, Hasher}, rc::Rc};
+use std::{cell::RefCell, collections::{HashMap, HashSet}, hash::{DefaultHasher, Hash, Hasher}, rc::Rc, time::Instant};
 
 use gloo_timers::callback::Interval;
-use os3yew::{components::ClockComponent, util::md};
+use os3yew::{components::{ClockComponent, VideoWrapper}, util::md};
 use rust_embed::RustEmbed;
 use wasm_bindgen::{prelude::Closure, JsCast, JsValue};
-use web_sys::{console, js_sys::Function, window, HtmlElement, MessageEvent, WebSocket};
+use web_sys::{HtmlElement, MessageEvent, WebSocket, Window, console, js_sys::{Function, Reflect}, window};
 use yew::prelude::*;
 
 use serde::{Deserialize, Serialize};
@@ -256,6 +256,7 @@ fn PhoneApp() -> Html {
         }
     };
 
+
     html! {
         <div class="root" onscroll={ scroll_handle }>
         <div class="stack">
@@ -479,7 +480,7 @@ fn DesktopApp() -> Html {
                         let mut h =  DefaultHasher::new();
                         id.hash(&mut h);
                         out.push(html! {
-                            <div class="picture-wrap" style={ format!("opacity: {}; color: white; z-index: {}; transform: rotate({:.4}deg);", tt, ((h.finish() % 10000) as f64) + tt, rotation) }>
+                            <div key={id.clone()} class="picture-wrap" style={ format!("opacity: {}; color: white; z-index: {}; transform: rotate({:.4}deg);", tt, ((h.finish() % 10000) as f64) + tt, rotation) }>
                                 <div class="picture">
                                     {main_html}
                                 </div>
@@ -493,10 +494,77 @@ fn DesktopApp() -> Html {
             .collect::<Vec<_>>()
     };
 
+    let culmative:UseStateHandle<f64> = use_state(||0.0);
+
+    let kokki_instances: UseStateHandle<Vec<f64>> = use_state(|| Vec::new());
+
+    let keypress_handle = {
+        let kokki_instances = kokki_instances.clone();
+        let culmative = culmative.clone();
+        Callback::from(move |e: KeyboardEvent| {
+        console::log_1(&"aaa".into());
+            let last_kokki = kokki_instances.last();
+            if e.key() == "ArrowRight" && (last_kokki.is_none() || (*culmative - last_kokki.unwrap()) > 10.0) {
+                let mut new_kokki_instances = (*kokki_instances).clone();
+                new_kokki_instances.push(*culmative);
+                new_kokki_instances.retain(|x| *culmative - x < 52.0);
+                kokki_instances.set(new_kokki_instances);
+
+                let win = window().unwrap();
+                let api_electron = Reflect::get(&win, &JsValue::from_str("api_electron"))
+                    .ok();
+                if let Some(api) = api_electron {
+                    let do_print_val = Reflect::get(&api, &JsValue::from_str("do_print")).ok();
+                    if let Some(do_print_val) = do_print_val {
+                        if do_print_val.is_function() {
+                            let do_print: Function = do_print_val.dyn_into::<Function>().expect("do_print is not a function");
+                            let _ = do_print.call3(
+                                &JsValue::NULL,
+                                &JsValue::from_f64(3.0),   // first argument: 3
+                                &JsValue::from_f64(0.0),   // second argument: 0
+                                &JsValue::from_f64(0.0),   // third argument: 0
+                            );
+                        }
+                    }
+                }
+            }
+        })
+    };
+
+    let pictures_kokki = (*kokki_instances).clone().iter().enumerate().map(|(i, x)| {
+        let x_key = x.to_string();
+
+        html! {
+                            <div data-key-debug={x_key} key={ x_key.clone() } class="picture-wrap" style={ format!("z-index: {}; transform: rotate({:.4}deg);", 50000.0 + (i as f32) / 100.0, i as f64 * 3.0 + x.fract() * 4.0) }>
+                                <div class="picture">
+                                    <VideoWrapper src="assets/inquire/rec20260720-crop.webm" current_seek={*culmative - x} />
+                                </div>
+                            </div>
+        }
+    }).collect::<Vec<_>>();
+
+    let time_cb: Callback<((f64, f64))> = {
+        let culmative = culmative.clone();
+        Callback::from(move |(delta, cul)| {
+            culmative.set(cul);
+        })
+    };
+
+        use_effect_with((keypress_handle.clone()), |keypress_handle| {
+            let w: Window = window().unwrap();
+            let key_listener = Closure::wrap(Box::new(move |ev: KeyboardEvent| {
+                (*keypress_handle).emit(ev,);
+            }) as Box<dyn FnMut(KeyboardEvent)>);
+            w.set_onkeydown(Some(key_listener.as_ref().unchecked_ref()));
+            key_listener.forget();
+        });
+
     html! {
-        <div class="root desktop" onclick={ enter_fullscreen }>
+        <div class="root desktop">
             <ClockComponent interval={100} callback={clock_callback}/>
             { pictures }
+            { pictures_kokki }
+            <ClockComponent callback={time_cb} interval={16}/>
         </div>
     }
 }
