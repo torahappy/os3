@@ -321,11 +321,13 @@ fn get_ranges_data() -> Vec<Program> {
         Program::new(2100.0, 7990.0, Slideshow::Image { src: "uchu.webp" }, Curve::Daikei),
         Program::new(8100.0, 11000.0, Slideshow::Markdown { text: "# 「内容証明アート」宣言
 
-少しでも違和感を感じることがあったらそれを文書にしたためて関係各所に送付しまくるのだ！
+少しでも違和感を感じることがあったらそれを文書にしたためて、抗議文、陳情書、申立書を関係各所に送付しまくるのだ！
 
-新聞の投書でも、政治家の事務所へのFAXでも、弁護士会への人権侵害申立でも、国連の人権委員会への報告書(Calls for Input)でも、、
+新聞の投書でも、政治家の事務所へのFAXでも、弁護士会への人権侵害申立でも、国連の人権委員会への報告書(Calls for Input)でも、、、
 
-サブチャンネル、迂回路を使いまくる！！
+サブチャンネル、迂回路、社会が私たちにお情け的に用意してくれている回路を使いまくる！！
+
+それらがすぐには何かにならなくとも、証拠として蓄積されていく。
 
 いま最も美しいアートの形態は、将来の国際人権裁判に提出される証拠集になるであろう。
 
@@ -335,26 +337,23 @@ Program::new(11111.0, 13000.0, Slideshow::Markdown { text:
 
 (ISO / IKITEIKOU STANDARD OPERATIONS -0001)
 
-- 蓄積すること
-    
-- 公の文法を撹乱すること
-    
+★蓄積すること    
 
-真面目な訴えかけの間に、絵文字や叫び声、ゆるふわな言葉たちを散りばめよう。決して、ふざけているのではない。そもそも、真面目であるとかふざけているとか、そうした判断基準は私たちを黙らせるための道具でしかないのだから。
+★公の文法を撹乱すること
+
+真面目な訴えかけの間に、絵文字や叫び声、ゆるふわな言葉たち、あるいは感情的な叫びを散りばめよう。決して、ふざけているのではない。そもそも、真面目であるとかふざけているとか、そうした判断基準は私たちを黙らせるための道具でしかないのだから。
 
 "}, Curve::Daikei),
 Program::new(13000.0, 16000.0, Slideshow::Markdown { text: "
-- マクロとミクロを接続すること
+★マクロとミクロを接続すること
 
 できるだけ、日々のちょっとした違和感、日常のなかの憤りの全てを拾い上げていく。最も洗練された監査請求は、小咄、独白、アネクドート、落語、の形式で行われる。
 
-- 自己検閲に抗うこと
-    
-- 百億の名前で行うこと
-    
+★自己検閲に抗うこと
+
+★百億の名前で行うこと
 
 私たちを規定して、縛り付ける名前なんて、もうおさらば。色々な名前を作り続け、色々な名前で署名しよう。
-
 "}, Curve::Daikei),
 Program::new(16000.0, 19000.0, Slideshow::Markdown { text: "
 ## わたしの　なまえ　一覧
@@ -507,7 +506,6 @@ fn DesktopApp() -> Html {
             if e.key() == "ArrowRight" && (last_kokki.is_none() || (*culmative - last_kokki.unwrap()) > 10.0) {
                 let mut new_kokki_instances = (*kokki_instances).clone();
                 new_kokki_instances.push(*culmative);
-                new_kokki_instances.retain(|x| *culmative - x < 52.0);
                 kokki_instances.set(new_kokki_instances);
 
                 let win = window().unwrap();
@@ -542,6 +540,13 @@ fn DesktopApp() -> Html {
                             </div>
         }
     }).collect::<Vec<_>>();
+
+    use_effect_with((kokki_instances.clone(), culmative.clone()), move |(kokki_instances, culmative)| {
+        let mut new_kokki_instances = (**kokki_instances).clone();
+
+        new_kokki_instances.retain(|x| **culmative - x < 52.0);
+        kokki_instances.set(new_kokki_instances);
+    });
 
     let time_cb: Callback<((f64, f64))> = {
         let culmative = culmative.clone();
