@@ -86,7 +86,7 @@ def run_cmd(
     """Run a subprocess and return the completed process."""
     if cwd is None:
         cwd = Path.cwd()
-    # debug(f"Running command: {args}")
+    debug(f"Running command: {args}")
     return subprocess.run(
         args,
         cwd=cwd,
@@ -414,17 +414,19 @@ def process_qr_data_input(
     data_input_queue.put_nowait((data, None, None))
     return True
 
+end_signal = False
+
 def qr_reader(signing_key: str):
     """
     Perform the login flow or data insersion flow.
 
     Returns a tuple (user_id, current_progression).
     """
-    while True:
+    while not end_signal:
         time.sleep(QR_APP_WINDOW)
 
         # 1. launch zbarcam
-        out = run_cmd("zbarcam", "-1", "--nodisplay")
+        out = run_cmd("zbarcam", "-1")
         try:
             if current_qr_state == "login":
                 process_qr_login(out.stdout, signing_key)
@@ -613,6 +615,7 @@ def progression_loop(db: DB, signing_key: str) -> None:
 
 def main() -> None:
     """Entry point of the script."""
+    global end_signal
     db = DB(DB_PATH)
     signing_key = read_signing_key()
 
@@ -622,8 +625,11 @@ def main() -> None:
     # Start the progression loop – this will never return
     try:
         progression_loop(db, signing_key)
-    except KeyboardInterrupt:
+    except Exception as e:
+        print("\n[INFO] Error…", e, file=sys.stderr)
         print("\n[INFO] Stopping…", file=sys.stderr)
+        subprocess.run(["killall", "zbarcam"])
+        end_signal = True
         sys.exit(0)
 
 
