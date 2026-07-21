@@ -19,9 +19,6 @@ function createWindow () {
 
 ipcMain.handle('do_print', async (e, ...args) => {
   // Validate that we have exactly 3 arguments (optional)
-  if (args.length !== 3) {
-    throw new Error('do_print expects 3 arguments');
-  }
 
   const pythonPath = path.join(__dirname, 'venv', 'bin', 'python');
 
