@@ -516,10 +516,11 @@ fn DesktopApp() -> Html {
                     if let Some(do_print_val) = do_print_val {
                         if do_print_val.is_function() {
                             let do_print: Function = do_print_val.dyn_into::<Function>().expect("do_print is not a function");
-                            let _ = do_print.call3(
+                            let _ = do_print.call4(
                                 &JsValue::NULL,
                                 &JsValue::from_f64(3.0),   // first argument: 3
                                 &JsValue::from_f64(0.0),   // second argument: 0
+                                &JsValue::from_f64(0.0),   // third argument: 0
                                 &JsValue::from_f64(0.0),   // third argument: 0
                             );
                         }
