@@ -99,11 +99,13 @@ struct WsClient {
     socket: Rc<WebSocket>,
     onmessage: Closure<dyn FnMut(MessageEvent) -> ()>,
     onopen: Closure<dyn FnMut(JsValue) -> ()>,
+    onclose: Closure<dyn FnMut(JsValue) -> ()>,
     client_id: Rc<RefCell<Option<String>>>,
     interval: Interval,
     mode: ClientMode,
     scroll_listener: Rc<RefCell<Option<Box<dyn FnMut((String, f64)) -> ()>>>>,
     clients: Rc<RefCell<Vec<String>>>,
+    is_closed: Rc<RefCell<bool>>
 }
 
 impl WsClient {
@@ -117,6 +119,7 @@ impl WsClient {
         *self.scroll_listener.borrow_mut() = Some(Box::new(f));
     }
     fn new(mode: ClientMode) -> WsClient {
+        let is_closed_rc = Rc::new(RefCell::new(false));
         let clients_rc = Rc::new(RefCell::new(Vec::new()));
         let scroll_listener: Rc<RefCell<Option<Box<dyn FnMut((String, f64)) -> ()>>>> =
             Rc::new(RefCell::new(None));
@@ -182,6 +185,14 @@ impl WsClient {
         };
         socket.set_onopen(Some(onopen.as_ref().unchecked_ref()));
 
+        let onclose = {
+            let is_closed = is_closed_rc.clone();
+            Closure::new(Box::new(move |_| {
+                (*is_closed.borrow_mut()) = true;
+            }) as Box<dyn FnMut(JsValue)>)
+        };
+        socket.set_onclose(Some(onclose.as_ref().unchecked_ref()));
+
         let interval = {
             let socket = socket.clone();
             Interval::new(1000, move || {
@@ -197,11 +208,13 @@ impl WsClient {
             socket,
             onmessage,
             onopen,
+            onclose,
             interval,
             client_id: client_id_rc,
             mode,
             scroll_listener,
             clients: clients_rc,
+            is_closed: is_closed_rc
         };
     }
     fn scroll(&self, value: f64, scroll_width: f64) {
@@ -244,13 +257,34 @@ impl Drop for WsClient {
     }
 }
 
+#[hook]
+fn use_initialize_ws <T> (initializer: Callback<(), WsClient>) -> (Rc<RefCell<WsClient>>, Callback<T>) {
+    let ws = use_mut_ref(|| {
+        initializer.emit(())
+    });
+
+    let ws_clock_callback = {
+        let ws = ws.clone();
+        Callback::from(move |_|{
+            let is_closed = ws.borrow().is_closed.borrow().clone();
+            if is_closed {
+                let mut m = ws.borrow_mut();
+                *m = initializer.emit(());
+            }
+        })
+    };
+
+    return (ws, ws_clock_callback);
+}
+
 #[component]
 fn PhoneApp() -> Html {
+    let (ws, ws_clock_callback) = use_initialize_ws(Callback::from(|_| { WsClient::new(ClientMode::Phone) }));
+
     use_effect_with((), |()| {
         scroll_to_top();
     });
 
-    let ws = use_mut_ref(|| WsClient::new(ClientMode::Phone));
 
     let komagire_metrics = use_ref(|| get_metrics("komagire"));
 
@@ -270,6 +304,7 @@ fn PhoneApp() -> Html {
 
     html! {
         <div class="root" onscroll={ scroll_handle }>
+        <ClockComponent interval={100} callback={ws_clock_callback}/>
         <div class="stack">
             { (1..16).map(|_| get_komagire_html(&komagire_metrics, "tushin.webp")).collect::<Vec<_>>() }
             { komagire_three(&komagire_metrics, ("bt1-1.webp", "bt1-2.webp", "bt1-3.webp")) }
@@ -400,18 +435,17 @@ Program::new(16000.0, 19000.0, Slideshow::Markdown { text: "
 // 47678
 #[component]
 fn DesktopApp() -> Html {
+    let (ws, ws_clock_callback) = use_initialize_ws(Callback::from(|_| { WsClient::new(ClientMode::Screen) }));
+
     let clients: UseStateHandle<HashMap<String, f64>> = use_state(|| HashMap::new());
     let ranges = use_ref(|| get_ranges_data());
     let inquire_metrics = use_ref(|| get_metrics("inquire"));
-    let ws = use_ref(|| {
-        let ws = RefCell::new(WsClient::new(ClientMode::Screen));
-        ws
-    });
     {
         let ws = ws.clone();
         let clients = clients.clone();
         use_effect(move || {
             ws.borrow_mut().listen_scroll(move |(id, scroll_y)| {
+                console::log_1(&scroll_y.into());
                 let mut new_clients = (*clients).clone();
                 new_clients.insert(id, scroll_y);
                 clients.set(new_clients);
@@ -431,7 +465,10 @@ fn DesktopApp() -> Html {
     let clock_callback = {
         let ws = ws.clone();
         let clients = clients.clone();
+        let ws_clock_callback = ws_clock_callback.clone();
         move |(delta, culmative)| {
+            ws_clock_callback.emit(());
+
             ws.borrow().query_list_clients();
             let cl = ws.borrow().clients.borrow().clone();
             let mut clients_copy = (*clients).clone();
@@ -460,7 +497,7 @@ fn DesktopApp() -> Html {
                     let rotation = (idx as f64).sin() * 1.1;
                     if pr.start <= *scr && *scr <= pr.end {
                         let t = (scr - pr.start) / (pr.end - pr.start);
-                        console::log_1(&format!("{}", t).into());
+                        // console::log_1(&format!("{}", t).into());
                         let tt = match pr.curve {
                             Daikei => {
                                 if t < 1.0 / 3.0 {
@@ -595,11 +632,11 @@ fn DesktopApp() -> Html {
     };
 
     html! {
-        <div class="root desktop">
+        <div class="root desktop" onclick={ enter_fullscreen }>
             <ClockComponent interval={100} callback={clock_callback}/>
             { pictures }
             { pictures_kokki }
-            <ClockComponent callback={time_cb} interval={16}/>
+            <ClockComponent interval={16} callback={time_cb}/>
         </div>
     }
 }
