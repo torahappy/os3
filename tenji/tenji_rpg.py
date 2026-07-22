@@ -14,18 +14,18 @@ import signal
 import time
 import shutil
 
-DEFAULT_SOURCE = "alsa_input.usb-KTMicro_KT_USB_Audio_2020-02-20-0000-0000-0000--00.mono-fallback"
-SOURCE_VOLUME = '100%'
+DEFAULT_SINK = "alsa_output.pci-0000_e5_00.1.hdmi-stereo-extra2"
+SINK_VOLUME = '128%'
 
 def check_pulseaudio():
-    r = subprocess.run(["pactl", "get-default-source"], stderr=subprocess.PIPE, stdout=subprocess.PIPE, text=True)
-    if not DEFAULT_SOURCE in r.stdout:
-        subprocess.run(["pactl", "set-default-source", DEFAULT_SOURCE], stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
+    r = subprocess.run(["pactl", "get-default-sink"], stderr=subprocess.PIPE, stdout=subprocess.PIPE, text=True)
+    if not DEFAULT_SINK in r.stdout:
+        subprocess.run(["pactl", "set-default-sink", DEFAULT_SINK], stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
     time.sleep(1.0)
-    r = subprocess.run(["pactl", "get-source-volume", "@DEFAULT_SOURCE@"], stderr=subprocess.PIPE, stdout=subprocess.PIPE, text=True)
+    r = subprocess.run(["pactl", "get-sink-volume", "@DEFAULT_SINK@"], stderr=subprocess.PIPE, stdout=subprocess.PIPE, text=True)
     # TODO: mono/stereo
-    if not re.match(r'.*%s.*' % SOURCE_VOLUME, r.stdout):
-        subprocess.run(["pactl", "set-source-volume", "@DEFAULT_SOURCE@", SOURCE_VOLUME], stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
+    if not re.match(r'.*%s.*' % SINK_VOLUME, r.stdout):
+        subprocess.run(["pactl", "set-sink-volume", "@DEFAULT_SINK@", SINK_VOLUME], stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
 
 try:
     display_pos = 0
@@ -92,7 +92,7 @@ my_state: MyState = initial_state()
 shutil.copyfile(Path(__file__).parent.absolute() / "rpg-remap" / "config.ini", Path.home() / ".config" / "EasyRPG" / "Player" / "config.ini")
 
 while True:
-    # check_pulseaudio()
+    check_pulseaudio()
 
     subprocess.run(["/bin/wmctrl", "-x", "-r", "easyrpg-player.EasyRPG Player", "-b", "add,above"])
     subprocess.run(["/bin/wmctrl", "-x", "-a", "easyrpg-player.EasyRPG Player"])
