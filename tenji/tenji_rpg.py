@@ -88,7 +88,7 @@ src_path = os.path.join(
 my_state: MyState = initial_state()
 
 while True:
-    check_pulseaudio()
+    # check_pulseaudio()
 
     subprocess.run(["/bin/wmctrl", "-x", "-r", "easyrpg-player.EasyRPG Player", "-b", "add,above"])
     subprocess.run(["/bin/wmctrl", "-x", "-a", "easyrpg-player.EasyRPG Player"])
