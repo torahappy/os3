@@ -542,6 +542,10 @@ def progression_loop(db: DB, signing_key: str) -> None:
                     login_queue.task_done()
                 except queue.Empty:
                     pass
+                
+                out = rpg_read_generic(1)
+                if out[0] >= 10000:
+                    raise RuntimeError(f"Desync from RPG with Error Code (while not logged in): {out[0]}")
             else:
                 # ===================================
                 # AFTER_LOGIN
