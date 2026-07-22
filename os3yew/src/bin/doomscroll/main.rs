@@ -123,7 +123,9 @@ impl WsClient {
         let window: Window = web_sys::window().unwrap();
         let location: Location = window.location();
         let search = location.search().unwrap_or_default();
-        let has_local = search.contains("local");
+        let usp = web_sys::UrlSearchParams::new_with_str(&search).unwrap();
+        let has_local = usp.get("local").is_some();
+        let channel = usp.get("channel").unwrap_or("channel12345".to_string());
 
         let socket = if has_local {
             Rc::new(WebSocket::new(&"/doomscroll_web/ws").unwrap())
@@ -169,7 +171,7 @@ impl WsClient {
             Closure::new(Box::new(move |_| {
                 if let Err(e) = socket.send_with_str(
                     &serde_json::to_string(&Outgoing::InitializeResponse {
-                        channel: "channel12345".to_string(),
+                        channel: channel.clone(),
                         client_type: mode,
                     })
                     .unwrap(),
