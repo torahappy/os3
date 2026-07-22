@@ -6,7 +6,7 @@ use gloo_timers::callback::Interval;
 use os3yew::{components::{ClockComponent, VideoWrapper}, util::md};
 use rust_embed::RustEmbed;
 use wasm_bindgen::{prelude::Closure, JsCast, JsValue};
-use web_sys::{HtmlElement, MessageEvent, WebSocket, Window, console, js_sys::{Function, Reflect}, window};
+use web_sys::{HtmlElement, Location, MessageEvent, WebSocket, Window, console, js_sys::{Function, Reflect}, window};
 use yew::prelude::*;
 
 use serde::{Deserialize, Serialize};
@@ -120,7 +120,18 @@ impl WsClient {
         let clients_rc = Rc::new(RefCell::new(Vec::new()));
         let scroll_listener: Rc<RefCell<Option<Box<dyn FnMut((String, f64)) -> ()>>>> =
             Rc::new(RefCell::new(None));
-        let socket = Rc::new(WebSocket::new(&"wss://os3.torahappy.org/doomscroll_web/ws").unwrap());
+        let window: Window = web_sys::window().unwrap();
+        let location: Location = window.location();
+        let search = location.search().unwrap_or_default();
+        let usp = web_sys::UrlSearchParams::new_with_str(&search).unwrap();
+        let has_local = usp.get("local").is_some();
+        let channel = usp.get("channel").unwrap_or("channel12345".to_string());
+
+        let socket = if has_local {
+            Rc::new(WebSocket::new(&"/doomscroll_web/ws").unwrap())
+        } else {
+            Rc::new(WebSocket::new(&"wss://os3.torahappy.org/doomscroll_web/ws").unwrap())
+        };
 
         let client_id_rc = Rc::new(RefCell::new(None));
 
@@ -160,7 +171,7 @@ impl WsClient {
             Closure::new(Box::new(move |_| {
                 if let Err(e) = socket.send_with_str(
                     &serde_json::to_string(&Outgoing::InitializeResponse {
-                        channel: "channel12345".to_string(),
+                        channel: channel.clone(),
                         client_type: mode,
                     })
                     .unwrap(),
