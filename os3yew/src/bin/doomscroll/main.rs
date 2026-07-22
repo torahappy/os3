@@ -512,7 +512,6 @@ fn DesktopApp() -> Html {
         let kokki_instances = kokki_instances.clone();
         let culmative = culmative.clone();
         Callback::from(move |e: KeyboardEvent| {
-        console::log_1(&"aaa".into());
             let last_kokki = kokki_instances.last();
             if e.key() == "ArrowRight" && (last_kokki.is_none() || (*culmative - last_kokki.unwrap()) > 10.0) {
                 let mut new_kokki_instances = (*kokki_instances).clone();
@@ -567,14 +566,33 @@ fn DesktopApp() -> Html {
         })
     };
 
-        use_effect_with((keypress_handle.clone()), |keypress_handle| {
+    let ref_key_listener: Rc<RefCell<Option<Closure<dyn FnMut(KeyboardEvent)>>>> = use_ref(|| RefCell::new(None));
+
+    {
+        let ref_key_listener = ref_key_listener.clone();
+        let keypress_handle = keypress_handle.clone();
+        use_effect(move || {
             let w: Window = window().unwrap();
+
             let key_listener = Closure::wrap(Box::new(move |ev: KeyboardEvent| {
-                (*keypress_handle).emit(ev,);
+                (keypress_handle).emit(ev,);
             }) as Box<dyn FnMut(KeyboardEvent)>);
-            w.set_onkeydown(Some(key_listener.as_ref().unchecked_ref()));
-            key_listener.forget();
+            let _ = w.add_event_listener_with_callback("keydown", key_listener.as_ref().unchecked_ref());
+
+            let mut current_closure = ref_key_listener.borrow_mut();
+            *current_closure = Some(key_listener);
+
+            {
+                let ref_key_listener =  ref_key_listener.clone();
+                return move || {
+                    let key_listener = ref_key_listener.borrow();
+                    if let Some(key_listener) = key_listener.as_ref() {
+                        let _ = w.remove_event_listener_with_callback("keydown", key_listener.as_ref().unchecked_ref());
+                    }
+                }
+            }
         });
+    };
 
     html! {
         <div class="root desktop">
