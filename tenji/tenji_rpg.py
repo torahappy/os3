@@ -6,11 +6,13 @@ import subprocess
 import sys
 import time
 from typing import TypedDict
+from pathlib import Path
 import os
 import atexit
 import re
 import signal
 import time
+import shutil
 
 DEFAULT_SOURCE = "alsa_input.usb-KTMicro_KT_USB_Audio_2020-02-20-0000-0000-0000--00.mono-fallback"
 SOURCE_VOLUME = '100%'
@@ -86,6 +88,8 @@ src_path = os.path.join(
         )
 
 my_state: MyState = initial_state()
+
+shutil.copyfile(Path(__file__).parent.absolute() / "rpg-remap" / "config.ini", Path.home() / ".config" / "EasyRPG" / "Player" / "config.ini")
 
 while True:
     # check_pulseaudio()
