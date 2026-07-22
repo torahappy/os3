@@ -304,8 +304,8 @@ fn PhoneApp() -> Html {
 
     html! {
         <div class="root" onscroll={ scroll_handle }>
-        <ClockComponent interval={100} callback={ws_clock_callback}/>
-        <div class="stack">
+            <ClockComponent interval={100} callback={ws_clock_callback}/>
+            <div class="stack">
             { (1..16).map(|_| get_komagire_html(&komagire_metrics, "tushin.webp")).collect::<Vec<_>>() }
             { komagire_three(&komagire_metrics, ("bt1-1.webp", "bt1-2.webp", "bt1-3.webp")) }
             { get_komagire_html(&komagire_metrics, "tushin.webp") }
@@ -317,7 +317,7 @@ fn PhoneApp() -> Html {
             { get_komagire_html(&komagire_metrics, &"tushin.webp") }
             { komagire_three(&komagire_metrics, ("nkr11-3.webp", "nkr14-2.webp", "nkr16.webp")) }
             { (1..6).map(|_| get_komagire_html(&komagire_metrics, "tushin.webp")).collect::<Vec<_>>() }
-        </div>
+            </div>
         </div>
     }
 }
@@ -631,8 +631,15 @@ fn DesktopApp() -> Html {
         });
     };
 
+    let asobikata_shown = clients.is_empty();
+
     html! {
         <div class="root desktop" onclick={ enter_fullscreen }>
+            <div class={"picture-wrap asobikata".to_string() + if !asobikata_shown {" hide"} else {""}}>
+                <div class="picture">
+                    { get_inquire_html(&inquire_metrics, "asobikata.webp") }
+                </div>
+            </div>
             <ClockComponent interval={100} callback={clock_callback}/>
             { pictures }
             { pictures_kokki }

@@ -117,3 +117,10 @@ h1,  h2,  h3, p {
   margin-left: 2vw;
   margin-right: 2vw;
 }
+.asobikata {
+  opacity: 1;
+
+}
+.hide {
+  opacity: 0;
+}
