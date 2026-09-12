@@ -1,12 +1,12 @@
 // ふむふむこういうのもあるのね
 
-use std::{cell::RefCell, collections::{HashMap, HashSet}, hash::{DefaultHasher, Hash, Hasher}, rc::Rc};
+use std::{cell::RefCell, collections::{HashMap, HashSet}, hash::{DefaultHasher, Hash, Hasher}, rc::Rc, time::Instant};
 
 use gloo_timers::callback::Interval;
-use os3yew::{components::ClockComponent, util::md};
+use os3yew::{components::{ClockComponent, VideoWrapper}, util::md};
 use rust_embed::RustEmbed;
 use wasm_bindgen::{prelude::Closure, JsCast, JsValue};
-use web_sys::{console, js_sys::Function, window, HtmlElement, MessageEvent, WebSocket};
+use web_sys::{HtmlElement, Location, MessageEvent, WebSocket, Window, console, js_sys::{Function, Reflect}, window};
 use yew::prelude::*;
 
 use serde::{Deserialize, Serialize};
@@ -99,11 +99,13 @@ struct WsClient {
     socket: Rc<WebSocket>,
     onmessage: Closure<dyn FnMut(MessageEvent) -> ()>,
     onopen: Closure<dyn FnMut(JsValue) -> ()>,
+    onclose: Closure<dyn FnMut(JsValue) -> ()>,
     client_id: Rc<RefCell<Option<String>>>,
     interval: Interval,
     mode: ClientMode,
     scroll_listener: Rc<RefCell<Option<Box<dyn FnMut((String, f64)) -> ()>>>>,
     clients: Rc<RefCell<Vec<String>>>,
+    is_closed: Rc<RefCell<bool>>
 }
 
 impl WsClient {
@@ -117,10 +119,22 @@ impl WsClient {
         *self.scroll_listener.borrow_mut() = Some(Box::new(f));
     }
     fn new(mode: ClientMode) -> WsClient {
+        let is_closed_rc = Rc::new(RefCell::new(false));
         let clients_rc = Rc::new(RefCell::new(Vec::new()));
         let scroll_listener: Rc<RefCell<Option<Box<dyn FnMut((String, f64)) -> ()>>>> =
             Rc::new(RefCell::new(None));
-        let socket = Rc::new(WebSocket::new(&"/doomscroll_web/ws").unwrap());
+        let window: Window = web_sys::window().unwrap();
+        let location: Location = window.location();
+        let search = location.search().unwrap_or_default();
+        let usp = web_sys::UrlSearchParams::new_with_str(&search).unwrap();
+        let has_local = usp.get("local").is_some();
+        let channel = usp.get("channel").unwrap_or("channel12345".to_string());
+
+        let socket = if has_local {
+            Rc::new(WebSocket::new(&"/doomscroll_web/ws").unwrap())
+        } else {
+            Rc::new(WebSocket::new(&"wss://os3.torahappy.org/doomscroll_web/ws").unwrap())
+        };
 
         let client_id_rc = Rc::new(RefCell::new(None));
 
@@ -160,7 +174,7 @@ impl WsClient {
             Closure::new(Box::new(move |_| {
                 if let Err(e) = socket.send_with_str(
                     &serde_json::to_string(&Outgoing::InitializeResponse {
-                        channel: "channel12345".to_string(),
+                        channel: channel.clone(),
                         client_type: mode,
                     })
                     .unwrap(),
@@ -170,6 +184,14 @@ impl WsClient {
             }))
         };
         socket.set_onopen(Some(onopen.as_ref().unchecked_ref()));
+
+        let onclose = {
+            let is_closed = is_closed_rc.clone();
+            Closure::new(Box::new(move |_| {
+                (*is_closed.borrow_mut()) = true;
+            }) as Box<dyn FnMut(JsValue)>)
+        };
+        socket.set_onclose(Some(onclose.as_ref().unchecked_ref()));
 
         let interval = {
             let socket = socket.clone();
@@ -186,11 +208,13 @@ impl WsClient {
             socket,
             onmessage,
             onopen,
+            onclose,
             interval,
             client_id: client_id_rc,
             mode,
             scroll_listener,
             clients: clients_rc,
+            is_closed: is_closed_rc
         };
     }
     fn scroll(&self, value: f64, scroll_width: f64) {
@@ -233,13 +257,34 @@ impl Drop for WsClient {
     }
 }
 
+#[hook]
+fn use_initialize_ws <T> (initializer: Callback<(), WsClient>) -> (Rc<RefCell<WsClient>>, Callback<T>) {
+    let ws = use_mut_ref(|| {
+        initializer.emit(())
+    });
+
+    let ws_clock_callback = {
+        let ws = ws.clone();
+        Callback::from(move |_|{
+            let is_closed = ws.borrow().is_closed.borrow().clone();
+            if is_closed {
+                let mut m = ws.borrow_mut();
+                *m = initializer.emit(());
+            }
+        })
+    };
+
+    return (ws, ws_clock_callback);
+}
+
 #[component]
 fn PhoneApp() -> Html {
+    let (ws, ws_clock_callback) = use_initialize_ws(Callback::from(|_| { WsClient::new(ClientMode::Phone) }));
+
     use_effect_with((), |()| {
         scroll_to_top();
     });
 
-    let ws = use_mut_ref(|| WsClient::new(ClientMode::Phone));
 
     let komagire_metrics = use_ref(|| get_metrics("komagire"));
 
@@ -256,9 +301,11 @@ fn PhoneApp() -> Html {
         }
     };
 
+
     html! {
         <div class="root" onscroll={ scroll_handle }>
-        <div class="stack">
+            <ClockComponent interval={100} callback={ws_clock_callback}/>
+            <div class="stack">
             { (1..16).map(|_| get_komagire_html(&komagire_metrics, "tushin.webp")).collect::<Vec<_>>() }
             { komagire_three(&komagire_metrics, ("bt1-1.webp", "bt1-2.webp", "bt1-3.webp")) }
             { get_komagire_html(&komagire_metrics, "tushin.webp") }
@@ -270,7 +317,7 @@ fn PhoneApp() -> Html {
             { get_komagire_html(&komagire_metrics, &"tushin.webp") }
             { komagire_three(&komagire_metrics, ("nkr11-3.webp", "nkr14-2.webp", "nkr16.webp")) }
             { (1..6).map(|_| get_komagire_html(&komagire_metrics, "tushin.webp")).collect::<Vec<_>>() }
-        </div>
+            </div>
         </div>
     }
 }
@@ -320,11 +367,13 @@ fn get_ranges_data() -> Vec<Program> {
         Program::new(2100.0, 7990.0, Slideshow::Image { src: "uchu.webp" }, Curve::Daikei),
         Program::new(8100.0, 11000.0, Slideshow::Markdown { text: "# 「内容証明アート」宣言
 
-少しでも違和感を感じることがあったらそれを文書にしたためて関係各所に送付しまくるのだ！
+少しでも違和感を感じることがあったらそれを文書にしたためて、抗議文、陳情書、申立書を関係各所に送付しまくるのだ！
 
-新聞の投書でも、政治家の事務所へのFAXでも、弁護士会への人権侵害申立でも、国連の人権委員会への報告書(Calls for Input)でも、、
+新聞の投書でも、政治家の事務所へのFAXでも、弁護士会への人権侵害申立でも、国連の人権委員会への報告書(Calls for Input)でも、、、
 
-サブチャンネル、迂回路を使いまくる！！
+サブチャンネル、迂回路、社会が私たちにお情け的に用意してくれている回路を使いまくる！！
+
+それらがすぐには何かにならなくとも、証拠として蓄積されていく。
 
 いま最も美しいアートの形態は、将来の国際人権裁判に提出される証拠集になるであろう。
 
@@ -334,26 +383,23 @@ Program::new(11111.0, 13000.0, Slideshow::Markdown { text:
 
 (ISO / IKITEIKOU STANDARD OPERATIONS -0001)
 
-- 蓄積すること
-    
-- 公の文法を撹乱すること
-    
+★蓄積すること    
 
-真面目な訴えかけの間に、絵文字や叫び声、ゆるふわな言葉たちを散りばめよう。決して、ふざけているのではない。そもそも、真面目であるとかふざけているとか、そうした判断基準は私たちを黙らせるための道具でしかないのだから。
+★公の文法を撹乱すること
+
+真面目な訴えかけの間に、絵文字や叫び声、ゆるふわな言葉たち、あるいは感情的な叫びを散りばめよう。決して、ふざけているのではない。そもそも、真面目であるとかふざけているとか、そうした判断基準は私たちを黙らせるための道具でしかないのだから。
 
 "}, Curve::Daikei),
 Program::new(13000.0, 16000.0, Slideshow::Markdown { text: "
-- マクロとミクロを接続すること
+★マクロとミクロを接続すること
 
 できるだけ、日々のちょっとした違和感、日常のなかの憤りの全てを拾い上げていく。最も洗練された監査請求は、小咄、独白、アネクドート、落語、の形式で行われる。
 
-- 自己検閲に抗うこと
-    
-- 百億の名前で行うこと
-    
+★自己検閲に抗うこと
+
+★百億の名前で行うこと
 
 私たちを規定して、縛り付ける名前なんて、もうおさらば。色々な名前を作り続け、色々な名前で署名しよう。
-
 "}, Curve::Daikei),
 Program::new(16000.0, 19000.0, Slideshow::Markdown { text: "
 ## わたしの　なまえ　一覧
@@ -389,18 +435,17 @@ Program::new(16000.0, 19000.0, Slideshow::Markdown { text: "
 // 47678
 #[component]
 fn DesktopApp() -> Html {
+    let (ws, ws_clock_callback) = use_initialize_ws(Callback::from(|_| { WsClient::new(ClientMode::Screen) }));
+
     let clients: UseStateHandle<HashMap<String, f64>> = use_state(|| HashMap::new());
     let ranges = use_ref(|| get_ranges_data());
     let inquire_metrics = use_ref(|| get_metrics("inquire"));
-    let ws = use_ref(|| {
-        let ws = RefCell::new(WsClient::new(ClientMode::Screen));
-        ws
-    });
     {
         let ws = ws.clone();
         let clients = clients.clone();
         use_effect(move || {
             ws.borrow_mut().listen_scroll(move |(id, scroll_y)| {
+                console::log_1(&scroll_y.into());
                 let mut new_clients = (*clients).clone();
                 new_clients.insert(id, scroll_y);
                 clients.set(new_clients);
@@ -420,7 +465,10 @@ fn DesktopApp() -> Html {
     let clock_callback = {
         let ws = ws.clone();
         let clients = clients.clone();
+        let ws_clock_callback = ws_clock_callback.clone();
         move |(delta, culmative)| {
+            ws_clock_callback.emit(());
+
             ws.borrow().query_list_clients();
             let cl = ws.borrow().clients.borrow().clone();
             let mut clients_copy = (*clients).clone();
@@ -449,7 +497,7 @@ fn DesktopApp() -> Html {
                     let rotation = (idx as f64).sin() * 1.1;
                     if pr.start <= *scr && *scr <= pr.end {
                         let t = (scr - pr.start) / (pr.end - pr.start);
-                        console::log_1(&format!("{}", t).into());
+                        // console::log_1(&format!("{}", t).into());
                         let tt = match pr.curve {
                             Daikei => {
                                 if t < 1.0 / 3.0 {
@@ -479,7 +527,7 @@ fn DesktopApp() -> Html {
                         let mut h =  DefaultHasher::new();
                         id.hash(&mut h);
                         out.push(html! {
-                            <div class="picture-wrap" style={ format!("opacity: {}; color: white; z-index: {}; transform: rotate({:.4}deg);", tt, ((h.finish() % 10000) as f64) + tt, rotation) }>
+                            <div key={id.clone()} class="picture-wrap" style={ format!("opacity: {}; color: white; z-index: {}; transform: rotate({:.4}deg);", tt, ((h.finish() % 10000) as f64) + tt, rotation) }>
                                 <div class="picture">
                                     {main_html}
                                 </div>
@@ -493,10 +541,109 @@ fn DesktopApp() -> Html {
             .collect::<Vec<_>>()
     };
 
+    let culmative:UseStateHandle<f64> = use_state(||0.0);
+
+    let kokki_instances: UseStateHandle<Vec<f64>> = use_state(|| Vec::new());
+
+    let keypress_handle = {
+        let kokki_instances = kokki_instances.clone();
+        let culmative = culmative.clone();
+        Callback::from(move |e: KeyboardEvent| {
+            let last_kokki = kokki_instances.last();
+            if e.key() == "ArrowRight" && (last_kokki.is_none() || (*culmative - last_kokki.unwrap()) > 10.0) {
+                let mut new_kokki_instances = (*kokki_instances).clone();
+                new_kokki_instances.push(*culmative);
+                kokki_instances.set(new_kokki_instances);
+
+                let win = window().unwrap();
+                let api_electron = Reflect::get(&win, &JsValue::from_str("api_electron"))
+                    .ok();
+                if let Some(api) = api_electron {
+                    let do_print_val = Reflect::get(&api, &JsValue::from_str("do_print")).ok();
+                    if let Some(do_print_val) = do_print_val {
+                        if do_print_val.is_function() {
+                            let do_print: Function = do_print_val.dyn_into::<Function>().expect("do_print is not a function");
+                            let _ = do_print.call4(
+                                &JsValue::NULL,
+                                &JsValue::from_f64(3.0),   // first argument: 3
+                                &JsValue::from_f64(0.0),   // second argument: 0
+                                &JsValue::from_f64(0.0),   // third argument: 0
+                                &JsValue::from_f64(0.0),   // third argument: 0
+                            );
+                        }
+                    }
+                }
+            }
+        })
+    };
+
+    let pictures_kokki = (*kokki_instances).clone().iter().enumerate().map(|(i, x)| {
+        let x_key = x.to_string();
+
+        html! {
+                            <div data-key-debug={x_key} key={ x_key.clone() } class="picture-wrap" style={ format!("z-index: {}; transform: rotate({:.4}deg);", 50000.0 + (i as f32) / 100.0, i as f64 * 3.0 + x.fract() * 4.0) }>
+                                <div class="picture">
+                                    <VideoWrapper src="assets/inquire/rec20260720-crop.webm" current_seek={*culmative - x} />
+                                </div>
+                            </div>
+        }
+    }).collect::<Vec<_>>();
+
+    use_effect_with((kokki_instances.clone(), culmative.clone()), move |(kokki_instances, culmative)| {
+        let mut new_kokki_instances = (**kokki_instances).clone();
+
+        new_kokki_instances.retain(|x| **culmative - x < 52.0);
+        kokki_instances.set(new_kokki_instances);
+    });
+
+    let time_cb: Callback<((f64, f64))> = {
+        let culmative = culmative.clone();
+        Callback::from(move |(delta, cul)| {
+            culmative.set(cul);
+        })
+    };
+
+    let ref_key_listener: Rc<RefCell<Option<Closure<dyn FnMut(KeyboardEvent)>>>> = use_ref(|| RefCell::new(None));
+
+    {
+        let ref_key_listener = ref_key_listener.clone();
+        let keypress_handle = keypress_handle.clone();
+        use_effect(move || {
+            let w: Window = window().unwrap();
+
+            let key_listener = Closure::wrap(Box::new(move |ev: KeyboardEvent| {
+                (keypress_handle).emit(ev,);
+            }) as Box<dyn FnMut(KeyboardEvent)>);
+            let _ = w.add_event_listener_with_callback("keydown", key_listener.as_ref().unchecked_ref());
+
+            let mut current_closure = ref_key_listener.borrow_mut();
+            *current_closure = Some(key_listener);
+
+            {
+                let ref_key_listener =  ref_key_listener.clone();
+                return move || {
+                    let key_listener = ref_key_listener.borrow();
+                    if let Some(key_listener) = key_listener.as_ref() {
+                        let _ = w.remove_event_listener_with_callback("keydown", key_listener.as_ref().unchecked_ref());
+                    }
+                }
+            }
+        });
+    };
+
+    let asobikata_shown = clients.is_empty();
+
     html! {
         <div class="root desktop" onclick={ enter_fullscreen }>
+            <div class={"picture-wrap asobikata".to_string() + if !asobikata_shown {" hide"} else {""}}>
+                <div class="picture">
+                    { get_inquire_html(&inquire_metrics, "asobikata.webp") }
+                </div>
+            </div>
             <ClockComponent interval={100} callback={clock_callback}/>
             { pictures }
+            { pictures_kokki }
+            <ClockComponent interval={16} callback={time_cb}/>
         </div>
     }
 }

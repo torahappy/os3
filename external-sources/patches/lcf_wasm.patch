@@ -1,0 +1,16 @@
+diff --git a/external-sources/liblcf-0.8.1/CMakeLists.txt b/external-sources/liblcf-0.8.1/CMakeLists.txt
+index 5ba56ac..c8c5515 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -372,10 +372,7 @@ endif ()
+ # icu
+ set(LCF_SUPPORT_ICU 0)
+ if(LIBLCF_WITH_ICU)
+-	find_package(ICU COMPONENTS i18n uc data)
+-	if(ICU_FOUND)
+-		target_link_libraries(lcf ICU::i18n ICU::uc ICU::data)
+-		list(APPEND LIBLCF_DEPS "icu-i18n")
++	if(1)
+ 		set(LCF_SUPPORT_ICU 1)
+ 	else()
+ 		if(NOT WIN32)
