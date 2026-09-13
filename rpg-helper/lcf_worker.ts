@@ -7,7 +7,7 @@ import type {
 
 
 // ---------------------------------------------------------------------------
-// 1️⃣  Instantiate the module
+//  Instantiate the module
 // ---------------------------------------------------------------------------
 let moduleInstance: MainModule|null = null;
 
@@ -28,7 +28,7 @@ async function ensureModule() {
 }
 
 // ---------------------------------------------------------------------------
-// 2️⃣  Helper: write a JavaScript string into wasm memory
+//  Helper: write a JavaScript string into wasm memory
 // ---------------------------------------------------------------------------
 function writeString(Module: MainModule, str: string) {
   const encoded = (new TextEncoder()).encode(str)
@@ -41,14 +41,14 @@ function writeString(Module: MainModule, str: string) {
 }
 
 // ---------------------------------------------------------------------------
-// 3️⃣  Helper: read an Int32Array from wasm memory
+//  Helper: read an Int32Array from wasm memory
 // ---------------------------------------------------------------------------
 function readInt32(Module: MainModule, ptr: number, len: number) {
   return Module.HEAP32.slice(ptr >> 2, (ptr >> 2) + len);
 }
 
 // ---------------------------------------------------------------------------
-// 4️⃣  Helper: read an Int8Array from wasm memory
+//  Helper: read an Int8Array from wasm memory
 // ---------------------------------------------------------------------------
 function readInt8(Module: MainModule, ptr: number, len: number) {
   return Module.HEAP8.slice(ptr, ptr + len);
@@ -207,7 +207,7 @@ async function callExported(Module: MainModule, name: string,
 }
 
 // ---------------------------------------------------------------------------
-// 6️⃣  Worker message handler
+// Worker message handler
 // ---------------------------------------------------------------------------
 self.onmessage = async function(e: any) {
   const {type, args, transaction_id} = e.data;
@@ -218,7 +218,7 @@ self.onmessage = async function(e: any) {
 
     self.postMessage({type : 'return', transaction_id, data : result});
   } catch (err) {
-    self.postMessage(
-        {type : 'return', transaction_id, data : null, error : err.message});
+    // @ts-ignore TS18046: 'err' is of type 'unknown'.
+    self.postMessage({type : 'return', transaction_id, data : null, error : String(err.message)});
   }
 };

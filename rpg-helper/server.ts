@@ -33,9 +33,17 @@
  * For browser, restarting means just reloading the web page by `location.reload()`.
  */
 
-import { easyrpgPlayer } from "easyrpg-player";
-import Dexie, { Table } from "dexie";
-import { QrScanner } from "qr-scanner";
+import type {FSOnlyModule} from './lcf_lib_defines.d.ts';
+// @ts-ignore TS7016: Could not find a declaration file for module
+import { Dexie as DexieImpl } from "./node_modules/dexie/dist/modern/dexie.min.mjs";
+import type { Dexie as DexieType, EntityTable } from "./node_modules/dexie/import-wrapper-prod.d.mts";
+
+const Dexie: typeof DexieType = DexieImpl;
+
+// @ts-ignore TS7016: Could not find a declaration file for module
+import QrScannerImpl from "./node_modules/qr-scanner/qr-scanner.min.js";
+import type QrScannerType from "./node_modules/qr-scanner/types/qr-scanner.d.ts";
+const QrScanner: typeof QrScannerType = QrScannerImpl;
 
 // ---------------------------------------------------------------------------
 //  Constants
@@ -47,7 +55,7 @@ const RPG_TIMEOUT_WINDOW = 10_000; // ms
 const QR_APP_WINDOW = 2_000; // ms
 const MAX_DATA = 10;
 
-const SAVE_PATH = "Save/Save.lgs";
+const SAVE_PATH = "/easyrpg/Save/Save.lgs";
 
 // ---------------------------------------------------------------------------
 //  Types
@@ -79,23 +87,22 @@ type DataInputQueueItem =
 // ---------------------------------------------------------------------------
 
 class DB extends Dexie {
-  users = this.table<UserRow>("users", { keyPath: "user_id" });
-  logins = this.table<LoginRow>("logins", {
-    keyPath: "id",
-    autoIncrement: true,
-  });
-  logouts = this.table<LogoutRow>("logouts", {
-    keyPath: "id",
-    autoIncrement: true,
-  });
-  progressions = this.table<ProgressionRow>("progressions", {
-    keyPath: "id",
-    autoIncrement: true,
-  });
-  choices = this.table<ChoiceRow>("choices", {
-    keyPath: "id",
-    autoIncrement: true,
-  });
+  users!: EntityTable<UserRow, "user_id">;
+  logins!: EntityTable<LoginRow, "rowId">;
+  logouts!: EntityTable<LogoutRow, "rowId">;
+  progressions!: EntityTable<ProgressionRow, "rowId">
+  choices!: EntityTable<ChoiceRow, "rowId">
+
+  constructor() {
+    super("TaraimawashiDB")
+    this.version(1).stores({
+      users: "user_id, creation_date, current_progression",
+      logins: "++rowId, user_id, login_date, progression",
+      logouts: "++rowId, user_id, logout_date, progression",
+      progressions: "++rowId, user_id, progression_date, progression",
+      choices: "++rowId, user_id, choice_date, progression, details",
+    })
+  }
 }
 
 interface UserRow {
@@ -105,28 +112,28 @@ interface UserRow {
 }
 
 interface LoginRow {
-  id?: number;
+  rowId: number;
   user_id: number;
   login_date: string;
   progression: number;
 }
 
 interface LogoutRow {
-  id?: number;
+  rowId: number;
   user_id: number;
-  login_date: string;
+  logout_date: string;
   progression: number;
 }
 
 interface ProgressionRow {
-  id?: number;
+  rowId: number;
   user_id: number;
   progression_date: string;
   progression: number;
 }
 
 interface ChoiceRow {
-  id?: number;
+  rowId: number;
   user_id: number;
   choice_date: string;
   progression: number;
@@ -134,7 +141,7 @@ interface ChoiceRow {
 }
 
 // ------------------------------------------
-//  Simple in-memory queue with max size = 0
+//  Simple in-memory queue with max size = 1
 // ------------------------------------------
 
 class QueueError extends Error {}
@@ -145,7 +152,7 @@ class QueueFullError extends QueueError {
   }
 }
 
-/// simple in-memory queue with max size = 0, only supports non-wait I/O.
+/// simple in-memory queue with max size = 1, only supports non-wait I/O.
 class SimpleQueue<T> {
   private item: T | null = null;
 
@@ -199,28 +206,6 @@ function nowIso(): string {
 //  Signature & QR parsing
 // ---------------------------------------------------------------------------
 
-function verifySignature(
-  data: string,
-  signatureB64: string,
-  signingKey: string,
-  purpose: string,
-): boolean {
-  const text = `${signingKey}/${purpose}/${data}`;
-  const encoder = new TextEncoder();
-  const bytes = encoder.encode(text);
-
-  // SHA-256
-  const cryptoHash = crypto.subtle.digest ? crypto.subtle.digest : undefined;
-  // Use Web Crypto
-  const digest = crypto.subtle ? undefined : undefined;
-
-  // Compute SHA-256 via Web Crypto
-  const sha256 = crypto.subtle ? null : null;
-
-  // We need the async crypto.subtle.digest — let's make this a helper
-  return false; // placeholder — see async version below
-}
-
 /**
  * Async signature verification using Web Crypto (SHA-256).
  */
@@ -262,7 +247,7 @@ async function rpgReadVars(
   offset: number = 99,
 ): Promise<number[]> {
   // 1. Read save data from main process
-  const saveData: Uint8Array = await easyrpgPlayer.FS.readFile(SAVE_PATH);
+  const saveData: Uint8Array = window.easyrpgPlayer.FS.readFile(SAVE_PATH);
 
   // 2. Copy to Web Worker
   await callLcfLib("write_file", { filename: SAVE_PATH, data: saveData });
@@ -287,7 +272,7 @@ async function rpgWriteVars(
   offset: number = 199,
 ): Promise<void> {
   // 1. Read save data from main process
-  const saveData: Uint8Array = await easyrpgPlayer.FS.readFile(SAVE_PATH);
+  const saveData: Uint8Array = window.easyrpgPlayer.FS.readFile(SAVE_PATH);
 
   // 2. Copy to Web Worker
   await callLcfLib("write_file", { filename: SAVE_PATH, data: saveData });
@@ -307,7 +292,7 @@ async function rpgWriteVars(
   });
 
   // 5. Write back to main process
-  await easyrpgPlayer.FS.writeFile(SAVE_PATH, updated);
+  window.easyrpgPlayer.FS.writeFile(SAVE_PATH, updated);
 }
 
 /**
@@ -338,7 +323,7 @@ declare function callLcfLib<T>(
 async function scanQrCode(): Promise<string> {
   return new Promise<string>((resolve, reject) => {
     const videoElem = document.createElement("video");
-    videoElem.style.display = "none";
+    videoElem.style = "display: block !important; opacity: 1; position: absolute; top:0; left:0; width: calc((100vw - 100vh * 1.3333333333) / 2); height: auto;";
     document.body.appendChild(videoElem);
 
     const qrScanner = new QrScanner(videoElem, (result) => {
@@ -349,7 +334,7 @@ async function scanQrCode(): Promise<string> {
 
     async function cleanup(): Promise<void> {
       try {
-        await qrScanner.stop();
+        qrScanner.stop();
       } catch {}
       if (videoElem.parentNode) {
         videoElem.remove();
@@ -397,8 +382,8 @@ async function processQrLogin(
   signingKey: string,
 ): Promise<void> {
   // Find a matching QR-code line
-  let userId: number;
-  let signatureB64: string;
+  let userId: number | null = null;
+  let signatureB64: string | null = null;
 
   for (const line of qrData.splitlines()) {
     try {
@@ -408,6 +393,8 @@ async function processQrLogin(
       continue;
     }
   }
+
+  if (userId === null || signatureB64 === null) { throw Error("no user id and signature found"); }
 
   // Validate
   const valid = await verifySignatureAsync(
@@ -433,7 +420,7 @@ async function processQrDataInput(
 ): Promise<void> {
   // Expected format: QR-Code:2 5 3 7 <signature>
   let data: number[] = [];
-  let signatureB64: string;
+  let signatureB64: string | null = null;
 
   for (const line of qrData.splitlines()) {
     const m = line.match(/QR-Code:((\d+ )+)([A-Za-z0-9+/=]+)/);
@@ -444,6 +431,7 @@ async function processQrDataInput(
     signatureB64 = m[2];
     break;
   }
+  if (signatureB64 === null) { throw Error("no user id and signature found"); }
 
   if (data.length === 0) {
     dataInputQueue.put_nowait({
@@ -697,7 +685,7 @@ async function progressionLoop(db: DB, signingKey: string): Promise<void> {
           debug(`User ${userId} Logout`);
           await db.logouts.add({
             user_id: userId ?? 0,
-            login_date: nowIso(),
+            logout_date: nowIso(),
             progression: currentProgression ?? 0,
           });
           userId = null;
@@ -748,9 +736,7 @@ async function main(): Promise<void> {
  * In the browser, this could be imported from a config module.
  */
 async function loadSigningKey(): Promise<string> {
-  // In a browser environment, this could be a simple import or fetch
-  const mod = await import("./credentials.js");
-  return mod.SIGNING_KEY;
+  return "THIS_IS_SIGNING_KEY";
 }
 
 // ---------------------------------------------------------------------------
