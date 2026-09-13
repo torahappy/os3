@@ -1,14 +1,14 @@
 import type {MainModule} from "./dist-wasm/rpg_lsd_io";
 
 declare global {
-    interface Window { call_lcf_lib_data: CallLcfLibData; call_lcf_lib: CallLcfLibFunc; easyrpgPlayer: FSOnlyModule }
+    interface Window { call_lcf_lib_data: CallLcfLibData; call_lcf_lib: CallLcfLibFunc; easyrpgPlayer: EasyRPGModule }
 }
 
 export type LcfMessage = LcfMessageRead | LcfMessageWrite | LcfMessageWriteSwitches | LcfMessageWriteFile | LcfMessageReadFile
 export type LcfMessageReturn = null | Boolean[] | Int32Array | Uint8Array
 
 export interface LcfResolve {
-  (data: LcfMessage): void
+  (data: LcfMessageReturn): void
 }
 
 export interface LcfReject {
@@ -21,7 +21,7 @@ export interface LcfResolveReject {
 }
 
 export interface CallLcfLibFunc {
-  (function_name: string, args: LcfMessage): Promise<LcfMessage>
+  (function_name: string, args: LcfMessage): Promise<LcfMessageReturn>
 }
 
 export interface CallLcfLibData {
@@ -85,6 +85,6 @@ export interface MainModuleWithFS extends MainModule {
   FS: FSDef;
 }
 
-export interface FSOnlyModule {
-  FS: FSDef;
+export interface EasyRPGModule {
+  FS?: FSDef;
 }

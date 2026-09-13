@@ -148,8 +148,8 @@
     </div>
   </div>
 
-<script type="text/javascript" src="index.js"></script>
-<script type="module" src="server.js"></script>
+<script src="index.js"></script>
+<script src="server.js"></script>
 
 <script>
 const hasTouchscreen = window.matchMedia('(hover: none), (pointer: coarse)').matches;
@@ -167,6 +167,7 @@ window.addEventListener('load', (event) => {
       saveFs: undefined
     }).then(function(Module) {
       // Module is ready
+      window.easyrpgPlayer = Module;
       easyrpgPlayer = Module;
       easyrpgPlayer.initApi();
       canvas.focus();

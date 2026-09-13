@@ -33,17 +33,14 @@
  * For browser, restarting means just reloading the web page by `location.reload()`.
  */
 
-import type {FSOnlyModule} from './lcf_lib_defines.d.ts';
 // @ts-ignore TS7016: Could not find a declaration file for module
-import { Dexie as DexieImpl } from "./node_modules/dexie/dist/modern/dexie.min.mjs";
-import type { Dexie as DexieType, EntityTable } from "./node_modules/dexie/import-wrapper-prod.d.mts";
 
-const Dexie: typeof DexieType = DexieImpl;
+import type {EasyRPGModule} from './lcf_lib_defines.d.ts';
+import { Dexie, type EntityTable } from "dexie";
 
-// @ts-ignore TS7016: Could not find a declaration file for module
-import QrScannerImpl from "./node_modules/qr-scanner/qr-scanner.min.js";
-import type QrScannerType from "./node_modules/qr-scanner/types/qr-scanner.d.ts";
-const QrScanner: typeof QrScannerType = QrScannerImpl;
+import QrScanner from "qr-scanner";
+
+import { call_lcf_lib } from './lcf_lib.js';
 
 // ---------------------------------------------------------------------------
 //  Constants
@@ -184,7 +181,6 @@ let currentQrState: QrState = "login";
 const loginQueue = new SimpleQueue<LoginQueueItem | null>();
 const dataInputQueue = new SimpleQueue<DataInputQueueItem | null>();
 
-let endSignal = false;
 
 // ---------------------------------------------------------------------------
 //  Helpers
@@ -227,7 +223,7 @@ async function verifySignatureAsync(
 }
 
 function parseQrCodeLine(line: string): [number, string] {
-  const m = line.match(/QR-Code:(\d+)\s+([A-Za-z0-9+/=]+)/);
+  const m = line.match(/(\d+)\s+([A-Za-z0-9+/=]+)/);
   if (!m) {
     throw new Error(`Line does not match QR-Code pattern: ${line}`);
   }
@@ -245,23 +241,23 @@ function parseQrCodeLine(line: string): [number, string] {
 async function rpgReadVars(
   count: number,
   offset: number = 99,
-): Promise<number[]> {
+): Promise<Int32Array> {
   // 1. Read save data from main process
+  console.log(Object.keys(window))
   const saveData: Uint8Array = window.easyrpgPlayer.FS.readFile(SAVE_PATH);
 
   // 2. Copy to Web Worker
-  await callLcfLib("write_file", { filename: SAVE_PATH, data: saveData });
+  await call_lcf_lib("write_file", { filename: SAVE_PATH, data: saveData });
 
   // 3. Read the variables in the Web Worker
-  const result = await callLcfLib("read_rpg_var_lgs", {
+  const result = await call_lcf_lib("read_rpg_var_lgs", {
     filename: SAVE_PATH,
     offset,
     count,
   });
 
   // result is expected to be the array of numbers read from the file
-
-  return result as number[];
+  return result as Int32Array;
 }
 
 /**
@@ -275,10 +271,10 @@ async function rpgWriteVars(
   const saveData: Uint8Array = window.easyrpgPlayer.FS.readFile(SAVE_PATH);
 
   // 2. Copy to Web Worker
-  await callLcfLib("write_file", { filename: SAVE_PATH, data: saveData });
+  await call_lcf_lib("write_file", { filename: SAVE_PATH, data: saveData });
 
   // 3. Write the variables in the Web Worker
-  await callLcfLib("write_rpg_var_lgs", {
+  await call_lcf_lib("write_rpg_var_lgs", {
     in_filename: SAVE_PATH,
     out_filename: SAVE_PATH,
     offset,
@@ -287,9 +283,9 @@ async function rpgWriteVars(
   });
 
   // 4. Read the modified file back from Web Worker
-  const updated: Uint8Array = await callLcfLib("read_file", {
+  const updated: Uint8Array = await call_lcf_lib("read_file", {
     filename: SAVE_PATH,
-  });
+  }) as Uint8Array;
 
   // 5. Write back to main process
   window.easyrpgPlayer.FS.writeFile(SAVE_PATH, updated);
@@ -302,19 +298,6 @@ async function rpgWriteVars(
 async function rpgWriteError(code: number): Promise<void> {
   await rpgWriteVars([10000 + code]);
 }
-
-// ---------------------------------------------------------------------------
-//  Web Worker call helper
-// ---------------------------------------------------------------------------
-
-/**
- * Calls the Web Worker library function by name with the given args.
- * The actual implementation is provided by the environment.
- */
-declare function callLcfLib<T>(
-  functionName: string,
-  args: Record<string, unknown>,
-): Promise<T>;
 
 // ---------------------------------------------------------------------------
 //  QR code scanning (browser)
@@ -356,10 +339,9 @@ async function scanQrCode(): Promise<string> {
 // ---------------------------------------------------------------------------
 
 async function qrReader(signingKey: string): Promise<void> {
-  while (!endSignal) {
+  while (true) {
     await delay(QR_APP_WINDOW);
 
-    if (endSignal) break;
 
     try {
       const qrData = await scanQrCode();
@@ -385,7 +367,7 @@ async function processQrLogin(
   let userId: number | null = null;
   let signatureB64: string | null = null;
 
-  for (const line of qrData.splitlines()) {
+  for (const line of splitlines(qrData)) {
     try {
       [userId, signatureB64] = parseQrCodeLine(line);
       break;
@@ -422,8 +404,8 @@ async function processQrDataInput(
   let data: number[] = [];
   let signatureB64: string | null = null;
 
-  for (const line of qrData.splitlines()) {
-    const m = line.match(/QR-Code:((\d+ )+)([A-Za-z0-9+/=]+)/);
+  for (const line of splitlines(qrData)) {
+    const m = line.match(/((\d+ )+)([A-Za-z0-9+/=]+)/);
     if (!m) continue;
 
     const dataPart = m[1];
@@ -494,7 +476,7 @@ async function progressionLoop(db: DB, signingKey: string): Promise<void> {
   let pingStart: number | null = null;
   let processed = true;
 
-  while (!endSignal) {
+  while (true) {
     // 1. Read the ping
     const pingData = await rpgReadVars(1, 98);
 
@@ -709,6 +691,9 @@ async function progressionLoop(db: DB, signingKey: string): Promise<void> {
 // ---------------------------------------------------------------------------
 
 async function main(): Promise<void> {
+  while (window.easyrpgPlayer === undefined) {
+    await delay(1000);
+  }
   const db = new DB();
   await db.open();
 
@@ -719,38 +704,33 @@ async function main(): Promise<void> {
   const qrReaderPromise = qrReader(signingKey);
 
   // Start the progression loop
-  const progressionPromise = progressionLoop(db, signingKey);
+  const progressionPromise = progressionLoop(db, signingKey).catch((e) => {console.error(e)});
 
-  // Wait for either to complete
-  await Promise.allSettled([qrReaderPromise, progressionPromise]).catch(
-    () => {},
-  );
-
-  // Cleanup
-  endSignal = true;
-  console.info("[INFO] Stopping…");
 }
 
 /**
  * Load the signing key from credentials.
  * In the browser, this could be imported from a config module.
  */
+let signing_key_cache: string | null = null;
 async function loadSigningKey(): Promise<string> {
-  return "THIS_IS_SIGNING_KEY";
+  if (signing_key_cache !== null) {
+    return signing_key_cache
+  } else{
+    signing_key_cache = (await (await fetch('credentials.py')).text())
+	    .replace(/^SIGNING_KEY="/, '')
+	    .replace(/"$/, '')
+	    .replace('\n', '');
+    return signing_key_cache;
+  }
 }
 
 // ---------------------------------------------------------------------------
 //  Splitlines polyfill (Python's str.splitlines())
 // ---------------------------------------------------------------------------
 
-declare global {
-  interface String {
-    splitlines(): string[];
-  }
-}
-
-String.prototype.splitlines = function (this: string): string[] {
-  return this.split(/\r\n|\r|\n/).map((l) => l.replace(/[\r\n]+$/, ""));
+const splitlines = function (data: string): string[] {
+  return data.split(/\r\n|\r|\n/).map((l) => l.replace(/[\r\n]+$/, ""));
 };
 
 // ---------------------------------------------------------------------------

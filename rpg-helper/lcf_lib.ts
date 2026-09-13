@@ -1,4 +1,4 @@
-import type {CallLcfLibData, LcfMessage} from './lcf_lib_defines.d.ts';
+import type {CallLcfLibData, LcfMessage, LcfMessageReturn} from './lcf_lib_defines.d.ts';
 
 export const call_lcf_lib_data: CallLcfLibData = {
   worker: null,
@@ -6,7 +6,7 @@ export const call_lcf_lib_data: CallLcfLibData = {
   lastId: 0
 }
 
-export async function call_lcf_lib(function_name: string, args: LcfMessage): Promise<LcfMessage> {
+export async function call_lcf_lib(function_name: string, args: LcfMessage): Promise<LcfMessageReturn> {
   // -----------------------------------------------------------------------
   // 1️⃣  Keep a single worker instance
   // -----------------------------------------------------------------------
@@ -43,7 +43,7 @@ export async function call_lcf_lib(function_name: string, args: LcfMessage): Pro
   // -----------------------------------------------------------------------
   // 3️⃣  Return a Promise that will be resolved/rejected by the worker
   // -----------------------------------------------------------------------
-  const promise: Promise<LcfMessage> = new Promise((resolve, reject) => {
+  const promise: Promise<LcfMessageReturn> = new Promise((resolve, reject) => {
     call_lcf_lib_data.pending.set(transaction_id, {resolve, reject});
   });
 

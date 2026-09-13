@@ -1,15 +1,17 @@
 {
   "scripts": {
-    "watch": "chokidar --initial '*.ts' -c 'clear; tsc'",
+    "watch": "chokidar --initial '*.ts' -c 'clear; webpack'",
     "serve": "browser-sync start -s ./ -f ./"
   },
   "devDependencies": {
+    "browser-sync": "^3.0.4",
     "chokidar-cli": "3.0.0",
-    "browser-sync": "^3.0.4"
+    "typescript": "^7.0.2",
+    "webpack": "^5.110.3",
+    "webpack-cli": "^7.2.3"
   },
   "dependencies": {
     "dexie": "^4.4.6",
-    "qr-scanner": "^1.4.2",
-    "typescript": "^7.0.2"
+    "qr-scanner": "^1.4.2"
   }
 }
