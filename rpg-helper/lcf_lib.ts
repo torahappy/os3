@@ -26,7 +26,7 @@ export async function call_lcf_lib(function_name: string, args: LcfMessage): Pro
       call_lcf_lib_data.pending.delete(transaction_id);
 
       if (error) {
-        handlers.reject(new Error(error));
+        handlers.reject(error);
       } else {
         handlers.resolve(data);
       }

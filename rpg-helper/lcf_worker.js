@@ -13,6 +13,8 @@ async function ensureModule() {
         const Module = await LcfModule({
             noInitialRun: true,
             noInitialMemory: true,
+            print: () => { },
+            printErr: () => { }
         });
         moduleInstance = Module;
         return Module;
@@ -167,7 +169,6 @@ self.onmessage = async function (e) {
         self.postMessage({ type: 'return', transaction_id, data: result });
     }
     catch (err) {
-        // @ts-ignore TS18046: 'err' is of type 'unknown'.
-        self.postMessage({ type: 'return', transaction_id, data: null, error: String(err.message) });
+        self.postMessage({ type: 'return', transaction_id, data: null, error: String(err.message || err.errno) });
     }
 };

@@ -13,5 +13,6 @@ export default {
     filename: "server.js",
     path: __dirname,
   },
+  devtool: 'source-map',
   resolve: { fallback: { "path": false, "fs": false, "crypto": false }}
 };

@@ -53,6 +53,7 @@ const QR_APP_WINDOW = 2_000; // ms
 const MAX_DATA = 10;
 
 const SAVE_PATH = "/easyrpg/Save/Save.lgs";
+const WORKER_TMP_PATH = "tmp.lgs";
 
 // ---------------------------------------------------------------------------
 //  Types
@@ -157,7 +158,9 @@ class SimpleQueue<T> {
     if (this.item === null) {
       return null;
     }
-    return this.item;
+    let data = this.item;
+    this.item = null;
+    return data;
   }
 
   put_nowait(item: T): void {
@@ -243,15 +246,14 @@ async function rpgReadVars(
   offset: number = 99,
 ): Promise<Int32Array> {
   // 1. Read save data from main process
-  console.log(Object.keys(window))
   const saveData: Uint8Array = window.easyrpgPlayer.FS.readFile(SAVE_PATH);
 
   // 2. Copy to Web Worker
-  await call_lcf_lib("write_file", { filename: SAVE_PATH, data: saveData });
+  await call_lcf_lib("write_file", { filename: WORKER_TMP_PATH, data: saveData });
 
   // 3. Read the variables in the Web Worker
   const result = await call_lcf_lib("read_rpg_var_lgs", {
-    filename: SAVE_PATH,
+    filename: WORKER_TMP_PATH,
     offset,
     count,
   });
@@ -271,12 +273,12 @@ async function rpgWriteVars(
   const saveData: Uint8Array = window.easyrpgPlayer.FS.readFile(SAVE_PATH);
 
   // 2. Copy to Web Worker
-  await call_lcf_lib("write_file", { filename: SAVE_PATH, data: saveData });
+  await call_lcf_lib("write_file", { filename: WORKER_TMP_PATH, data: saveData });
 
   // 3. Write the variables in the Web Worker
   await call_lcf_lib("write_rpg_var_lgs", {
-    in_filename: SAVE_PATH,
-    out_filename: SAVE_PATH,
+    in_filename: WORKER_TMP_PATH,
+    out_filename: WORKER_TMP_PATH,
     offset,
     count: variables.length,
     variables,
@@ -284,7 +286,7 @@ async function rpgWriteVars(
 
   // 4. Read the modified file back from Web Worker
   const updated: Uint8Array = await call_lcf_lib("read_file", {
-    filename: SAVE_PATH,
+    filename: WORKER_TMP_PATH,
   }) as Uint8Array;
 
   // 5. Write back to main process
@@ -318,6 +320,7 @@ async function scanQrCode(): Promise<string> {
     async function cleanup(): Promise<void> {
       try {
         qrScanner.stop();
+	qrScanner.destroy();
       } catch {}
       if (videoElem.parentNode) {
         videoElem.remove();
@@ -470,7 +473,7 @@ function sanitizeQueues(): void {
 //  Progression loop (main async context)
 // ---------------------------------------------------------------------------
 
-async function progressionLoop(db: DB, signingKey: string): Promise<void> {
+async function progressionLoop(db: DB): Promise<void> {
   let userId: number | null = null;
   let currentProgression: number | null = null;
   let pingStart: number | null = null;
@@ -514,6 +517,7 @@ async function progressionLoop(db: DB, signingKey: string): Promise<void> {
         sanitizeQueues();
 
         const loginResult = loginQueue.get_nowait();
+	console.log(loginResult)
 
         if (loginResult === null) {
           // empty / timeout — keep looping
@@ -704,7 +708,7 @@ async function main(): Promise<void> {
   const qrReaderPromise = qrReader(signingKey);
 
   // Start the progression loop
-  const progressionPromise = progressionLoop(db, signingKey).catch((e) => {console.error(e)});
+  const progressionPromise = progressionLoop(db).catch((e) => {location.reload()});
 
 }
 
@@ -717,10 +721,7 @@ async function loadSigningKey(): Promise<string> {
   if (signing_key_cache !== null) {
     return signing_key_cache
   } else{
-    signing_key_cache = (await (await fetch('credentials.py')).text())
-	    .replace(/^SIGNING_KEY="/, '')
-	    .replace(/"$/, '')
-	    .replace('\n', '');
+    signing_key_cache = (await (await fetch('credentials.py')).text()).match(/SIGNING_KEY="(.+?)"/)[1]
     return signing_key_cache;
   }
 }
