@@ -335,9 +335,6 @@ async function scanQrCode(): Promise<string> {
       cleanup();
       reject(err);
     });
-
-    // Store scanner for cleanup
-    (window as unknown as Record<string, unknown>).__qrScanner = qrScanner;
   });
 }
 
@@ -486,6 +483,18 @@ async function progressionLoop(db: DB): Promise<void> {
   let pingStart: number | null = null;
   let processed = true;
 
+  // try reading the save
+  while (true) {
+    await delay(SYNC_WINDOW);
+    try {
+      window.easyrpgPlayer.FS.readFile(SAVE_PATH);
+    } catch (e) {
+      continue;
+    }
+    break;
+  }
+
+  // main loop
   while (true) {
     // 1. Read the ping
     const pingData = await rpgReadVars(1, 98);
@@ -705,6 +714,7 @@ async function main(): Promise<void> {
   while (window.easyrpgPlayer === undefined) {
     await delay(1000);
   }
+
   const db = new DB();
   await db.open();
 
@@ -715,7 +725,9 @@ async function main(): Promise<void> {
   const qrReaderPromise = qrReader(signingKey);
 
   // Start the progression loop
-  const progressionPromise = progressionLoop(db).catch((e) => {
+  const progressionPromise = progressionLoop(db).catch(async (e) => {
+    console.error("Error: ", e);
+    await delay(5000);
     location.reload();
   });
 }

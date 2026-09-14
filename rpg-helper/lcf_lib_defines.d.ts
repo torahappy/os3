@@ -1,84 +1,99 @@
-import type {MainModule} from "./dist-wasm/rpg_lsd_io";
+import type { MainModule } from "./dist-wasm/rpg_lsd_io";
 
 declare global {
-    interface Window { call_lcf_lib_data: CallLcfLibData; call_lcf_lib: CallLcfLibFunc; easyrpgPlayer: EasyRPGModule }
+  interface Window {
+    call_lcf_lib_data: CallLcfLibData;
+    call_lcf_lib: CallLcfLibFunc;
+    easyrpgPlayer: EasyRPGModule;
+  }
 }
 
-export type LcfMessage = LcfMessageRead | LcfMessageWrite | LcfMessageWriteSwitches | LcfMessageWriteFile | LcfMessageReadFile
-export type LcfMessageReturn = null | Boolean[] | Int32Array | Uint8Array
+export type LcfMessage =
+  | LcfMessageRead
+  | LcfMessageWrite
+  | LcfMessageWriteSwitches
+  | LcfMessageWriteFile
+  | LcfMessageReadFile;
+export type LcfMessageReturn = null | Boolean[] | Int32Array | Uint8Array;
 
 export interface LcfResolve {
-  (data: LcfMessageReturn): void
+  (data: LcfMessageReturn): void;
 }
 
 export interface LcfReject {
-  (error: Error): void
+  (error: Error): void;
 }
 
 export interface LcfResolveReject {
-  resolve: LcfResolve,
-  reject: LcfReject
+  resolve: LcfResolve;
+  reject: LcfReject;
 }
 
 export interface CallLcfLibFunc {
-  (function_name: string, args: LcfMessage): Promise<LcfMessageReturn>
+  (function_name: string, args: LcfMessage): Promise<LcfMessageReturn>;
 }
 
 export interface CallLcfLibData {
-  worker: Worker | null,
-  pending: Map<number, LcfResolveReject>,
-  lastId: number
+  worker: Worker | null;
+  pending: Map<number, LcfResolveReject>;
+  lastId: number;
 }
 
 export interface LcfMessageRead {
-  filename: string,
-  offset: number,
-  count: number
+  filename: string;
+  offset: number;
+  count: number;
 }
 
 export interface LcfMessageWrite {
-  in_filename: string,
-  out_filename: string,
-  offset: number,
-  count: number,
-  variables: number[]
+  in_filename: string;
+  out_filename: string;
+  offset: number;
+  count: number;
+  variables: number[];
 }
 
 export interface LcfMessageWriteSwitches {
-  in_filename: string,
-  out_filename: string,
-  offset: number,
-  count: number,
-  switches: number[]
+  in_filename: string;
+  out_filename: string;
+  offset: number;
+  count: number;
+  switches: number[];
 }
 export interface LcfMessageWriteFile {
-  filename: string,
-  data: Uint8Array
+  filename: string;
+  data: Uint8Array;
 }
 
 export interface LcfMessageReadFile {
-  filename: string
+  filename: string;
 }
 
 export interface MallocFunc {
-  (size: number): number
+  (size: number): number;
 }
 
 export interface FreeFunc {
-  (address: number): void
+  (address: number): void;
 }
 
 export interface ReadCallFunc {
-  (ptrName: number, offset: number, count: number, retPtr: number): number
+  (ptrName: number, offset: number, count: number, retPtr: number): number;
 }
 
 export interface WriteCallFunc {
-  (ptrIn: number, ptrOut: number, offset: number, count: number, ptrVar: number): number
+  (
+    ptrIn: number,
+    ptrOut: number,
+    offset: number,
+    count: number,
+    ptrVar: number,
+  ): number;
 }
 
 export interface FSDef {
-  readFile(filename: string): Uint8Array,
-  writeFile(filename: string, data: Uint8Array): void
+  readFile(filename: string): Uint8Array;
+  writeFile(filename: string, data: Uint8Array): void;
 }
 
 export interface MainModuleWithFS extends MainModule {
@@ -86,5 +101,5 @@ export interface MainModuleWithFS extends MainModule {
 }
 
 export interface EasyRPGModule {
-  FS?: FSDef;
+  FS: FSDef;
 }
