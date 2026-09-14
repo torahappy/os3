@@ -33,14 +33,12 @@
  * For browser, restarting means just reloading the web page by `location.reload()`.
  */
 
-// @ts-ignore TS7016: Could not find a declaration file for module
-
-import type {EasyRPGModule} from './lcf_lib_defines.d.ts';
+import type { EasyRPGModule } from "./lcf_lib_defines.d.ts";
 import { Dexie, type EntityTable } from "dexie";
 
 import QrScanner from "qr-scanner";
 
-import { call_lcf_lib } from './lcf_lib.js';
+import { call_lcf_lib } from "./lcf_lib.js";
 
 // ---------------------------------------------------------------------------
 //  Constants
@@ -88,18 +86,18 @@ class DB extends Dexie {
   users!: EntityTable<UserRow, "user_id">;
   logins!: EntityTable<LoginRow, "rowId">;
   logouts!: EntityTable<LogoutRow, "rowId">;
-  progressions!: EntityTable<ProgressionRow, "rowId">
-  choices!: EntityTable<ChoiceRow, "rowId">
+  progressions!: EntityTable<ProgressionRow, "rowId">;
+  choices!: EntityTable<ChoiceRow, "rowId">;
 
   constructor() {
-    super("TaraimawashiDB")
+    super("TaraimawashiDB");
     this.version(1).stores({
       users: "user_id, creation_date, current_progression",
       logins: "++rowId, user_id, login_date, progression",
       logouts: "++rowId, user_id, logout_date, progression",
       progressions: "++rowId, user_id, progression_date, progression",
       choices: "++rowId, user_id, choice_date, progression, details",
-    })
+    });
   }
 }
 
@@ -184,7 +182,6 @@ let currentQrState: QrState = "login";
 const loginQueue = new SimpleQueue<LoginQueueItem | null>();
 const dataInputQueue = new SimpleQueue<DataInputQueueItem | null>();
 
-
 // ---------------------------------------------------------------------------
 //  Helpers
 // ---------------------------------------------------------------------------
@@ -249,7 +246,10 @@ async function rpgReadVars(
   const saveData: Uint8Array = window.easyrpgPlayer.FS.readFile(SAVE_PATH);
 
   // 2. Copy to Web Worker
-  await call_lcf_lib("write_file", { filename: WORKER_TMP_PATH, data: saveData });
+  await call_lcf_lib("write_file", {
+    filename: WORKER_TMP_PATH,
+    data: saveData,
+  });
 
   // 3. Read the variables in the Web Worker
   const result = await call_lcf_lib("read_rpg_var_lgs", {
@@ -273,7 +273,10 @@ async function rpgWriteVars(
   const saveData: Uint8Array = window.easyrpgPlayer.FS.readFile(SAVE_PATH);
 
   // 2. Copy to Web Worker
-  await call_lcf_lib("write_file", { filename: WORKER_TMP_PATH, data: saveData });
+  await call_lcf_lib("write_file", {
+    filename: WORKER_TMP_PATH,
+    data: saveData,
+  });
 
   // 3. Write the variables in the Web Worker
   await call_lcf_lib("write_rpg_var_lgs", {
@@ -285,9 +288,9 @@ async function rpgWriteVars(
   });
 
   // 4. Read the modified file back from Web Worker
-  const updated: Uint8Array = await call_lcf_lib("read_file", {
+  const updated: Uint8Array = (await call_lcf_lib("read_file", {
     filename: WORKER_TMP_PATH,
-  }) as Uint8Array;
+  })) as Uint8Array;
 
   // 5. Write back to main process
   window.easyrpgPlayer.FS.writeFile(SAVE_PATH, updated);
@@ -308,7 +311,8 @@ async function rpgWriteError(code: number): Promise<void> {
 async function scanQrCode(): Promise<string> {
   return new Promise<string>((resolve, reject) => {
     const videoElem = document.createElement("video");
-    videoElem.style = "display: block !important; opacity: 1; position: absolute; top:0; left:0; width: calc((100vw - 100vh * 1.3333333333) / 2); height: auto;";
+    videoElem.style =
+      "display: block !important; opacity: 1; position: absolute; top:0; left:0; width: calc((100vw - 100vh * 1.3333333333) / 2); height: auto;";
     document.body.appendChild(videoElem);
 
     const qrScanner = new QrScanner(videoElem, (result) => {
@@ -320,7 +324,7 @@ async function scanQrCode(): Promise<string> {
     async function cleanup(): Promise<void> {
       try {
         qrScanner.stop();
-	qrScanner.destroy();
+        qrScanner.destroy();
       } catch {}
       if (videoElem.parentNode) {
         videoElem.remove();
@@ -344,7 +348,6 @@ async function scanQrCode(): Promise<string> {
 async function qrReader(signingKey: string): Promise<void> {
   while (true) {
     await delay(QR_APP_WINDOW);
-
 
     try {
       const qrData = await scanQrCode();
@@ -379,7 +382,9 @@ async function processQrLogin(
     }
   }
 
-  if (userId === null || signatureB64 === null) { throw Error("no user id and signature found"); }
+  if (userId === null || signatureB64 === null) {
+    throw Error("no user id and signature found");
+  }
 
   // Validate
   const valid = await verifySignatureAsync(
@@ -416,7 +421,9 @@ async function processQrDataInput(
     signatureB64 = m[2];
     break;
   }
-  if (signatureB64 === null) { throw Error("no user id and signature found"); }
+  if (signatureB64 === null) {
+    throw Error("no user id and signature found");
+  }
 
   if (data.length === 0) {
     dataInputQueue.put_nowait({
@@ -517,7 +524,7 @@ async function progressionLoop(db: DB): Promise<void> {
         sanitizeQueues();
 
         const loginResult = loginQueue.get_nowait();
-	console.log(loginResult)
+        console.log(loginResult);
 
         if (loginResult === null) {
           // empty / timeout — keep looping
@@ -708,8 +715,9 @@ async function main(): Promise<void> {
   const qrReaderPromise = qrReader(signingKey);
 
   // Start the progression loop
-  const progressionPromise = progressionLoop(db).catch((e) => {location.reload()});
-
+  const progressionPromise = progressionLoop(db).catch((e) => {
+    location.reload();
+  });
 }
 
 /**
@@ -719,9 +727,15 @@ async function main(): Promise<void> {
 let signing_key_cache: string | null = null;
 async function loadSigningKey(): Promise<string> {
   if (signing_key_cache !== null) {
-    return signing_key_cache
-  } else{
-    signing_key_cache = (await (await fetch('credentials.py')).text()).match(/SIGNING_KEY="(.+?)"/)[1]
+    return signing_key_cache;
+  } else {
+    const m = (await (await fetch("credentials.py")).text()).match(
+      /SIGNING_KEY="(.+?)"/,
+    );
+    if (m === null) {
+      throw Error("credentials.py loading failed");
+    }
+    signing_key_cache = m[1];
     return signing_key_cache;
   }
 }

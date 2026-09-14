@@ -6,3 +6,7 @@ Save.lgs
 Save01.lsd
 credentials.py
 *.db
+*.server.js
+*.server.js.map
+server.js
+server.js.map
