@@ -169,6 +169,7 @@ self.onmessage = async function (e) {
         self.postMessage({ type: 'return', transaction_id, data: result });
     }
     catch (err) {
+        // @ts-ignore
         self.postMessage({ type: 'return', transaction_id, data: null, error: String(err.message || err.errno) });
     }
 };
