@@ -18,7 +18,7 @@ build:
   rules:
     # This ensures that only pushes to the default branch will trigger
     # a pages deploy
-    - if: $CI_COMMIT_REF_NAME == "main"
+    - if: $CI_COMMIT_REF_NAME == "develop-rpg-archive"
   # Functions that should be executed before the build script is run
   before_script: []
   script:
@@ -65,5 +65,9 @@ build:
     - cp ./os3yew/wasm/doomscroll/*.html public/doomscroll_web
     - cp ./os3yew/wasm/doomscroll/*.css public/doomscroll_web
     - cp ./os3yew/wasm/doomscroll/*.js public/doomscroll_web
+    - BUILD_NATIVE=0 BUILD_WASM=1 ./rpg-helper/setup-rpg.sh
+    - cd rpg-helper; yarn install; yarn build; cd ..
+    - mkdir -p public/0.0002-archive-rpg/
+    - cd rpg-helper; cp -r dist-wasm games index.html index.js index.wasm lcf_worker.js server.js ZenKakuGothicAntique-Medium.ttf credentials.py ../public/0.0002-archive-rpg/
   artifacts:
     expire_in: 1 hour
