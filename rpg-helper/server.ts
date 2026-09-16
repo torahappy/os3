@@ -307,24 +307,43 @@ async function rpgWriteError(code: number): Promise<void> {
 // ---------------------------------------------------------------------------
 //  QR code scanning (browser)
 // ---------------------------------------------------------------------------
+// height: calc((100vh - 100vw * 0.75) / 2); width: auto;
+// width: calc((100vw - 100vh * 1.3333333333) / 2); height: auto;
+// videoElem.style = "display: block !important; opacity: 1; position: absolute; top:0; left:0; width: calc((100vw - 100vh * 1.3333333333) / 2); height: auto;";
+// videoElem.style = "display: block !important; opacity: 1; position: absolute; top:0; left:0; height: calc((100vh - 100vw * 0.75) / 2); width: auto;";
+
+interface QRState {
+  videoElem: HTMLVideoElement | null;
+  qrScanner: QrScanner | null;
+}
+
+let qr_state: QRState = {
+  videoElem: null,
+  qrScanner: null,
+};
 
 async function scanQrCode(): Promise<string> {
+  if (qr_state.videoElem !== null || qr_state.qrScanner !== null) {
+    throw Error("QR inscance already exists");
+  }
   return new Promise<string>((resolve, reject) => {
     const videoElem = document.createElement("video");
-    videoElem.style =
-      "display: block !important; opacity: 1; position: absolute; top:0; left:0; width: calc((100vw - 100vh * 1.3333333333) / 2); height: auto;";
     document.body.appendChild(videoElem);
+    qr_state.videoElem = videoElem;
 
     const qrScanner = new QrScanner(videoElem, (result) => {
       // Got a QR code result
       cleanup();
       resolve(result);
     });
+    qr_state.qrScanner = qrScanner;
 
     async function cleanup(): Promise<void> {
       try {
         qrScanner.stop();
         qrScanner.destroy();
+        qr_state.qrScanner = null;
+        qr_state.videoElem = null;
       } catch {}
       if (videoElem.parentNode) {
         videoElem.remove();

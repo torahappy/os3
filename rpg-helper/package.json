@@ -1,7 +1,7 @@
 {
   "scripts": {
     "watch": "chokidar --initial '*.ts' -c 'clear; webpack; tsc'",
-    "serve": "browser-sync start -s ./ -f ./"
+    "serve": "browser-sync start -s ./ -f ./ --port 6363"
   },
   "devDependencies": {
     "browser-sync": "^3.0.4",
