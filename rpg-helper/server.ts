@@ -429,12 +429,12 @@ async function processQrDataInput(
   let signatureB64: string | null = null;
 
   for (const line of splitlines(qrData)) {
-    const m = line.match(/((\d+ )+)([A-Za-z0-9+/=]+)/);
+    const m = line.match(/^((\d+ )+)([A-Za-z0-9+/=]+)$/);
     if (!m) continue;
 
     const dataPart = m[1];
-    data = dataPart.split(/\s+/).map((x) => parseInt(x, 10));
-    signatureB64 = m[2];
+    data = dataPart.split(/\s+/).filter(x => x !== "").map((x) => parseInt(x, 10));
+    signatureB64 = m[m.length - 1];
     break;
   }
   if (signatureB64 === null) {

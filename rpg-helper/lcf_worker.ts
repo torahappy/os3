@@ -11,7 +11,6 @@ import type {
 // ---------------------------------------------------------------------------
 let moduleInstance: MainModule|null = null;
 
-/// initialize the main module
 async function ensureModule() {
   if (moduleInstance !== null) {
     return moduleInstance;
@@ -60,7 +59,7 @@ function read_rpg_var_generic(args: LcfMessageRead, call_func: ReadCallFunc,
                               Module: MainModule) {
   const {filename, offset, count} = args;
   const ptrName = writeString(Module, filename);
-  const retPtr = Module._malloc(count * 4); // 4 bytes per int32
+  const retPtr = Module._malloc(count * 4);
 
   const retCode = call_func(ptrName, offset, count, retPtr);
   const return_data = readInt32(Module, retPtr, count);
@@ -94,14 +93,14 @@ function write_rpg_var_generic(args: LcfMessageWrite, call_func: WriteCallFunc,
 
   if (retCode !== 0)
     throw new Error(`write_rpg_var failed: ${retCode}`);
-  return null; // nothing to return
+  return null;
 }
 
 function read_rpg_switch_generic(args: LcfMessageRead, call_func: ReadCallFunc,
                                  Module: MainModule) {
   const {filename, offset, count} = args;
   const ptrName = writeString(Module, filename);
-  const retPtr = Module._malloc(count); // 1 byte per int8
+  const retPtr = Module._malloc(count);
 
   const retCode = call_func(ptrName, offset, count, retPtr);
   const return_data = readInt8(Module, retPtr, count);
@@ -145,7 +144,7 @@ function write_rpg_switch_generic(args: LcfMessageWriteSwitches,
 }
 
 // ---------------------------------------------------------------------------
-// 5️⃣  Core: call a specific exported function
+//  Core: call a specific exported function
 // ---------------------------------------------------------------------------
 async function callExported(Module: MainModule, name: string,
                             args: LcfMessage): Promise<LcfMessageReturn> {
