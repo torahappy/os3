@@ -434,7 +434,7 @@ async function processQrDataInput(
 
     const dataPart = m[1];
     data = dataPart.split(/\s+/).filter(x => x !== "").map((x) => parseInt(x, 10));
-    signatureB64 = m[m.length - 1];
+    signatureB64 = m[3];
     break;
   }
   if (signatureB64 === null) {
