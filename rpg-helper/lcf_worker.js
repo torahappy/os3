@@ -4,7 +4,6 @@ import LcfModule from './dist-wasm/rpg_lsd_io.js';
 //  Instantiate the module
 // ---------------------------------------------------------------------------
 let moduleInstance = null;
-/// initialize the main module
 async function ensureModule() {
     if (moduleInstance !== null) {
         return moduleInstance;
@@ -47,7 +46,7 @@ function readInt8(Module, ptr, len) {
 function read_rpg_var_generic(args, call_func, Module) {
     const { filename, offset, count } = args;
     const ptrName = writeString(Module, filename);
-    const retPtr = Module._malloc(count * 4); // 4 bytes per int32
+    const retPtr = Module._malloc(count * 4);
     const retCode = call_func(ptrName, offset, count, retPtr);
     const return_data = readInt32(Module, retPtr, count);
     Module._free(ptrName);
@@ -75,12 +74,12 @@ function write_rpg_var_generic(args, call_func, Module) {
     Module._free(ptrVar);
     if (retCode !== 0)
         throw new Error(`write_rpg_var failed: ${retCode}`);
-    return null; // nothing to return
+    return null;
 }
 function read_rpg_switch_generic(args, call_func, Module) {
     const { filename, offset, count } = args;
     const ptrName = writeString(Module, filename);
-    const retPtr = Module._malloc(count); // 1 byte per int8
+    const retPtr = Module._malloc(count);
     const retCode = call_func(ptrName, offset, count, retPtr);
     const return_data = readInt8(Module, retPtr, count);
     Module._free(ptrName);
@@ -113,7 +112,7 @@ function write_rpg_switch_generic(args, call_func, Module) {
     return null;
 }
 // ---------------------------------------------------------------------------
-// 5️⃣  Core: call a specific exported function
+//  Core: call a specific exported function
 // ---------------------------------------------------------------------------
 async function callExported(Module, name, args) {
     switch (name) {
