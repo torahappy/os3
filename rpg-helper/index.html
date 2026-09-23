@@ -137,30 +137,25 @@
         opacity: 0.7;
       }
 
-      @media (min-aspect-ratio: 4/3) {
-        video {
+      video {
           display: block !important;
           opacity: 1;
           position: absolute;
           top: 0;
           left: 0;
-          width: calc((100vw - 100vh * 1.3333333333) / 2);
+	  mix-blend-mode: difference;
+      }
+
+      @media (min-aspect-ratio: 4/3) {
+        video {
+          width: calc((100svw - 100svh * 1.3333333333) / 2) !important;
           height: auto;
-          max-height: 100vh;
-	  overflow: hidden;
         }
       }
       @media (max-aspect-ratio: 4/3) {
         video {
-          display: block !important;
-          opacity: 1;
-          position: absolute;
-          top: 0;
-          left: 0;
-          height: calc((100vh - 100vw * 0.75) / 2);
+          height: calc((100svh - 100svw * 0.75) / 2) !important;
           width: auto;
-          max-width: 100vw;
-	  overflow: hidden;
         }
       }
     </style>
