@@ -12,14 +12,13 @@ impl bevy::prelude::Plugin for AudioOutputPlugin {
 
 #[derive(Resource)]
 pub struct AudioOutput {
-    stream_handle: Option<rodio::OutputStreamHandle>,
+    stream_handle: Option<rodio::MixerDeviceSink>,
 }
 
 impl AudioOutput {
     fn new() -> Self {
-        if let Ok((stream, stream_handle)) = rodio::OutputStream::try_default() {
+        if let Ok((stream_handle)) = rodio::DeviceSinkBuilder::open_default_sink() {
             // We leak `OutputStream` to prevent the audio from stopping.
-            std::mem::forget(stream);
             Self {
                 stream_handle: Some(stream_handle),
             }
@@ -32,16 +31,15 @@ impl AudioOutput {
     }
     pub fn new_sink(&self) -> Option<SpatialAudioSink> {
         Some(SpatialAudioSink {
-            sink: rodio::SpatialSink::try_new(
-                self.get()?,
+            sink: rodio::SpatialPlayer::connect_new(
+                self.get()?.mixer(),
                 [0.0, 0.0, 0.0],
                 (Vec3::X * 4.0 / -2.0).to_array(),
                 (Vec3::X * 4.0 / 2.0).to_array(),
             )
-            .unwrap(),
         })
     }
-    pub fn get(&self) -> Option<&rodio::OutputStreamHandle> {
+    pub fn get(&self) -> Option<&rodio::MixerDeviceSink> {
         self.stream_handle.as_ref()
     }
 }

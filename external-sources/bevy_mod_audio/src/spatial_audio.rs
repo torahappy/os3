@@ -3,8 +3,8 @@ use bevy::math::Vec3;
 #[allow(deprecated)]
 use bevy::prelude::{Changed, Component, GlobalTransform, Query, Update, With};
 use bevy::prelude::{Single, Transform};
-use cpal::FromSample;
-use rodio::{Sample, Source};
+use cpal::{FromSample, Sample};
+use rodio::{Source};
 
 pub struct SpatialAudioPlugin;
 
@@ -32,7 +32,7 @@ impl Default for Ears {
 #[derive(Component)]
 #[require(Transform)]
 pub struct SpatialAudioSink {
-    pub(crate) sink: rodio::SpatialSink,
+    pub(crate) sink: rodio::SpatialPlayer,
 }
 
 impl SpatialAudioSink {

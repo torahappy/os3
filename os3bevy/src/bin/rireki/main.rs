@@ -347,7 +347,7 @@ fn system_voice_history_calc(
                     atari += 1;
                 }
 
-                let mm = materials.get_mut(matref.id()).unwrap();
+                let mut mm = materials.get_mut(matref.id()).unwrap();
                 mm.category_level_p3_p4 = Vec4::new(v_data.category as f32, level as f32, 0.0, 0.0);
 
                 apply_adv_transform(

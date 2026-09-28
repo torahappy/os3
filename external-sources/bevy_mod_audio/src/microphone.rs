@@ -171,8 +171,8 @@ pub fn create_microphone(mut commands: Commands) {
     let config = match configs.find(|c| {
         c.sample_format() == cpal::SampleFormat::F32
             && c.channels() == microphone_config.channels
-            && c.min_sample_rate().0 <= microphone_config.sample_rate
-            && c.max_sample_rate().0 >= microphone_config.sample_rate
+            && c.min_sample_rate() <= microphone_config.sample_rate
+            && c.max_sample_rate() >= microphone_config.sample_rate
     }) {
         None => {
             return warn!(
@@ -182,13 +182,13 @@ pub fn create_microphone(mut commands: Commands) {
         }
         Some(config) => config,
     }
-        .with_sample_rate(cpal::SampleRate(microphone_config.sample_rate));
+        .with_sample_rate(microphone_config.sample_rate);
 
     // Run microphone audio through our channel
     let err_fn = |err| error!("an error occurred on the output audio stream: {}", err);
     let stream = device
         .build_input_stream(
-            &config.into(),
+            config.clone().into(),
             move |d: &[f32], _| {
                 // sending errors imply the receiver is dropped.
                 tx.send(d.to_vec()).ok();

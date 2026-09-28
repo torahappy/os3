@@ -7,12 +7,12 @@ license = "MIT OR Apache-2.0"
 repository = "https://github.com/MalekiRe/bevy_mod_audio"
 
 [dependencies]
-bevy = "0.17.3"
-rodio = "0.20.1"
-cpal = { version = "0.15.3" }
-flume = "0.11.1"
+bevy = "0.19.1"
+cpal = "0.18.2"
+flume = "0.12.0"
+rodio = "0.22.2"
 
 [target.'cfg(target_arch="wasm32")'.dependencies]
-cpal = { version = "0.15.3", features = ["wasm-bindgen"] }
+cpal = { version = "0.18.2", features = ["wasm-bindgen"] }
 wasm-bindgen = "=0.2.108"
 web-sys = { version = "=0.3.85", features = ["MediaStream","MediaStreamAudioSourceNode","MediaStreamConstraints","AudioProcessingEvent","Navigator", "Window", "ScriptProcessorNode", "MediaDevices"] }

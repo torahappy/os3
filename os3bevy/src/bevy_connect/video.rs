@@ -229,13 +229,13 @@ pub fn play_video(
                                 .run(&decoded, &mut rgb_frame)
                                 .unwrap();
                             // update data of image texture
-                            let image = images.get_mut(&video_player.image_handle).unwrap();
+                            let mut image = images.get_mut(&video_player.image_handle).unwrap();
 
                             let frame = rgb_frame.data(0).to_vec();
                             image.data = Some(frame);
                             if m2d.contains(entity) {
                                 let m = materials.get_mut(m2d.get(entity).unwrap().0.id());
-                                if let Some(mm) = m {
+                                if let Some(mut mm) = m {
                                     mm.time += time.delta_secs();
                                 }
                             }
