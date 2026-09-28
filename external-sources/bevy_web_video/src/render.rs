@@ -80,7 +80,7 @@ impl RenderAsset for RenderVideoElement {
                     color_space: PredefinedColorSpace::Srgb,
                     premultiplied_alpha: false,
                 },
-                gpu_image.size,
+                gpu_image.texture.size(),
             );
             // Marker asset, we already did the work above
             Ok(RenderVideoElement)

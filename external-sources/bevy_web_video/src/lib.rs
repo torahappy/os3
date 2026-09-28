@@ -1,3 +1,5 @@
+#![recursion_limit = "256"]
+
 use bevy::{asset::AsAssetId, prelude::*};
 use wasm_bindgen::prelude::*;
 

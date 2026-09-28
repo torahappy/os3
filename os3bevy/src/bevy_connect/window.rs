@@ -7,11 +7,10 @@ pub struct WindowMetricsResource {
 }
 
 pub fn system_window_resize(
-    resize_event: Res<Events<WindowResized>>,
+    mut reader: MessageReader<WindowResized>,
     mut system_data: ResMut<WindowMetricsResource>,
 ) {
-    let mut reader = resize_event.get_cursor();
-    for e in reader.read(&resize_event) {
+    for e in reader.read() {
         system_data.window_width = e.width;
         system_data.window_height = e.height;
     }

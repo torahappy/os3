@@ -107,7 +107,7 @@ fn resize_image(
     if width == 0 || height == 0 {
         return;
     }
-    if let Some(image) = images.get_mut(video_element.target_image_id()) {
+    if let Some(mut image) = images.get_mut(video_element.target_image_id()) {
         if image.size() != UVec2::new(width, height) {
             image.texture_descriptor.size = Extent3d {
                 width,
@@ -190,7 +190,7 @@ fn on_playing(
     listener_event: On<ListenerAssetEvent<events::Playing>>,
     mut video_elements: ResMut<Assets<VideoElement>>,
 ) {
-    if let Some(video_element) = video_elements.get_mut(listener_event.asset_id()) {
+    if let Some(mut video_element) = video_elements.get_mut(listener_event.asset_id()) {
         video_element.renderable = true;
     };
 }
@@ -199,7 +199,7 @@ fn on_ended(
     listener_event: On<ListenerAssetEvent<events::Ended>>,
     mut video_elements: ResMut<Assets<VideoElement>>,
 ) {
-    if let Some(video_element) = video_elements.get_mut(listener_event.asset_id()) {
+    if let Some(mut video_element) = video_elements.get_mut(listener_event.asset_id()) {
         video_element.renderable = false;
     };
 }
