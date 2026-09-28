@@ -180,7 +180,8 @@ fn main() {
 }
 
 fn system_microphone(mic: ResMut<MicrophoneAudio>, mut vpd: ResMut<VoicePacketData>) {
-    let ms = 30.0;
+    // TODO: ! device-dependent ! ADJUST HERE IF Audio Processing went wrong!!
+    let ms = 10.0;
     let samples = ((mic.config.sample_rate as f64) / 1000.0 * ms) as usize;
 
     let mut mic_in = mic.try_iter().collect::<Vec<Vec<_>>>().concat();
