@@ -10,6 +10,8 @@ default:
       - .cargo/
       - .emsdk/
       - os3bevy/target/
+      - os3yew/target/
+      - external-apps/
 
 build:
   pages:
@@ -18,7 +20,7 @@ build:
   rules:
     # This ensures that only pushes to the default branch will trigger
     # a pages deploy
-    - if: $CI_COMMIT_REF_NAME == "develop-rpg-archive"
+    - if: $CI_COMMIT_REF_NAME == "20260928-sm-2"
   # Functions that should be executed before the build script is run
   before_script: []
   script:
@@ -26,7 +28,8 @@ build:
     - apt install -y cmake make autoconf automake g++ gcc m4 dc git-lfs meson 
     - if [ ! -d .emsdk ]; then git clone https://github.com/emscripten-core/emsdk .emsdk; fi
     - cd .emsdk && git pull && ./emsdk install 5.0.3 && ./emsdk activate 5.0.3 && cd ..
-    - . .emsdk/emsdk_env.sh;  BUILD_NATIVE=0 ./external-sources/setup-tts.sh; ./external-sources/setup-wasm.sh
+    - ./external-sources/setup-wasm.sh
+    - . .emsdk/emsdk_env.sh;  BUILD_NATIVE=0 ./external-sources/setup-tts.sh
     - mkdir public
     - cp -r ocr_web public/ocr_web
     - curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
