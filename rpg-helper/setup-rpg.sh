@@ -24,8 +24,8 @@ cd "$SCRIPT_DIR"
 . ../external-sources/sources
 
 if [ $BUILD_WASM -eq 1 ]; then
-  emsdk install 4.0.10
-  emsdk activate 4.0.10
+  emsdk install 6.0.9
+  emsdk activate 6.0.9
 fi
 
 if [ ! -d ../external-apps/inih ] && [ $BUILD_NATIVE -eq 1 ]; then
@@ -134,7 +134,11 @@ if [ ! -d "${SCRIPT_DIR}/dist" ] && [ $BUILD_NATIVE -eq 1 ]; then
 
 fi
 
+export PATH="$PWD/node_modules/.bin:$PATH"
+
 if [ ! -d "${SCRIPT_DIR}/dist-wasm" ] && [ $BUILD_WASM -eq 1 ]; then
+  yarn install
+
   mkdir "${SCRIPT_DIR}/dist-wasm"
 
   pushd "${SCRIPT_DIR}/dist-wasm"
@@ -157,7 +161,7 @@ if [ ! -d "${SCRIPT_DIR}/dist-wasm" ] && [ $BUILD_WASM -eq 1 ]; then
   
   cp ../test1.lgs ../test1.lsd .
 
-  em++ ../rpg_lsd_io.cpp ../../external-apps/lcf-wasm/lib/liblcf.a -O3 -o rpg_lsd_io -sALLOW_MEMORY_GROWTH=1 -sMODULARIZE=1 -sEXPORT_ES6=1 -sEXPORTED_FUNCTIONS="$EXFUNCS" -sEXPORTED_RUNTIME_METHODS=stringToUTF8,UTF8ToString,AsciiToString,intArrayFromString,intArrayToString,writeArrayToMemory,setValue,getValue,HEAP8,HEAP16,HEAP32,HEAPU8,HEAPU16,HEAPU32 -I"../../external-apps/lcf-wasm/include" -sUSE_ICU=1
+  em++ ../rpg_lsd_io.cpp ../../external-apps/lcf-wasm/lib/liblcf.a -O3 -o rpg_lsd_io -sALLOW_MEMORY_GROWTH=1 -sMODULARIZE=1 -sEXPORT_ES6=1 -sEXPORTED_FUNCTIONS="$EXFUNCS" -sEXPORTED_RUNTIME_METHODS=stringToUTF8,UTF8ToString,AsciiToString,intArrayFromString,intArrayToString,writeArrayToMemory,setValue,getValue,HEAP8,HEAP16,HEAP32,HEAPU8,HEAPU16,HEAPU32 -I"../../external-apps/lcf-wasm/include" -sUSE_ICU=1 --emit-tsd rpg_lsd_io.d.ts
 
   em++ ../catch_amalgamated.cpp ../rpg_lsd_io.cpp ../rpg_lsd_io_test.cpp ../../external-apps/lcf-wasm/lib/liblcf.a -O3 -o rpg_lsd_io_test -sALLOW_MEMORY_GROWTH=1 -sEXPORTED_RUNTIME_METHODS=stringToUTF8,UTF8ToString,AsciiToString,intArrayFromString,intArrayToString,writeArrayToMemory,setValue,getValue,HEAP8,HEAP16,HEAP32,HEAPU8,HEAPU16,HEAPU32 --embed-file test1.lgs --embed-file test1.lsd -I"../../external-apps/lcf-wasm/include" -sUSE_ICU=1
 
