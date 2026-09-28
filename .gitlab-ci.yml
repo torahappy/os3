@@ -5,11 +5,20 @@ variables:
 
 default:
   cache:
-    key: ${CI_COMMIT_REF_SLUG}
+    key:
+      files:
+        - os3yew/Cargo.toml
+        - os3bevy/Cargo.toml
+        - external-sources/setup-wasm.sh
+        - external-sources/setup-ocr.sh
+        - external-sources/setup-tts.sh
+        - rpg-helper/setup-rpg.sh
     paths:
       - .cargo/
       - .emsdk/
       - os3bevy/target/
+      - os3yew/target/
+      - external-apps/
 
 build:
   pages:
