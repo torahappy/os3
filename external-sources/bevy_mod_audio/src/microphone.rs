@@ -188,7 +188,7 @@ pub fn create_microphone(mut commands: Commands) {
     let err_fn = |err| error!("an error occurred on the output audio stream: {}", err);
     let stream = device
         .build_input_stream(
-            config.clone().into(),
+            &config.into(),
             move |d: &[f32], _| {
                 // sending errors imply the receiver is dropped.
                 tx.send(d.to_vec()).ok();
