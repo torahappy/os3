@@ -26,7 +26,8 @@ build:
     - apt install -y cmake make autoconf automake g++ gcc m4 dc git-lfs meson 
     - if [ ! -d .emsdk ]; then git clone https://github.com/emscripten-core/emsdk .emsdk; fi
     - cd .emsdk && git pull && ./emsdk install 5.0.3 && ./emsdk activate 5.0.3 && cd ..
-    - . .emsdk/emsdk_env.sh;  BUILD_NATIVE=0 ./external-sources/setup-tts.sh; ./external-sources/setup-wasm.sh
+    - ./external-sources/setup-wasm.sh
+    - . .emsdk/emsdk_env.sh;  BUILD_NATIVE=0 ./external-sources/setup-tts.sh
     - mkdir public
     - cp -r ocr_web public/ocr_web
     - curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
