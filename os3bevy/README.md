@@ -1,6 +1,6 @@
 # rust dev files
 
-Before building, plz run the following:
+Before building, plz run the following **in the os3bevy directory**:
 
-`rustup component add rustc-codegen-cranelift-preview --toolchain nightly-2026-01-08`
+`rustup component add rustc-codegen-cranelift-preview`
 
