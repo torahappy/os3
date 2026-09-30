@@ -1,26 +1,17 @@
 // りれきしょ
 
-use bevy::math::VectorSpace;
-use bevy::tasks::futures::check_ready;
-use bevy::window::{CursorOptions, WindowResolution};
+use bevy::window::{CursorOptions};
 use bevy_mod_audio::ModAudioPlugins;
-use bevy_mod_audio::audio_output::AudioOutput;
-use bevy_mod_audio::microphone::MicrophoneAudio;
 #[cfg(target_arch = "wasm32")]
 use bevy_web_video::{EventListenerAppExt, WebVideoPlugin};
-use core::slice;
-use futures_lite::future;
+use os3bevy::bevy_connect::voice_analysis::{VoicePacketData, system_microphone, system_voice_history};
 use num_complex::ComplexFloat;
 #[cfg(target_arch = "wasm32")]
 use os3bevy::bevy_connect::video::wasm_video_termination;
-use os3bevy::math::wave;
-use rand::distr::uniform::SampleRange;
 use std::time::Duration;
 
-use bevy::platform::collections::HashMap;
 use bevy::shader::ShaderRef;
 use bevy::sprite_render::{AlphaMode2d, Material2d, Material2dPlugin};
-use bevy::tasks::{AsyncComputeTaskPool, IoTaskPool, Task, TaskPool, block_on};
 use bevy::{prelude::*, render::render_resource::AsBindGroup};
 use bevy_tweening::lens::TransformPositionLens;
 use bevy_tweening::{Tween, TweenAnim, TweeningPlugin};
@@ -42,11 +33,6 @@ pub struct VoiceSphere {
     category: u64,
 }
 
-#[derive(Resource, Default)]
-pub struct VoicePacketData {
-    tasks: Vec<Task<(f64, Vec<u64>)>>,
-    history: Vec<(f64, Vec<u64>)>,
-}
 
 #[derive(Resource, Default)]
 pub struct VoiceGameData {
@@ -169,7 +155,6 @@ fn main() {
     .add_systems(Update, system_lifetime)
     .add_systems(Update, system_video_shaders)
     .add_systems(Update, system_spawn_images)
-    .add_systems(FixedUpdate, system_voice_queue)
     .add_systems(Update, system_voice_history)
     .add_systems(Update, system_voice_history_calc)
     .add_systems(Update, system_end_condition)
@@ -179,45 +164,6 @@ fn main() {
     app.run();
 }
 
-fn system_microphone(mic: ResMut<MicrophoneAudio>, mut vpd: ResMut<VoicePacketData>) {
-    // TODO: ! device-dependent ! ADJUST HERE IF Audio Processing went wrong!!
-    let ms = 10.0;
-    let samples = ((mic.config.sample_rate as f64) / 1000.0 * ms) as usize;
-
-    let mut mic_in = mic.try_iter().collect::<Vec<Vec<_>>>().concat();
-
-    if mic_in.len() > samples {
-        // info!("sent async compute task {} {}", mic_in.len(), samples);
-        let task_pool = AsyncComputeTaskPool::get();
-        mic_in.truncate(samples);
-        let mut slice_left = mic_in.clone();
-        let task = task_pool.spawn(async move {
-            let max = slice_left
-                .iter()
-                .map(|x| x.abs())
-                .fold(0.0 / 0.0, |a, b| b.max(a));
-            slice_left.iter_mut().for_each(|x| *x /= max);
-            wave::pre_emphasis_in_place(&mut slice_left, 0.97);
-            wave::apply_hamming_in_place(&mut slice_left);
-            let result = wave::my_levinson(&slice_left, 32);
-            let fft_result = wave::compute_freqz(&result.1, result.0.as_slice(), samples);
-            let log_abs = fft_result
-                .iter()
-                .map(|x| x.abs().log10() * 20.0)
-                .collect::<Vec<_>>();
-            let mut pf = find_peaks::PeakFinder::new(&log_abs);
-            pf.with_min_prominence(10.0);
-            let mut peaks = pf
-                .find_peaks()
-                .iter()
-                .map(|x| x.position.start as u64)
-                .collect::<Vec<_>>();
-            peaks.sort();
-            return (result.1 as f64, peaks);
-        });
-        vpd.tasks.push(task);
-    }
-}
 
 fn system_end_condition(q: Query<(&VideoSequence, &TextVideo)>, mut ae: MessageWriter<AppExit>) {
     q.iter().for_each(|(vs, _)| {
@@ -378,53 +324,6 @@ fn system_voice_history_calc(
     }
 }
 
-fn system_voice_history(mut data: ResMut<VoicePacketData>) {
-    let mut vectors = Vec::new();
-    data.tasks.retain_mut(|x| {
-        let status = check_ready(x);
-        if let Some(v) = status {
-            vectors.push(v);
-            // info!("recv");
-            return false;
-        } else {
-            return true;
-        }
-    });
-    data.history.append(&mut vectors);
-    if data.history.len() > 1000 {
-        let x = data.history[500..]
-            .iter()
-            .map(|x| x.clone())
-            .collect::<Vec<_>>();
-        data.history = x;
-    }
-}
-
-fn system_voice_queue(mut data: ResMut<VoicePacketData>, time: Res<Time>) {
-    //    if time.elapsed_secs_f64() - data.last_run > 1.0 / 24.0 {
-    //        data.last_run = time.elapsed_secs_f64();
-    //        let task_pool = IoTaskPool::get();
-    //        let task = task_pool.spawn(async move {
-    //            let res = reqwest::blocking::get("http://127.0.0.1:8000/readlines");
-    //            match res {
-    //                Ok(x) => match x.json() {
-    //                    Ok(x) => x,
-    //                    Err(e) => {
-    //                        info!("Request parse failed ! {}", e);
-    //                        Vec::new()
-    //                    }
-    //                },
-    //                Err(e) => {
-    //                    info!("{}", e);
-    //                    Vec::new()
-    //                }
-    //            }
-    //        });
-    //        let i = data.last_task_id;
-    //        data.tasks.insert(i, task);
-    //        data.last_task_id += 1;
-    //    }
-}
 
 fn system_spawn_images(
     mut com: Commands,
