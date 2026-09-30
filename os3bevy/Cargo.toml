@@ -7,7 +7,6 @@ edition = "2024"
 
 [dependencies]
 bevy_mod_audio = { path = "../external-sources/bevy_mod_audio" }
-bevy_image_font = { path = "../external-sources/bevy_image_font" }
 bevy = { version = "0.19.1", features = ["dynamic_linking", "webp", "jpeg"] }
 log = { version = "*", features = ["max_level_debug", "release_max_level_warn"] }
 bevy_tweening = "0.16.0"

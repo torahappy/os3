@@ -1,10 +1,15 @@
 // nanikano map
 //
 use bevy::{
-    asset::{AssetLoader, LoadContext, io::Reader},
+    asset::{AssetLoader, LoadContext, RenderAssetUsages, io::Reader},
+    camera::RenderTarget,
+    color::palettes::{
+        css::{BLACK, WHITE},
+        tailwind::PINK_200,
+    },
     prelude::*,
+    render::render_resource::{Extent3d, TextureDimension, TextureFormat, TextureUsages},
 };
-use bevy_image_font::ImageFontPlugin;
 use bevy_mod_audio::ModAudioPlugins;
 use bevy_tweening::TweeningPlugin;
 use ffmpeg_next::ffi::daddr_t;
@@ -64,7 +69,22 @@ impl AssetLoader for CourtDatabaseLoader {
 struct GameData {
     judges_database: Option<Handle<CourtDatabase>>,
     /// vector of (所属, 氏名)
-    judges_shuffled: Option<Vec<(String, String)>>
+    judges_shuffled: Option<Vec<(String, String)>>,
+}
+
+#[derive(Resource)]
+struct GameConfig {
+    textbox_w: f32,
+    textbox_h: f32,
+}
+
+impl Default for GameConfig {
+    fn default() -> Self {
+        Self {
+            textbox_w: 1024.,
+            textbox_h: 512.,
+        }
+    }
 }
 
 fn main() {
@@ -86,13 +106,14 @@ fn main() {
             ..default()
         }),
         ModAudioPlugins,
-        TweeningPlugin
+        TweeningPlugin,
     ))
     .init_asset::<CourtDatabase>()
     .init_asset_loader::<CourtDatabaseLoader>()
-    .insert_resource(ClearColor(Color::srgb(0., 0., 0.)))
+    .insert_resource(ClearColor(Color::WHITE))
     .insert_resource(Time::<Fixed>::from_hz(120.0))
     .insert_resource(GameData::default())
+    .insert_resource(GameConfig::default())
     .init_resource::<VoicePacketData>()
     .add_systems(Startup, init_game)
     .add_systems(Update, display_name)
@@ -102,11 +123,91 @@ fn main() {
     app.run();
 }
 
-fn init_game(mut commands: Commands, asset_server: Res<AssetServer>, mut gd: ResMut<GameData>) {
+fn init_game(
+    mut commands: Commands,
+    asset_server: Res<AssetServer>,
+    mut gd: ResMut<GameData>,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<ColorMaterial>>,
+    mut images: ResMut<Assets<Image>>,
+    config: Res<GameConfig>,
+) {
     commands.spawn(Camera2d::default());
 
     let database_handle: Handle<CourtDatabase> = asset_server.load("database/combined.json");
     gd.judges_database = Some(database_handle);
+
+    let mut image = Image::new_fill(
+        Extent3d {
+            width: config.textbox_w as u32,
+            height: config.textbox_h as u32,
+            ..default()
+        },
+        TextureDimension::D2,
+        &[0, 0, 0, 0],
+        TextureFormat::Bgra8UnormSrgb,
+        RenderAssetUsages::default(),
+    );
+
+    image.texture_descriptor.usage =
+        TextureUsages::TEXTURE_BINDING | TextureUsages::COPY_DST | TextureUsages::RENDER_ATTACHMENT;
+
+    let image_handle = images.add(image);
+    let texture_camera = commands
+        .spawn((
+            Camera2d,
+            Camera {
+                // render before the "main pass" camera
+                order: -1,
+                ..default()
+            },
+            RenderTarget::Image(image_handle.clone().into()),
+        ))
+        .id();
+
+    commands
+        .spawn((
+            Node {
+                // Cover the whole image
+                width: percent(100),
+                height: percent(100),
+                flex_direction: FlexDirection::Column,
+                justify_content: JustifyContent::Center,
+                align_items: AlignItems::Center,
+                ..default()
+            },
+            BackgroundColor(PINK_200.into()),
+            UiTargetCamera(texture_camera),
+        ))
+        .with_children(|com| {
+            com.spawn((
+                Text::new("今崎幸彦\n安浪亮介\n中村愼"),
+                TextFont {
+                    font: asset_server.load("fonts/ZenOldMincho-Medium.ttf").into(),
+                    font_size: FontSize::Px(config.textbox_h / 3.5),
+                    ..default()
+                },
+                TextColor::BLACK,
+            ));
+        });
+
+    let mesh_handle = meshes.add(Rectangle::default());
+
+    // This material has the texture that has been rendered.
+    let material_handle = materials.add(ColorMaterial {
+        texture: Some(image_handle),
+        ..default()
+    });
+
+    commands.spawn((
+        Mesh2d(mesh_handle),
+        MeshMaterial2d(material_handle),
+        Transform::from_xyz(0.0, 0.0, 1.).with_scale(Vec3::new(
+            config.textbox_w,
+            config.textbox_h,
+            1.,
+        )),
+    ));
 }
 
 fn display_name(
@@ -119,7 +220,12 @@ fn display_name(
         if let Some(court_database) = court_database_asset.get(h) {
             if gd.judges_shuffled.is_none() {
                 info!("Court Count: {}", court_database.data.len());
-                let mut judges = court_database.data.iter().map(|x| x.judges.iter().map(|y|(x.court_name.clone(), y.clone()))).flatten().collect::<Vec<_>>();
+                let mut judges = court_database
+                    .data
+                    .iter()
+                    .map(|x| x.judges.iter().map(|y| (x.court_name.clone(), y.clone())))
+                    .flatten()
+                    .collect::<Vec<_>>();
                 let mut rng = rand::rng();
                 judges.shuffle(&mut rng);
                 info!("Judge Count: {}", judges.len());
@@ -128,7 +234,5 @@ fn display_name(
         }
     }
 
-    if let Some(shuffled) = &gd.judges_shuffled {
-
-    }
+    if let Some(shuffled) = &gd.judges_shuffled {}
 }
