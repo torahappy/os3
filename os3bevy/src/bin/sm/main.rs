@@ -3,21 +3,20 @@
 use bevy::{
     asset::{AssetLoader, LoadContext, RenderAssetUsages, io::Reader},
     camera::RenderTarget,
-    color::palettes::{
-        css::{BLACK, WHITE},
-        tailwind::PINK_200,
-    },
+    color::palettes::css::{BLACK, WHITE},
     prelude::*,
     render::render_resource::{Extent3d, TextureDimension, TextureFormat, TextureUsages},
 };
 use bevy_mod_audio::ModAudioPlugins;
 use bevy_tweening::TweeningPlugin;
-use ffmpeg_next::ffi::daddr_t;
-use os3bevy::bevy_connect::voice_analysis::{
-    VoiceAnalysisConfig, VoicePacketData, system_microphone, system_voice_history,
+use os3bevy::bevy_connect::{
+    transform::{AdvTransform, AdvTransformItem, AdvTransformOption, system_adv_transform},
+    voice_analysis::{
+        VoiceAnalysisConfig, VoicePacketData, system_microphone, system_voice_history,
+    },
+    window::{WindowMetricsResource, system_window_resize},
 };
 use rand::{Rng, seq::SliceRandom};
-use serde_json::de;
 
 #[derive(Asset, Reflect, Debug, serde::Deserialize, serde::Serialize)]
 struct Court {
@@ -76,13 +75,15 @@ struct GameData {
 struct GameConfig {
     textbox_w: f32,
     textbox_h: f32,
+    num_textbox: usize,
 }
 
 impl Default for GameConfig {
     fn default() -> Self {
         Self {
-            textbox_w: 1024.,
-            textbox_h: 512.,
+            textbox_w: 200.,
+            textbox_h: 100.,
+            num_textbox: 10,
         }
     }
 }
@@ -113,12 +114,15 @@ fn main() {
     .insert_resource(ClearColor(Color::WHITE))
     .insert_resource(Time::<Fixed>::from_hz(120.0))
     .insert_resource(GameData::default())
+    .insert_resource(WindowMetricsResource::default())
     .insert_resource(GameConfig::default())
     .insert_resource(VoiceAnalysisConfig::default())
     .init_resource::<VoicePacketData>()
     .add_systems(Startup, init_game)
     .add_systems(Update, display_name)
+    .add_systems(Update, system_window_resize)
     .add_systems(Update, system_voice_history)
+    .add_systems(Update, system_adv_transform)
     .add_systems(FixedUpdate, system_microphone);
 
     app.run();
@@ -177,12 +181,30 @@ fn init_game(
                 align_items: AlignItems::Center,
                 ..default()
             },
-            BackgroundColor(PINK_200.into()),
+            BackgroundColor(Color::WHITE.into()),
             UiTargetCamera(texture_camera),
         ))
         .with_children(|com| {
             com.spawn((
-                Text::new("今崎幸彦\n安浪亮介\n中村愼"),
+                Text::new("今崎幸彦"),
+                TextFont {
+                    font: asset_server.load("fonts/ZenOldMincho-Medium.ttf").into(),
+                    font_size: FontSize::Px(config.textbox_h / 3.5),
+                    ..default()
+                },
+                TextColor::BLACK,
+            ));
+            com.spawn((
+                Text::new("安浪亮介"),
+                TextFont {
+                    font: asset_server.load("fonts/ZenOldMincho-Medium.ttf").into(),
+                    font_size: FontSize::Px(config.textbox_h / 3.5),
+                    ..default()
+                },
+                TextColor::BLACK,
+            ));
+            com.spawn((
+                Text::new("中村愼"),
                 TextFont {
                     font: asset_server.load("fonts/ZenOldMincho-Medium.ttf").into(),
                     font_size: FontSize::Px(config.textbox_h / 3.5),
@@ -192,22 +214,34 @@ fn init_game(
             ));
         });
 
-    let mesh_handle = meshes.add(Rectangle::default());
-
-    // This material has the texture that has been rendered.
-    let material_handle = materials.add(ColorMaterial {
-        texture: Some(image_handle),
-        ..default()
-    });
+    commands.spawn((
+        Mesh2d(meshes.add(Rectangle::default())),
+        MeshMaterial2d(materials.add(ColorMaterial::from_color(WHITE))),
+        Transform::from_xyz(0.0, 0.0, 9.).with_scale(Vec3::new(1., 1., 1.)),
+        AdvTransform {
+            contents: vec![AdvTransformItem {
+                fullscreen_option: Some(AdvTransformOption::SameAsWindow),
+                ..default()
+            }],
+        },
+    ));
 
     commands.spawn((
-        Mesh2d(mesh_handle),
-        MeshMaterial2d(material_handle),
-        Transform::from_xyz(0.0, 0.0, 1.).with_scale(Vec3::new(
-            config.textbox_w,
-            config.textbox_h,
-            1.,
-        )),
+        Mesh2d(meshes.add(Rectangle::default())),
+        MeshMaterial2d(materials.add(ColorMaterial {
+            texture: Some(image_handle),
+            ..default()
+        })),
+        Transform::from_xyz(0.0, 0.0, 10.).with_scale(Vec3::new(1., 1., 1.)),
+        AdvTransform {
+            contents: vec![
+                AdvTransformItem {
+                    fullscreen_ratio: Some(config.textbox_w / config.textbox_h),
+                    fullscreen_option: Some(AdvTransformOption::FitHeight),
+                    ..default()
+                }
+            ],
+        },
     ));
 }
 
