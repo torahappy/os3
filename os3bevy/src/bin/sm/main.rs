@@ -14,7 +14,7 @@ use bevy_mod_audio::ModAudioPlugins;
 use bevy_tweening::TweeningPlugin;
 use ffmpeg_next::ffi::daddr_t;
 use os3bevy::bevy_connect::voice_analysis::{
-    VoicePacketData, system_microphone, system_voice_history,
+    VoiceAnalysisConfig, VoicePacketData, system_microphone, system_voice_history,
 };
 use rand::{Rng, seq::SliceRandom};
 use serde_json::de;
@@ -114,6 +114,7 @@ fn main() {
     .insert_resource(Time::<Fixed>::from_hz(120.0))
     .insert_resource(GameData::default())
     .insert_resource(GameConfig::default())
+    .insert_resource(VoiceAnalysisConfig::default())
     .init_resource::<VoicePacketData>()
     .add_systems(Startup, init_game)
     .add_systems(Update, display_name)
