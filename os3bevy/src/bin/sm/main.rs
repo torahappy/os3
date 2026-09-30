@@ -1,15 +1,11 @@
+use std::{cmp::Reverse, collections::BinaryHeap};
+
 // nanikano map
 //
 use bevy::{
-    asset::{AssetLoader, LoadContext, RenderAssetUsages, io::Reader},
-    camera::RenderTarget,
-    color::palettes::css::{BLACK, WHITE},
-    prelude::*,
-    render::render_resource::{
+    asset::{AssetLoader, LoadContext, RenderAssetUsages, io::Reader}, camera::RenderTarget, color::palettes::css::{BLACK, WHITE}, platform::collections::HashMap, prelude::*, render::render_resource::{
         AsBindGroup, Extent3d, TextureDimension, TextureFormat, TextureUsages,
-    },
-    shader::ShaderRef,
-    sprite_render::{AlphaMode2d, Material2d, Material2dPlugin},
+    }, shader::ShaderRef, sprite_render::{AlphaMode2d, Material2d, Material2dPlugin},
 };
 use bevy_mod_audio::ModAudioPlugins;
 use bevy_tweening::TweeningPlugin;
@@ -163,6 +159,25 @@ fn init_game(mut commands: Commands, asset_server: Res<AssetServer>, mut gd: Res
     gd.judges_database = Some(database_handle);
 }
 
+fn most_frequent<T>(array: &[T], k: usize) -> Vec<(usize, &T)>
+where
+    T: std::hash::Hash + Eq + Ord,
+{
+    let mut map = HashMap::new();
+    for x in array {
+        *map.entry(x).or_default() += 1;
+    }
+
+    let mut heap = BinaryHeap::with_capacity(k + 1);
+    for (x, count) in map.into_iter() {
+        heap.push(Reverse((count, x)));
+        if heap.len() > k {
+            heap.pop();
+        }
+    }
+    heap.into_sorted_vec().into_iter().map(|r| r.0).collect()
+}
+
 fn system_animate_name(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
@@ -170,9 +185,9 @@ fn system_animate_name(
     court_database_asset: Res<Assets<CourtDatabase>>,
     mut meshes: ResMut<Assets<Mesh>>,
     mut name_materials: ResMut<Assets<NameMaterial>>,
-    mut color_materials: ResMut<Assets<ColorMaterial>>,
     mut images: ResMut<Assets<Image>>,
     config: Res<GameConfig>,
+    vpd: Res<VoicePacketData>,
 ) {
     if let Some(h) = &gd.judges_database {
         if let Some(court_database) = court_database_asset.get(h) {
@@ -190,6 +205,31 @@ fn system_animate_name(
                 gd.judges_shuffled = Some(judges);
             }
         }
+    }
+
+    if gd.init_done {
+        let mean_all: f64 = vpd
+            .history
+            .iter()
+            .map(|x| if x.0.is_nan() { 0.0 } else { x.0 })
+            .sum::<f64>()
+            / vpd.history.len() as f64;
+        if let Some(last) = vpd.history.last() {
+            let mean_ratio = (mean_all as f32 / last.0 as f32).log10();
+            let mr_max = 7.0;
+            let mr_processed = (mean_ratio.min(mr_max) / mr_max * 0.7).max(0.0);
+        }
+        let mut top_data = vpd
+            .history
+            .iter()
+            .map(|x| x.1.get(3).cloned())
+            .flatten()
+            .map(|x| (x / 7, x))
+            .collect::<Vec<_>>();
+        top_data.sort();
+        let s = top_data.iter().map(|x|x.0).collect::<Vec<_>>();
+        let a = most_frequent(s.as_slice(), 3);
+        info!("{:?}", a);
     }
 
     if let Some(shuffled) = &gd.judges_shuffled
