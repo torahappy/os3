@@ -4,6 +4,7 @@ use bevy::{
     asset::{AssetLoader, LoadContext, io::Reader},
     prelude::*,
 };
+use bevy_image_font::ImageFontPlugin;
 use bevy_mod_audio::ModAudioPlugins;
 use bevy_tweening::TweeningPlugin;
 use ffmpeg_next::ffi::daddr_t;
@@ -85,7 +86,7 @@ fn main() {
             ..default()
         }),
         ModAudioPlugins,
-        TweeningPlugin,
+        TweeningPlugin
     ))
     .init_asset::<CourtDatabase>()
     .init_asset_loader::<CourtDatabaseLoader>()
