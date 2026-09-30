@@ -1,0 +1,6 @@
+#!/bin/sh
+
+set -eux
+
+# Let's make sure we don't push any broken tests
+cargo hack --each-feature nextest run

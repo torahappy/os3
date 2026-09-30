@@ -1,0 +1,238 @@
+[package]
+name = "bevy_image_font"
+version = "0.11.0"
+edition = "2024"
+authors = [
+    "Ash <ext0l@catgirl.ai>",
+    "Alexander Krivács Schrøder <alexschrod@gmail.com>",
+]
+categories = ["game-development"]
+description = "Render pixel fonts from PNGs in Bevy."
+keywords = ["gamedev", "bevy"]
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/ilyvion/bevy_image_font"
+include = ["/src", "README.md", "LICENSE*", "CHANGELOG.md"]
+
+[package.metadata.docs.rs]
+# document all features
+all-features = true
+# defines the configuration attribute `docsrs`
+rustdoc-args = ["--cfg", "docsrs"]
+cargo-args = ["-Zunstable-options", "-Zrustdoc-scrape-examples"]
+
+[features]
+default = ["ui", "rendered", "atlas_sprites", "bmf"]
+atlas_sprites = []
+bmf = []
+gizmos = ["dep:bevy_gizmos", "bevy/bevy_gizmos"]
+rendered = ["dep:image", "bevy_ui", "bevy_ui_render"]
+ui = ["rendered", "bevy_ui", "bevy_ui_render", "bevy/bevy_ui"]
+
+[dependencies]
+bevy_app = "0.19.1"
+bevy_asset = "0.19.1"
+bevy_camera = "0.19.1"
+bevy_color = "0.19.1"
+bevy_derive = "0.19.1"
+bevy_ecs = "0.19.1"
+bevy_gizmos = { version = "0.19.1", optional = true }
+bevy_image = "0.19.1"
+bevy_log = "0.19.1"
+bevy_math = "0.19.1"
+bevy_platform = "0.19.1"
+bevy_reflect = "0.19.1"
+bevy_render = "0.19.1"
+bevy_sprite = "0.19.1"
+bevy_sprite_render = "0.19.1"
+bevy_time = "0.19.1"
+bevy_transform = "0.19.1"
+bevy_ui = { version = "0.19.1", optional = true }
+bevy_ui_render = { version = "0.19.1", optional = true }
+bmfont_rs = { version = "0.4", features = ["xml"] }
+camino = { version = "1.2.1", features = ["serde1"] }
+derive_setters = "0.1"
+itertools = "0.14"
+ron = "0.12"
+serde = { version = "1", features = ["derive"] }
+strum = { version = "0.27", features = ["derive"] }
+thiserror = "2"
+
+[dependencies.image]
+version = "0.25"
+default-features = false
+features = ["png"]
+optional = true
+
+[dev-dependencies]
+bevy = { version = "0.19.1", default-features = false, features = [
+    "bevy_asset",
+    "bevy_log",
+    "bevy_render",
+    "bevy_sprite",
+    "bevy_sprite_render",
+    "bevy_state",
+    "bevy_core_pipeline",
+    "bevy_window",
+    "multi_threaded",
+    "bevy_ui",
+    "bevy_ui_render",
+    "png",
+    "x11",
+] }
+bevy_asset_loader = { version = "0.25", features = ["2d"] }
+crossbeam-channel = "0.5.14"
+float_eq = "1.0.1"
+itertools = "0.14"
+oxipng = "10.1"
+paste = "1.0.15"
+tokio = { version = "1", default-features = false, features = ["macros", "rt"] }
+
+[[example]]
+name = "rendered_ui"
+required-features = ["rendered", "ui"]
+doc-scrape-examples = true
+
+[[example]]
+name = "rendered_sprite"
+required-features = ["rendered"]
+doc-scrape-examples = true
+
+[[example]]
+name = "atlased_sprite"
+required-features = ["atlas_sprites"]
+doc-scrape-examples = true
+
+[[example]]
+name = "bmf"
+required-features = ["atlas_sprites"]
+doc-scrape-examples = true
+
+[[test]]
+name = "rendered_base_alignment"
+required-features = ["rendered"]
+
+[[test]]
+name = "rendered_fifths_alignment"
+required-features = ["rendered"]
+
+[[test]]
+name = "rendered_manual_positioning"
+required-features = ["rendered"]
+
+[[test]]
+name = "rendered_quarters_alignment"
+required-features = ["rendered"]
+
+[[test]]
+name = "rendered_sizes"
+required-features = ["rendered"]
+
+[[test]]
+name = "rendered_thirds_alignment"
+required-features = ["rendered"]
+
+[[test]]
+name = "sprites_base_alignment"
+required-features = ["rendered", "atlas_sprites"]
+
+[[test]]
+name = "sprites_fifths_alignment"
+required-features = ["rendered", "atlas_sprites"]
+
+[[test]]
+name = "sprites_manual_positioning"
+required-features = ["rendered", "atlas_sprites"]
+
+[[test]]
+name = "sprites_quarters_alignment"
+required-features = ["rendered", "atlas_sprites"]
+
+[[test]]
+name = "sprites_sizes"
+required-features = ["rendered", "atlas_sprites"]
+
+[[test]]
+name = "sprites_spacing"
+required-features = ["rendered", "atlas_sprites"]
+
+[[test]]
+name = "sprites_thirds_alignment"
+required-features = ["rendered", "atlas_sprites"]
+
+[lints.rust]
+absolute_paths_not_starting_with_crate = "warn"
+ambiguous_negative_literals = "warn"
+deprecated_safe_2024 = "warn"
+#edition_2024_expr_fragment_specifier = "warn"
+#elided_lifetimes_in_paths = "warn"
+explicit_outlives_requirements = "warn"
+ffi_unwind_calls = "warn"
+if_let_rescope = "warn"
+impl_trait_overcaptures = "warn"
+keyword-idents = "warn"
+keyword_idents_2018 = "warn"
+keyword_idents_2024 = "warn"
+let_underscore_drop = "warn"
+macro_use_extern_crate = "warn"
+meta_variable_misuse = "warn"
+missing_abi = "warn"
+# missing_copy_implementations = "warn"
+missing_debug_implementations = "warn"
+missing_docs = "warn"
+missing_unsafe_on_extern = "warn"
+non_ascii_idents = "warn"
+# redundant_imports = "warn"
+redundant_lifetimes = "warn"
+rust_2021_incompatible_closure_captures = "warn"
+rust_2021_incompatible_or_patterns = "warn"
+rust_2021_prefixes_incompatible_syntax = "warn"
+rust_2021_prelude_collisions = "warn"
+rust_2024_guarded_string_incompatible_syntax = "warn"
+rust_2024_incompatible_pat = "warn"
+rust_2024_prelude_collisions = "warn"
+single_use_lifetimes = "warn"
+#tail_expr_drop_order = "warn"
+trivial_casts = "warn"
+trivial_numeric_casts = "warn"
+unexpected_cfgs = { level = "deny", check-cfg = ['cfg(ci)'] }
+unit_bindings = "warn"
+unnameable_types = "warn"
+unreachable_pub = "warn"
+unsafe_attr_outside_unsafe = "warn"
+unsafe_code = "warn"
+unsafe_op_in_unsafe_fn = "warn"
+unstable_features = "warn"
+unused_extern_crates = "warn"
+unused_import_braces = "warn"
+unused_lifetimes = "warn"
+unused_macro_rules = "warn"
+unused_qualifications = "warn"
+#unused_results = "warn"
+variant_size_differences = "warn"
+
+[lints.clippy]
+suspicious = { level = "warn", priority = -1 }
+complexity = { level = "warn", priority = -1 }
+perf = { level = "warn", priority = -1 }
+style = { level = "warn", priority = -1 }
+pedantic = { level = "warn", priority = -1 }
+# restriction = { level = "warn", priority = -1 }
+needless_pass_by_value = "allow"
+type_complexity = "allow"
+mod-module-files = "deny"
+allow-attributes-without-reason = "deny"
+missing_docs_in_private_items = "warn"
+allow_attributes = "warn"
+unwrap_used = "deny"
+single_char_lifetime_names = "warn"
+absolute_paths = "warn"
+min_ident_chars = "deny"
+rest_pat_in_fully_bound_structs = "deny"
+pub_without_shorthand = "deny"
+# XXX: This currently triggers a false-positive `missing_docs` if applied as suggsted; enable when
+#      fixed.
+# doc_include_without_cfg = "deny"
+pattern_type_mismatch = "deny"
+wildcard_enum_match_arm = "warn"
+unused_trait_names = "deny"
+expect_used = "warn"

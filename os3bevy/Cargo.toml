@@ -7,6 +7,7 @@ edition = "2024"
 
 [dependencies]
 bevy_mod_audio = { path = "../external-sources/bevy_mod_audio" }
+bevy_image_font = { path = "../external-sources/bevy_image_font" }
 bevy = { version = "0.19.1", features = ["dynamic_linking", "webp", "jpeg"] }
 log = { version = "*", features = ["max_level_debug", "release_max_level_warn"] }
 bevy_tweening = "0.16.0"
@@ -19,6 +20,8 @@ num-complex = "0.4.6"
 num-traits = "0.2.19"
 find_peaks = "0.1.5"
 anyhow = "1.0.101"
+serde = "1.0.229"
+thiserror = "2.0.21"
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 ffmpeg-next = "9.0.0"
@@ -46,3 +49,7 @@ strip = "debuginfo"
 [[bin]]
 name = "rireki"
 path = "src/bin/rireki/main.rs"
+
+[[bin]]
+name = "sm"
+path = "src/bin/sm/main.rs"
