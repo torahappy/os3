@@ -60,7 +60,7 @@ pub fn system_microphone(mic: ResMut<MicrophoneAudio>, mut vpd: ResMut<VoicePack
                 .map(|x| x.abs().log10() * config.result_scale)
                 .collect::<Vec<_>>();
             let mut pf = find_peaks::PeakFinder::new(&log_abs);
-            pf.with_min_prominence(10.0);
+            pf.with_min_prominence(config.min_prominence);
             let mut peaks = pf
                 .find_peaks()
                 .iter()
