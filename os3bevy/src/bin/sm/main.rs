@@ -5,7 +5,11 @@ use bevy::{
     camera::RenderTarget,
     color::palettes::css::{BLACK, WHITE},
     prelude::*,
-    render::render_resource::{Extent3d, TextureDimension, TextureFormat, TextureUsages},
+    render::render_resource::{
+        AsBindGroup, Extent3d, TextureDimension, TextureFormat, TextureUsages,
+    },
+    shader::ShaderRef,
+    sprite_render::{AlphaMode2d, Material2d, Material2dPlugin},
 };
 use bevy_mod_audio::ModAudioPlugins;
 use bevy_tweening::TweeningPlugin;
@@ -16,7 +20,29 @@ use os3bevy::bevy_connect::{
     },
     window::{WindowMetricsResource, system_window_resize},
 };
-use rand::{Rng, seq::SliceRandom};
+use rand::{
+    Rng,
+    seq::{IndexedRandom, SliceRandom},
+};
+
+#[derive(Asset, TypePath, AsBindGroup, Debug, Clone)]
+pub struct NameMaterial {
+    #[texture(0)]
+    #[sampler(1)]
+    pub color_texture: Option<Handle<Image>>,
+}
+
+const SHADER_ASSET_PATH: &str = "shaders/name.wgsl";
+impl Material2d for NameMaterial {
+    fn fragment_shader() -> ShaderRef {
+        SHADER_ASSET_PATH.into()
+    }
+
+    fn alpha_mode(&self) -> AlphaMode2d {
+        let alpha_mode2d = AlphaMode2d::Blend;
+        alpha_mode2d
+    }
+}
 
 #[derive(Asset, Reflect, Debug, serde::Deserialize, serde::Serialize)]
 struct Court {
@@ -69,6 +95,7 @@ struct GameData {
     judges_database: Option<Handle<CourtDatabase>>,
     /// vector of (所属, 氏名)
     judges_shuffled: Option<Vec<(String, String)>>,
+    init_done: bool,
 }
 
 #[derive(Resource)]
@@ -108,6 +135,7 @@ fn main() {
         }),
         ModAudioPlugins,
         TweeningPlugin,
+        Material2dPlugin::<NameMaterial>::default(),
     ))
     .init_asset::<CourtDatabase>()
     .init_asset_loader::<CourtDatabaseLoader>()
@@ -119,7 +147,7 @@ fn main() {
     .insert_resource(VoiceAnalysisConfig::default())
     .init_resource::<VoicePacketData>()
     .add_systems(Startup, init_game)
-    .add_systems(Update, display_name)
+    .add_systems(Update, system_animate_name)
     .add_systems(Update, system_window_resize)
     .add_systems(Update, system_voice_history)
     .add_systems(Update, system_adv_transform)
@@ -128,128 +156,23 @@ fn main() {
     app.run();
 }
 
-fn init_game(
-    mut commands: Commands,
-    asset_server: Res<AssetServer>,
-    mut gd: ResMut<GameData>,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<ColorMaterial>>,
-    mut images: ResMut<Assets<Image>>,
-    config: Res<GameConfig>,
-) {
+fn init_game(mut commands: Commands, asset_server: Res<AssetServer>, mut gd: ResMut<GameData>) {
     commands.spawn(Camera2d::default());
 
     let database_handle: Handle<CourtDatabase> = asset_server.load("database/combined.json");
     gd.judges_database = Some(database_handle);
-
-    let mut image = Image::new_fill(
-        Extent3d {
-            width: config.textbox_w as u32,
-            height: config.textbox_h as u32,
-            ..default()
-        },
-        TextureDimension::D2,
-        &[0, 0, 0, 0],
-        TextureFormat::Bgra8UnormSrgb,
-        RenderAssetUsages::default(),
-    );
-
-    image.texture_descriptor.usage =
-        TextureUsages::TEXTURE_BINDING | TextureUsages::COPY_DST | TextureUsages::RENDER_ATTACHMENT;
-
-    let image_handle = images.add(image);
-    let texture_camera = commands
-        .spawn((
-            Camera2d,
-            Camera {
-                // render before the "main pass" camera
-                order: -1,
-                ..default()
-            },
-            RenderTarget::Image(image_handle.clone().into()),
-        ))
-        .id();
-
-    commands
-        .spawn((
-            Node {
-                // Cover the whole image
-                width: percent(100),
-                height: percent(100),
-                flex_direction: FlexDirection::Column,
-                justify_content: JustifyContent::Center,
-                align_items: AlignItems::Center,
-                ..default()
-            },
-            BackgroundColor(Color::WHITE.into()),
-            UiTargetCamera(texture_camera),
-        ))
-        .with_children(|com| {
-            com.spawn((
-                Text::new("今崎幸彦"),
-                TextFont {
-                    font: asset_server.load("fonts/ZenOldMincho-Medium.ttf").into(),
-                    font_size: FontSize::Px(config.textbox_h / 3.5),
-                    ..default()
-                },
-                TextColor::BLACK,
-            ));
-            com.spawn((
-                Text::new("安浪亮介"),
-                TextFont {
-                    font: asset_server.load("fonts/ZenOldMincho-Medium.ttf").into(),
-                    font_size: FontSize::Px(config.textbox_h / 3.5),
-                    ..default()
-                },
-                TextColor::BLACK,
-            ));
-            com.spawn((
-                Text::new("中村愼"),
-                TextFont {
-                    font: asset_server.load("fonts/ZenOldMincho-Medium.ttf").into(),
-                    font_size: FontSize::Px(config.textbox_h / 3.5),
-                    ..default()
-                },
-                TextColor::BLACK,
-            ));
-        });
-
-    commands.spawn((
-        Mesh2d(meshes.add(Rectangle::default())),
-        MeshMaterial2d(materials.add(ColorMaterial::from_color(WHITE))),
-        Transform::from_xyz(0.0, 0.0, 9.).with_scale(Vec3::new(1., 1., 1.)),
-        AdvTransform {
-            contents: vec![AdvTransformItem {
-                fullscreen_option: Some(AdvTransformOption::SameAsWindow),
-                ..default()
-            }],
-        },
-    ));
-
-    commands.spawn((
-        Mesh2d(meshes.add(Rectangle::default())),
-        MeshMaterial2d(materials.add(ColorMaterial {
-            texture: Some(image_handle),
-            ..default()
-        })),
-        Transform::from_xyz(0.0, 0.0, 10.).with_scale(Vec3::new(1., 1., 1.)),
-        AdvTransform {
-            contents: vec![
-                AdvTransformItem {
-                    fullscreen_ratio: Some(config.textbox_w / config.textbox_h),
-                    fullscreen_option: Some(AdvTransformOption::FitHeight),
-                    ..default()
-                }
-            ],
-        },
-    ));
 }
 
-fn display_name(
+fn system_animate_name(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
     mut gd: ResMut<GameData>,
     court_database_asset: Res<Assets<CourtDatabase>>,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut name_materials: ResMut<Assets<NameMaterial>>,
+    mut color_materials: ResMut<Assets<ColorMaterial>>,
+    mut images: ResMut<Assets<Image>>,
+    config: Res<GameConfig>,
 ) {
     if let Some(h) = &gd.judges_database {
         if let Some(court_database) = court_database_asset.get(h) {
@@ -269,5 +192,91 @@ fn display_name(
         }
     }
 
-    if let Some(shuffled) = &gd.judges_shuffled {}
+    if let Some(shuffled) = &gd.judges_shuffled
+        && !gd.init_done
+    {
+        let mut rng = rand::rng();
+        let choice = shuffled
+            .choose_multiple(&mut rng, 3 * config.num_textbox)
+            .cloned()
+            .collect::<Vec<_>>()
+            .chunks(3)
+            .map(|x| x.to_vec())
+            .collect::<Vec<_>>();
+
+        for arr in choice {
+            let mut image = Image::new_fill(
+                Extent3d {
+                    width: config.textbox_w as u32,
+                    height: config.textbox_h as u32,
+                    ..default()
+                },
+                TextureDimension::D2,
+                &[0, 0, 0, 0],
+                TextureFormat::Bgra8UnormSrgb,
+                RenderAssetUsages::default(),
+            );
+
+            image.texture_descriptor.usage = TextureUsages::TEXTURE_BINDING
+                | TextureUsages::COPY_DST
+                | TextureUsages::RENDER_ATTACHMENT;
+
+            let image_handle = images.add(image);
+            let texture_camera = commands
+                .spawn((
+                    Camera2d,
+                    Camera {
+                        // render before the "main pass" camera
+                        order: -1,
+                        ..default()
+                    },
+                    RenderTarget::Image(image_handle.clone().into()),
+                ))
+                .id();
+            commands
+                .spawn((
+                    Node {
+                        // Cover the whole image
+                        width: percent(100),
+                        height: percent(100),
+                        flex_direction: FlexDirection::Column,
+                        justify_content: JustifyContent::Center,
+                        align_items: AlignItems::Center,
+                        ..default()
+                    },
+                    BackgroundColor(Color::WHITE.into()),
+                    UiTargetCamera(texture_camera),
+                ))
+                .with_children(|com| {
+                    for i in arr {
+                        com.spawn((
+                            Text::new(i.1.clone()),
+                            TextFont {
+                                font: asset_server.load("fonts/ZenOldMincho-Medium.ttf").into(),
+                                font_size: FontSize::Px(config.textbox_h / 3.5),
+                                ..default()
+                            },
+                            TextColor::BLACK,
+                        ));
+                    }
+                });
+
+            commands.spawn((
+                Mesh2d(meshes.add(Rectangle::default())),
+                MeshMaterial2d(name_materials.add(NameMaterial {
+                    color_texture: Some(image_handle),
+                })),
+                Transform::from_xyz(0.0, 0.0, 10.).with_scale(Vec3::new(1., 1., 1.)),
+                AdvTransform {
+                    contents: vec![AdvTransformItem {
+                        fullscreen_ratio: Some(config.textbox_w / config.textbox_h),
+                        fullscreen_option: Some(AdvTransformOption::FitHeight),
+                        ..default()
+                    }],
+                },
+            ));
+        }
+
+        gd.init_done = true;
+    }
 }
