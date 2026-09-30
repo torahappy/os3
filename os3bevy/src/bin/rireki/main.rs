@@ -4,7 +4,7 @@ use bevy::window::{CursorOptions};
 use bevy_mod_audio::ModAudioPlugins;
 #[cfg(target_arch = "wasm32")]
 use bevy_web_video::{EventListenerAppExt, WebVideoPlugin};
-use os3bevy::bevy_connect::voice_analysis::{VoicePacketData, system_microphone, system_voice_history};
+use os3bevy::bevy_connect::voice_analysis::{VoiceAnalysisConfig, VoicePacketData, system_microphone, system_voice_history};
 use num_complex::ComplexFloat;
 #[cfg(target_arch = "wasm32")]
 use os3bevy::bevy_connect::video::wasm_video_termination;
@@ -141,6 +141,7 @@ fn main() {
     .insert_resource(ClearColor(Color::srgb(0., 0., 0.)))
     .insert_resource(Time::<Fixed>::from_hz(120.0))
     .init_resource::<WindowMetricsResource>()
+    .init_resource::<VoiceAnalysisConfig>()
     .init_resource::<VoicePacketData>()
     .init_resource::<VoiceGameData>()
     .init_non_send_resource::<VideoResource>()
