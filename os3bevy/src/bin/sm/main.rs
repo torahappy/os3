@@ -266,7 +266,8 @@ fn system_animate_name(
                 MeshMaterial2d(name_materials.add(NameMaterial {
                     color_texture: Some(image_handle),
                 })),
-                Transform::from_xyz(0.0, 0.0, 10.).with_scale(Vec3::new(1., 1., 1.)),
+                Transform::from_xyz(0.0, 0.0, 10.0 + rand::random_range(0.0..1.0))
+                    .with_scale(Vec3::new(1., 1., 1.)),
                 AdvTransform {
                     contents: vec![AdvTransformItem {
                         fullscreen_ratio: Some(config.textbox_w / config.textbox_h),
