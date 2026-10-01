@@ -94,9 +94,15 @@ struct GameData {
     init_done: bool,
 }
 
+#[derive(Default, Component)]
+struct TextBox {
+    id: usize
+}
 
 #[derive(Default, Resource)]
 struct NamePhysics {
+    prev: Vec<Option<u32>>,
+    current: Vec<u32>,
     pos: Vec<f32>,
     speed: Vec<f32>,
     force: Vec<f32>
@@ -107,6 +113,7 @@ struct GameConfig {
     textbox_w: f32,
     textbox_h: f32,
     num_textbox: usize,
+    num_lines: usize,
     num_sai: usize,
     len_1d_analysis: usize
 }
@@ -118,6 +125,7 @@ impl Default for GameConfig {
             textbox_h: 100.,
             num_textbox: 10,
             num_sai: 20,
+            num_lines: 3,
             len_1d_analysis: 50
         }
     }
@@ -202,6 +210,8 @@ fn init_game(mut com: Commands, asset_server: Res<AssetServer>, mut gd: ResMut<G
     mut materials: ResMut<Assets<SaiMaterial>>,
     config: Res<GameConfig>,mut phy: ResMut<NamePhysics>
 ) {
+    phy.prev = (0..config.num_textbox).map(|_|Some(0)).collect();
+    phy.current = (0..config.num_textbox).map(|_|0).collect();
     phy.pos = (0..config.num_textbox).map(|_|0.).collect();
     phy.speed = phy.pos.clone();
     phy.force = phy.pos.clone();
@@ -247,8 +257,16 @@ fn init_game(mut com: Commands, asset_server: Res<AssetServer>, mut gd: ResMut<G
     }
 }
 
-fn system_apply_physics (mut phy: ResMut<NamePhysics>, q: Query<(&mut Transform)>, time: Res<Time>) {
+fn system_apply_physics (mut phy: ResMut<NamePhysics>, q_textbox: Query<(&mut Transform, &TextBox)>, time: Res<Time>) {
     let n = phy.pos.len();
+    let current = phy.current.clone();
+    let prev = phy.prev.clone();
+    for i in 0..n {
+        if let Some(prev) = prev.get(i).unwrap() {
+            let diff = (*current.get(i).unwrap() as i32) - (*prev as i32);
+            *phy.force.get_mut(i).unwrap() += diff as f32;
+        }
+    }
     let speed = phy.speed.clone();
     let force = phy.force.clone();
     for i in 0..n {
@@ -256,15 +274,21 @@ fn system_apply_physics (mut phy: ResMut<NamePhysics>, q: Query<(&mut Transform)
         *phy.speed.get_mut(i).unwrap() += force.get(i).unwrap();
         *phy.speed.get_mut(i).unwrap() *= 0.99;
         *phy.force.get_mut(i).unwrap() = 0.0;
+        *phy.prev.get_mut(i).unwrap() = Some(*current.get(i).unwrap());
+    }
+    for (mut tr, tb) in q_textbox {
+        let c = *phy.pos.get(tb.id).unwrap();
+        tr.translation.y = c;
     }
 }
 
 fn system_1d_analysis (
+    mut phy: ResMut<NamePhysics>,
     vpd: Res<VoicePacketData>,
     config: Res<GameConfig>
-    ) {
+) {
     if vpd.history.len() < config.len_1d_analysis { return; }
-    let a = (0..5).map(|i| {
+    let vec_top = (0..config.num_textbox / 2).map(|i| {
         let recent_data = vpd.history.split_at(vpd.history.len() - config.len_1d_analysis).1.iter().cloned().collect::<Vec<_>>();
         let mut top_data = recent_data
             .iter()
@@ -275,7 +299,12 @@ fn system_1d_analysis (
         top_data.sort();
         most_frequent(top_data.as_slice(), 1).get(0).cloned().map(|x|(x.0, x.1.clone()))
     }).collect::<Vec<_>>();
-    info!("{:?}", a);
+    for (i, top) in vec_top.iter().enumerate() {
+        if let Some(top) = top {
+            *phy.current.get_mut(i * 2).unwrap() = top.0 as u32;
+            *phy.current.get_mut(i * 2 + 1).unwrap() = top.1 as u32;
+        }
+    }
 }
 
 fn system_animate_sai (
@@ -351,14 +380,14 @@ fn system_animate_name(
     {
         let mut rng = rand::rng();
         let choice = shuffled
-            .choose_multiple(&mut rng, 3 * config.num_textbox)
+            .choose_multiple(&mut rng, config.num_lines * config.num_textbox)
             .cloned()
             .collect::<Vec<_>>()
-            .chunks(3)
+            .chunks(config.num_lines)
             .map(|x| x.to_vec())
             .collect::<Vec<_>>();
 
-        for arr in choice {
+        for (i, arr) in choice.iter().enumerate() {
             let mut image = Image::new_fill(
                 Extent3d {
                     width: config.textbox_w as u32,
@@ -407,7 +436,7 @@ fn system_animate_name(
                             Text::new(i.1.clone()),
                             TextFont {
                                 font: asset_server.load("fonts/ZenOldMincho-Medium.ttf").into(),
-                                font_size: FontSize::Px(config.textbox_h / 3.5),
+                                font_size: FontSize::Px(config.textbox_h / (config.num_lines as f32 * 1.16666)),
                                 ..default()
                             },
                             TextColor::BLACK,
@@ -422,6 +451,7 @@ fn system_animate_name(
                 })),
                 Transform::from_xyz(0.0, 0.0, 10.0 + rand::random_range(0.0..1.0))
                     .with_scale(Vec3::new(1., 1., 1.)),
+                TextBox {id: i},
                 AdvTransform {
                     contents: vec![AdvTransformItem {
                         fullscreen_ratio: Some(config.textbox_w / config.textbox_h),
