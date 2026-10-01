@@ -149,7 +149,7 @@ impl Default for GameConfig {
         Self {
             textbox_w: 200.,
             textbox_h: 100.,
-            num_textbox: 2,
+            num_textbox: 10,
             num_sai: 20,
             num_lines: 5,
             len_1d_analysis: 50,
@@ -330,8 +330,7 @@ fn system_apply_physics(
 
     let mut text = text.iter_mut().collect::<Vec<_>>();
     text.sort_by_key(|x| (x.1.textbox_id, x.1.line_id));
-    let text_data_clone = text.iter().map(|x| x.0.0.clone()).collect::<Vec<_>>();
-    let text_data_clone = text_data_clone.chunks(conf.num_lines).collect::<Vec<_>>();
+    let text_cloned = text.iter().map(|x|x.0.0.clone()).collect::<Vec<_>>();
 
     let mut q_textbox = q_textbox.iter_mut().collect::<Vec<_>>();
     q_textbox.sort_by_key(|(_, tb, _)| tb.id);
@@ -351,9 +350,7 @@ fn system_apply_physics(
         let big_y = *phy.pos.get(i).unwrap();
         // if restrict < c || c < -restrict {
         name_materials.get_mut(mat_ref.id()).unwrap().time_x_x_x.x = time.elapsed_secs();
-        let mut text_array = text_data_clone
-            .get(i)
-            .unwrap()
+        let mut text_array = text_cloned[conf.num_lines * i .. conf.num_lines * (i + 1)]
             .iter()
             .cloned()
             .collect::<Vec<_>>();
@@ -365,20 +362,18 @@ fn system_apply_physics(
             .map(|x| x.1.clone())
             .collect::<Vec<_>>();
         if *phy.pos_limited.get(i).unwrap() < -restrict * 2.0 {
-            let x = vec![chosen, text_array[0..(conf.num_textbox - 2)].to_vec()].concat();
+            let x = vec![chosen, text_array[0..(conf.num_lines - 2)].to_vec()].concat();
             text_array = x;
             *phy.pos_limited.get_mut(i).unwrap() += restrict * 2.0;
         } else if *phy.pos_limited.get(i).unwrap() > restrict * 2.0 {
-            let x = vec![text_array[2..conf.num_textbox].to_vec(), chosen].concat();
+            let x = vec![text_array[2..conf.num_lines].to_vec(), chosen].concat();
             text_array = x;
             *phy.pos_limited.get_mut(i).unwrap() -= restrict * 2.0;
         }
         for j in 0..conf.num_lines {
-            info!("{} {} {} {}", i, j, text.len(), conf.num_lines * i + j);
+            info!("{} {} {} {} {} {} {}", conf.num_lines, conf.num_textbox, i, j, text.len(), conf.num_lines * i + j, text_cloned.len());
             let x = text.get_mut(conf.num_lines * i + j);
-            if let Some(a) = x.is_some() {
-                x.unwrap().0.0 = text_array.get(j).unwrap().clone();
-            }
+            x.unwrap().0.0 = text_array.get(j).unwrap().clone();
         }
         // }
 
