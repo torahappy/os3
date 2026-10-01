@@ -34,6 +34,8 @@ pub struct AdvTransformItem {
     pub scale_mult: Option<(f32, f32)>,
     pub scale_mult_rel_window_width: Option<(f32, f32)>,
     pub rotate: Option<f32>,
+    pub set_x: Option<f32>,
+    pub set_y: Option<f32>,
     pub set_z: Option<f32>,
 }
 
@@ -94,8 +96,12 @@ pub fn apply_adv_transform(mfs: &AdvTransform, t: &mut Transform, wm: &WindowMet
             t.scale.y = wm.window_width * y;
         } else if let Some(x) = mf.rotate {
             t.rotate_z(x);
-        } else if let Some(x) = mf.set_z {
-            t.translation.z = x;
+        } else if let Some(x) = mf.set_x {
+            t.translation.x = x;
+        } else if let Some(y) = mf.set_y {
+            t.translation.y = y;
+        } else if let Some(z) = mf.set_z {
+            t.translation.z = z;
         } else if let Some((x, y)) = mf.translate_rel_window {
             t.translation.x += wm.window_width * x;
             t.translation.y += wm.window_height * y;
