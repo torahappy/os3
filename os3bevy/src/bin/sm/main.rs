@@ -1,4 +1,3 @@
-#![feature(slice_shift)]
 use std::{cmp::Reverse, collections::BinaryHeap};
 
 // nanikano map
@@ -130,6 +129,7 @@ struct NamePhysics {
     prev: Vec<Option<u32>>,
     current: Vec<u32>,
     pos: Vec<f64>,
+    pos_limited: Vec<f64>,
     speed: Vec<f64>,
     force: Vec<f64>,
 }
@@ -149,7 +149,7 @@ impl Default for GameConfig {
         Self {
             textbox_w: 200.,
             textbox_h: 100.,
-            num_textbox: 10,
+            num_textbox: 2,
             num_sai: 20,
             num_lines: 5,
             len_1d_analysis: 50,
@@ -244,6 +244,7 @@ fn init_game(
     phy.prev = (0..config.num_textbox).map(|_| Some(0)).collect();
     phy.current = (0..config.num_textbox).map(|_| 0).collect();
     phy.pos = (0..config.num_textbox).map(|_| 0.).collect();
+    phy.pos_limited = (0..config.num_textbox).map(|_| 0.).collect();
     phy.speed = phy.pos.clone();
     phy.force = phy.pos.clone();
 
@@ -303,7 +304,7 @@ fn init_game(
 fn system_apply_physics(
     conf: Res<GameConfig>,
     mut phy: ResMut<NamePhysics>,
-    mut q_textbox: Query<(&mut Transform, &TextBox)>,
+    mut q_textbox: Query<(&mut Transform, &TextBox, &MeshMaterial2d<NameMaterial>)>,
     time: Res<Time>,
     wm: Res<WindowMetricsResource>,
     mut text: Query<(&mut Text, &OrigUIText)>,
@@ -329,51 +330,59 @@ fn system_apply_physics(
 
     let mut text = text.iter_mut().collect::<Vec<_>>();
     text.sort_by_key(|x| (x.1.textbox_id, x.1.line_id));
-    let text_data_clone = text.iter().map(|x|x.0.0.clone()).collect::<Vec<_>>();
+    let text_data_clone = text.iter().map(|x| x.0.0.clone()).collect::<Vec<_>>();
     let text_data_clone = text_data_clone.chunks(conf.num_lines).collect::<Vec<_>>();
+
+    let mut q_textbox = q_textbox.iter_mut().collect::<Vec<_>>();
+    q_textbox.sort_by_key(|(_, tb, _)| tb.id);
 
     for i in 0..n {
         *phy.pos.get_mut(i).unwrap() += speed.get(i).unwrap();
+        *phy.pos_limited.get_mut(i).unwrap() += speed.get(i).unwrap();
         *phy.speed.get_mut(i).unwrap() += force.get(i).unwrap();
         *phy.speed.get_mut(i).unwrap() *= 0.99;
         *phy.force.get_mut(i).unwrap() = 0.0;
         *phy.prev.get_mut(i).unwrap() = Some(*current.get(i).unwrap());
     }
-    for (i, (mut tr, tb)) in q_textbox.iter_mut().enumerate() {
-        let c = *phy.pos.get(tb.id).unwrap();
+
+    for i in 0..conf.num_textbox {
+        let mat_ref = q_textbox.get(i).unwrap().2;
         let restrict = wm.window_height as f64 / (conf.num_lines as f64);
-        let orig_y = tr.translation.y as f64;
-        if restrict < orig_y || orig_y < -restrict {
-            let mut text_array = text_data_clone
-                .get(i)
-                .unwrap()
-                .iter()
-                .cloned()
-                .collect::<Vec<_>>();
-            let chosen = gd
-                .judges_shuffled
-                .as_ref()
-                .unwrap()
-                .choose(&mut rng)
-                .unwrap()
-                .1
-                .clone();
-            if restrict < orig_y {
-                text_array.shift_left([chosen]);
-            } else if orig_y < -restrict {
-                text_array.shift_right([chosen]);
-            }
-            for j in 0..conf.num_lines {
-                let x = text.get_mut(conf.num_textbox * i + j);
-                if let Some((t, id_info)) = x {
-                    assert!(id_info.textbox_id == i);
-                    assert!(id_info.line_id == j);
-                    t.0 = text_array.get(j).unwrap().clone();
-                }
+        let big_y = *phy.pos.get(i).unwrap();
+        // if restrict < c || c < -restrict {
+        name_materials.get_mut(mat_ref.id()).unwrap().time_x_x_x.x = time.elapsed_secs();
+        let mut text_array = text_data_clone
+            .get(i)
+            .unwrap()
+            .iter()
+            .cloned()
+            .collect::<Vec<_>>();
+        let chosen = gd
+            .judges_shuffled
+            .as_ref()
+            .unwrap()
+            .choose_multiple(&mut rng, 2)
+            .map(|x| x.1.clone())
+            .collect::<Vec<_>>();
+        if *phy.pos_limited.get(i).unwrap() < -restrict * 2.0 {
+            let x = vec![chosen, text_array[0..(conf.num_textbox - 2)].to_vec()].concat();
+            text_array = x;
+            *phy.pos_limited.get_mut(i).unwrap() += restrict * 2.0;
+        } else if *phy.pos_limited.get(i).unwrap() > restrict * 2.0 {
+            let x = vec![text_array[2..conf.num_textbox].to_vec(), chosen].concat();
+            text_array = x;
+            *phy.pos_limited.get_mut(i).unwrap() -= restrict * 2.0;
+        }
+        for j in 0..conf.num_lines {
+            info!("{} {} {} {}", i, j, text.len(), conf.num_lines * i + j);
+            let x = text.get_mut(conf.num_lines * i + j);
+            if let Some(a) = x.is_some() {
+                x.unwrap().0.0 = text_array.get(j).unwrap().clone();
             }
         }
+        // }
 
-        tr.translation.y = ((c + restrict) % (restrict * 2.0) - restrict) as f32;
+        q_textbox.get_mut(i).unwrap().0.translation.y = *phy.pos_limited.get(i).unwrap() as f32;
     }
 }
 
