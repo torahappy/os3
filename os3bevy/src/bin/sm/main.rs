@@ -9,6 +9,7 @@ use bevy::{
 };
 use bevy_mod_audio::ModAudioPlugins;
 use bevy_tweening::TweeningPlugin;
+use num_traits::Pow;
 use os3bevy::{bevy_connect::{
     transform::{AdvTransform, AdvTransformItem, AdvTransformOption, system_adv_transform},
     voice_analysis::{
@@ -99,6 +100,15 @@ struct TextBox {
     id: usize
 }
 
+
+#[derive(Default, Component)]
+struct HideBoxUpper {
+}
+
+#[derive(Default, Component)]
+struct HideBoxLower {
+}
+
 #[derive(Default, Resource)]
 struct NamePhysics {
     prev: Vec<Option<u32>>,
@@ -125,7 +135,7 @@ impl Default for GameConfig {
             textbox_h: 100.,
             num_textbox: 10,
             num_sai: 20,
-            num_lines: 3,
+            num_lines: 5,
             len_1d_analysis: 50
         }
     }
@@ -207,7 +217,8 @@ fn main() {
 
 fn init_game(mut com: Commands, asset_server: Res<AssetServer>, mut gd: ResMut<GameData>, 
     mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<SaiMaterial>>,
+    mut sai_materials: ResMut<Assets<SaiMaterial>>,
+    mut color_materials: ResMut<Assets<ColorMaterial>>,
     config: Res<GameConfig>,mut phy: ResMut<NamePhysics>
 ) {
     phy.prev = (0..config.num_textbox).map(|_|Some(0)).collect();
@@ -224,7 +235,7 @@ fn init_game(mut com: Commands, asset_server: Res<AssetServer>, mut gd: ResMut<G
     for i in 0..config.num_sai {
         com.spawn((
             Mesh2d(meshes.add(Rectangle::default())),
-            MeshMaterial2d(materials.add(SaiMaterial {
+            MeshMaterial2d(sai_materials.add(SaiMaterial {
                 color_texture: Some(asset_server.load("pictures/sai.png")),
                 ..default()
             })),
@@ -241,7 +252,7 @@ fn init_game(mut com: Commands, asset_server: Res<AssetServer>, mut gd: ResMut<G
     for i in 0..config.num_sai {
         com.spawn((
             Mesh2d(meshes.add(Rectangle::default())),
-            MeshMaterial2d(materials.add(SaiMaterial {
+            MeshMaterial2d(sai_materials.add(SaiMaterial {
                 color_texture: Some(asset_server.load("pictures/sai.png")),
                 ..default()
             })),
@@ -255,16 +266,32 @@ fn init_game(mut com: Commands, asset_server: Res<AssetServer>, mut gd: ResMut<G
                 }),
         ));
     }
+        com.spawn(
+            (
+                Mesh2d(meshes.add(Rectangle::default())),
+                MeshMaterial2d(color_materials.add(ColorMaterial::from_color(Color::WHITE))),
+                Transform::from_xyz(0.0, 0.0, 19.0),
+                HideBoxUpper {}
+            )
+        );
+        com.spawn(
+            (
+                Mesh2d(meshes.add(Rectangle::default())),
+                MeshMaterial2d(color_materials.add(ColorMaterial::from_color(Color::WHITE))),
+                Transform::from_xyz(0.0, 0.0, 19.0),
+                HideBoxLower {}
+            )
+        );
 }
 
-fn system_apply_physics (mut phy: ResMut<NamePhysics>, q_textbox: Query<(&mut Transform, &TextBox)>, time: Res<Time>) {
+fn system_apply_physics (conf: Res<GameConfig>, mut phy: ResMut<NamePhysics>, q_textbox: Query<(&mut Transform, &TextBox)>, time: Res<Time>, wm: Res<WindowMetricsResource>) {
     let n = phy.pos.len();
     let current = phy.current.clone();
     let prev = phy.prev.clone();
     for i in 0..n {
         if let Some(prev) = prev.get(i).unwrap() {
             let diff = (*current.get(i).unwrap() as i32) - (*prev as i32);
-            *phy.force.get_mut(i).unwrap() += diff as f32;
+            *phy.force.get_mut(i).unwrap() += (diff as f32).signum() * (diff as f32).abs().pow(0.2);
         }
     }
     let speed = phy.speed.clone();
@@ -278,7 +305,8 @@ fn system_apply_physics (mut phy: ResMut<NamePhysics>, q_textbox: Query<(&mut Tr
     }
     for (mut tr, tb) in q_textbox {
         let c = *phy.pos.get(tb.id).unwrap();
-        tr.translation.y = c;
+        let restrict = wm.window_height / (conf.num_lines as f32);
+        tr.translation.y = (c + restrict) % (restrict * 2.0) - restrict;
     }
 }
 
@@ -349,10 +377,45 @@ fn system_animate_name(
     court_database_asset: Res<Assets<CourtDatabase>>,
     mut meshes: ResMut<Assets<Mesh>>,
     mut name_materials: ResMut<Assets<NameMaterial>>,
+    mut hide_box_upper: Query<&mut Transform, (With<HideBoxUpper>, Without<HideBoxLower>)>,
+    mut hide_box_lower: Query<&mut Transform, (With<HideBoxLower>, Without<HideBoxUpper>)>,
     mut images: ResMut<Assets<Image>>,
     config: Res<GameConfig>,
     vpd: Res<VoicePacketData>,
+    wm: Res<WindowMetricsResource>
 ) {
+    let textbox_ratio = config.textbox_w / config.textbox_h;
+    let shown_lines = config.num_lines - 2;
+
+    // when FitHeight:
+    // let fit_mode = AdvTransformOption::FitHeight;
+    // let textbox_scale = (config.num_lines as f32) / (shown_lines as f32);
+    // let actual_line_height = wm.window_height / shown_lines as f32;
+    
+    // when FitWidth:
+    let fit_mode = AdvTransformOption::FitWidth;
+    let textbox_scale = 1.0;
+    let actual_line_height = wm.window_width / textbox_ratio / config.num_lines as f32;
+
+    {
+        let top_y1 = wm.window_height / 2.0;
+        let top_y2 = actual_line_height * shown_lines as f32 / 2.0;
+        if top_y1 > top_y2 {
+            let bottom_y1 = -top_y2;
+            let bottom_y2 = -top_y1;
+            hide_box_upper.single_mut().unwrap().scale.x = wm.window_width;
+            hide_box_upper.single_mut().unwrap().scale.y = bottom_y1 - bottom_y2;
+            hide_box_lower.single_mut().unwrap().scale.x = wm.window_width;
+            hide_box_lower.single_mut().unwrap().scale.y = bottom_y1 - bottom_y2;
+            hide_box_upper.single_mut().unwrap().translation.y = (top_y1 + top_y2) / 2.0;
+            hide_box_lower.single_mut().unwrap().translation.y = (bottom_y1 + bottom_y2) / 2.0;
+        } else {
+
+            hide_box_upper.single_mut().unwrap().scale = Vec3::splat(0.0);
+            hide_box_lower.single_mut().unwrap().scale = Vec3::splat(0.0);
+        }
+    }
+    
     if let Some(h) = &gd.judges_database {
         if let Some(court_database) = court_database_asset.get(h) {
             if gd.judges_shuffled.is_none() {
@@ -436,13 +499,14 @@ fn system_animate_name(
                             Text::new(i.1.clone()),
                             TextFont {
                                 font: asset_server.load("fonts/ZenOldMincho-Medium.ttf").into(),
-                                font_size: FontSize::Px(config.textbox_h / (config.num_lines as f32 * 1.16666)),
+                                font_size: FontSize::Px(config.textbox_h / (config.num_lines as f32 * 1.166666666)),
                                 ..default()
                             },
                             TextColor::BLACK,
                         ));
                     }
                 });
+
 
             commands.spawn((
                 Mesh2d(meshes.add(Rectangle::default())),
@@ -454,10 +518,15 @@ fn system_animate_name(
                 TextBox {id: i},
                 AdvTransform {
                     contents: vec![AdvTransformItem {
-                        fullscreen_ratio: Some(config.textbox_w / config.textbox_h),
-                        fullscreen_option: Some(AdvTransformOption::FitHeight),
+                        fullscreen_ratio: Some(textbox_ratio),
+                        fullscreen_option: Some(fit_mode),
                         ..default()
-                    }],
+                    },
+                    AdvTransformItem {
+                        scale_mult: Some((textbox_scale,textbox_scale)),
+                            ..default()
+                    }
+                    ],
                 },
             ));
         }
