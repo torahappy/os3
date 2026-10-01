@@ -9,13 +9,13 @@ use bevy::{
 };
 use bevy_mod_audio::ModAudioPlugins;
 use bevy_tweening::TweeningPlugin;
-use os3bevy::bevy_connect::{
+use os3bevy::{bevy_connect::{
     transform::{AdvTransform, AdvTransformItem, AdvTransformOption, system_adv_transform},
     voice_analysis::{
         VoiceAnalysisConfig, VoicePacketData, system_microphone, system_voice_history,
     },
     window::{WindowMetricsResource, system_window_resize},
-};
+}, math::misc::most_frequent};
 use rand::{
     Rng,
     seq::{IndexedRandom, SliceRandom},
@@ -94,11 +94,21 @@ struct GameData {
     init_done: bool,
 }
 
+
+#[derive(Default, Resource)]
+struct NamePhysics {
+    pos: Vec<f32>,
+    speed: Vec<f32>,
+    force: Vec<f32>
+}
+
 #[derive(Resource)]
 struct GameConfig {
     textbox_w: f32,
     textbox_h: f32,
     num_textbox: usize,
+    num_sai: usize,
+    len_1d_analysis: usize
 }
 
 impl Default for GameConfig {
@@ -107,7 +117,37 @@ impl Default for GameConfig {
             textbox_w: 200.,
             textbox_h: 100.,
             num_textbox: 10,
+            num_sai: 20,
+            len_1d_analysis: 50
         }
+    }
+}
+
+#[derive(Component, Default)]
+pub struct Sai {
+    id: usize,
+    category: u64,
+}
+
+#[derive(Asset, TypePath, AsBindGroup, Debug, Clone, Default)]
+pub struct SaiMaterial {
+    #[texture(0)]
+    #[sampler(1)]
+    pub color_texture: Option<Handle<Image>>,
+    #[uniform(2)]
+    pub category_id_freq1_freq2: Vec4,
+    #[uniform(3)]
+    pub color: Vec4
+}
+
+const SHADER_ASSET_PATH_VOICESPHERE: &str = "shaders/sai.wgsl";
+impl Material2d for SaiMaterial {
+    fn fragment_shader() -> ShaderRef {
+        SHADER_ASSET_PATH_VOICESPHERE.into()
+    }
+
+    fn alpha_mode(&self) -> AlphaMode2d {
+        AlphaMode2d::Blend
     }
 }
 
@@ -132,6 +172,7 @@ fn main() {
         ModAudioPlugins,
         TweeningPlugin,
         Material2dPlugin::<NameMaterial>::default(),
+        Material2dPlugin::<SaiMaterial>::default(),
     ))
     .init_asset::<CourtDatabase>()
     .init_asset_loader::<CourtDatabaseLoader>()
@@ -141,41 +182,135 @@ fn main() {
     .insert_resource(WindowMetricsResource::default())
     .insert_resource(GameConfig::default())
     .insert_resource(VoiceAnalysisConfig::default())
+    .insert_resource(NamePhysics::default())
     .init_resource::<VoicePacketData>()
     .add_systems(Startup, init_game)
+    .add_systems(Update, system_animate_sai)
     .add_systems(Update, system_animate_name)
     .add_systems(Update, system_window_resize)
     .add_systems(Update, system_voice_history)
     .add_systems(Update, system_adv_transform)
+    .add_systems(Update, system_1d_analysis)
+    .add_systems(FixedUpdate, system_apply_physics)
     .add_systems(FixedUpdate, system_microphone);
 
     app.run();
 }
 
-fn init_game(mut commands: Commands, asset_server: Res<AssetServer>, mut gd: ResMut<GameData>) {
-    commands.spawn(Camera2d::default());
+fn init_game(mut com: Commands, asset_server: Res<AssetServer>, mut gd: ResMut<GameData>, 
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<SaiMaterial>>,
+    config: Res<GameConfig>,mut phy: ResMut<NamePhysics>
+) {
+    phy.pos = (0..config.num_textbox).map(|_|0.).collect();
+    phy.speed = phy.pos.clone();
+    phy.force = phy.pos.clone();
+
+    com.spawn(Camera2d::default());
 
     let database_handle: Handle<CourtDatabase> = asset_server.load("database/combined.json");
     gd.judges_database = Some(database_handle);
+
+    for i in 0..config.num_sai {
+        com.spawn((
+            Mesh2d(meshes.add(Rectangle::default())),
+            MeshMaterial2d(materials.add(SaiMaterial {
+                color_texture: Some(asset_server.load("pictures/sai.png")),
+                ..default()
+            })),
+            Sai { id: i, category: 2 },
+            Transform::default()
+                .with_scale(Vec3::splat(20.0))
+                .with_translation(Vec3 {
+                    x: 0.,
+                    y: 0.,
+                    z: 20.0 + (0.000001 * rand::rng().random_range(0.0..1.0)),
+                }),
+        ));
+    }
+    for i in 0..config.num_sai {
+        com.spawn((
+            Mesh2d(meshes.add(Rectangle::default())),
+            MeshMaterial2d(materials.add(SaiMaterial {
+                color_texture: Some(asset_server.load("pictures/sai.png")),
+                ..default()
+            })),
+            Sai { id: i, category: 1 },
+            Transform::default()
+                .with_scale(Vec3::splat(20.0))
+                .with_translation(Vec3 {
+                    x: 0.,
+                    y: 0.,
+                    z: 21.0 + (0.000001 * rand::rng().random_range(0.0..1.0)),
+                }),
+        ));
+    }
 }
 
-fn most_frequent<T>(array: &[T], k: usize) -> Vec<(usize, &T)>
-where
-    T: std::hash::Hash + Eq + Ord,
-{
-    let mut map = HashMap::new();
-    for x in array {
-        *map.entry(x).or_default() += 1;
+fn system_apply_physics (mut phy: ResMut<NamePhysics>, q: Query<(&mut Transform)>, time: Res<Time>) {
+    let n = phy.pos.len();
+    let speed = phy.speed.clone();
+    let force = phy.force.clone();
+    for i in 0..n {
+        *phy.pos.get_mut(i).unwrap() += speed.get(i).unwrap();
+        *phy.speed.get_mut(i).unwrap() += force.get(i).unwrap();
+        *phy.speed.get_mut(i).unwrap() *= 0.99;
+        *phy.force.get_mut(i).unwrap() = 0.0;
     }
+}
 
-    let mut heap = BinaryHeap::with_capacity(k + 1);
-    for (x, count) in map.into_iter() {
-        heap.push(Reverse((count, x)));
-        if heap.len() > k {
-            heap.pop();
-        }
+fn system_1d_analysis (
+    vpd: Res<VoicePacketData>,
+    config: Res<GameConfig>
+    ) {
+    if vpd.history.len() < config.len_1d_analysis { return; }
+    let a = (0..5).map(|i| {
+        let recent_data = vpd.history.split_at(vpd.history.len() - config.len_1d_analysis).1.iter().cloned().collect::<Vec<_>>();
+        let mut top_data = recent_data
+            .iter()
+            .map(|x| x.1.get(i).cloned())
+            .flatten()
+            .map(|x| x)
+            .collect::<Vec<_>>();
+        top_data.sort();
+        most_frequent(top_data.as_slice(), 1).get(0).cloned().map(|x|(x.0, x.1.clone()))
+    }).collect::<Vec<_>>();
+    info!("{:?}", a);
+}
+
+fn system_animate_sai (
+    mut commands: Commands,
+    mut gd: ResMut<GameData>,
+    mut sai_materials: ResMut<Assets<SaiMaterial>>,
+    config: Res<GameConfig>,
+    vpd: Res<VoicePacketData>,
+    mut q_sai: Query<(
+        &Sai,
+        &mut Transform,
+        &MeshMaterial2d<SaiMaterial>,
+    )>
+) {
+    if vpd.history.len() < 100 { return; }
+    let mean_all: f64 = vpd
+        .history
+        .iter()
+        .map(|x| if x.0.is_nan() { 0.0 } else { x.0 })
+        .sum::<f64>()
+        / vpd.history.len() as f64;
+    if let Some(last) = vpd.history.last() {
+        let mean_ratio = (mean_all as f32 / last.0 as f32).log10();
+        let mr_max = 7.0;
+        let mr_coeff = 0.7;
+        let mr_processed = (mean_ratio.min(mr_max) / mr_max * mr_coeff).max(0.0);
     }
-    heap.into_sorted_vec().into_iter().map(|r| r.0).collect()
+    q_sai.iter_mut().for_each(|(sai, mut trans, mat_ref)|{
+        let id = sai.id;
+        let category = sai.category;
+
+        // get the recent data
+        let item = vpd.history.get(vpd.history.len() - id - 1);
+
+    });
 }
 
 fn system_animate_name(
@@ -208,28 +343,7 @@ fn system_animate_name(
     }
 
     if gd.init_done {
-        let mean_all: f64 = vpd
-            .history
-            .iter()
-            .map(|x| if x.0.is_nan() { 0.0 } else { x.0 })
-            .sum::<f64>()
-            / vpd.history.len() as f64;
-        if let Some(last) = vpd.history.last() {
-            let mean_ratio = (mean_all as f32 / last.0 as f32).log10();
-            let mr_max = 7.0;
-            let mr_processed = (mean_ratio.min(mr_max) / mr_max * 0.7).max(0.0);
-        }
-        let mut top_data = vpd
-            .history
-            .iter()
-            .map(|x| x.1.get(3).cloned())
-            .flatten()
-            .map(|x| (x / 7, x))
-            .collect::<Vec<_>>();
-        top_data.sort();
-        let s = top_data.iter().map(|x|x.0).collect::<Vec<_>>();
-        let a = most_frequent(s.as_slice(), 3);
-        info!("{:?}", a);
+        
     }
 
     if let Some(shuffled) = &gd.judges_shuffled
