@@ -3,20 +3,30 @@ use std::{cmp::Reverse, collections::BinaryHeap};
 // nanikano map
 //
 use bevy::{
-    asset::{AssetLoader, LoadContext, RenderAssetUsages, io::Reader}, camera::RenderTarget, color::palettes::css::{BLACK, WHITE}, platform::collections::HashMap, prelude::*, render::render_resource::{
+    asset::{AssetLoader, LoadContext, RenderAssetUsages, io::Reader},
+    camera::RenderTarget,
+    color::palettes::css::{BLACK, WHITE},
+    platform::collections::HashMap,
+    prelude::*,
+    render::render_resource::{
         AsBindGroup, Extent3d, TextureDimension, TextureFormat, TextureUsages,
-    }, shader::ShaderRef, sprite_render::{AlphaMode2d, Material2d, Material2dPlugin},
+    },
+    shader::ShaderRef,
+    sprite_render::{AlphaMode2d, Material2d, Material2dPlugin},
 };
 use bevy_mod_audio::ModAudioPlugins;
 use bevy_tweening::TweeningPlugin;
 use num_traits::Pow;
-use os3bevy::{bevy_connect::{
-    transform::{AdvTransform, AdvTransformItem, AdvTransformOption, system_adv_transform},
-    voice_analysis::{
-        VoiceAnalysisConfig, VoicePacketData, system_microphone, system_voice_history,
+use os3bevy::{
+    bevy_connect::{
+        transform::{AdvTransform, AdvTransformItem, AdvTransformOption, system_adv_transform},
+        voice_analysis::{
+            VoiceAnalysisConfig, VoicePacketData, system_microphone, system_voice_history,
+        },
+        window::{WindowMetricsResource, system_window_resize},
     },
-    window::{WindowMetricsResource, system_window_resize},
-}, math::misc::most_frequent};
+    math::misc::most_frequent,
+};
 use rand::{
     Rng,
     seq::{IndexedRandom, SliceRandom},
@@ -27,6 +37,8 @@ pub struct NameMaterial {
     #[texture(0)]
     #[sampler(1)]
     pub color_texture: Option<Handle<Image>>,
+    #[uniform(2)]
+    pub time_x_x_x: Vec4,
 }
 
 const SHADER_ASSET_PATH: &str = "shaders/name.wgsl";
@@ -97,25 +109,29 @@ struct GameData {
 
 #[derive(Default, Component)]
 struct TextBox {
-    id: usize
-}
-
-
-#[derive(Default, Component)]
-struct HideBoxUpper {
+    id: usize,
 }
 
 #[derive(Default, Component)]
-struct HideBoxLower {
+struct OrigUIText {
+    textbox_id: usize,
+    line_id: usize,
 }
+
+#[derive(Default, Component)]
+struct HideBoxUpper {}
+
+#[derive(Default, Component)]
+struct HideBoxLower {}
 
 #[derive(Default, Resource)]
 struct NamePhysics {
     prev: Vec<Option<u32>>,
     current: Vec<u32>,
-    pos: Vec<f32>,
-    speed: Vec<f32>,
-    force: Vec<f32>
+    pos: Vec<f64>,
+    pos_limited: Vec<f64>,
+    speed: Vec<f64>,
+    force: Vec<f64>,
 }
 
 #[derive(Resource)]
@@ -125,7 +141,7 @@ struct GameConfig {
     num_textbox: usize,
     num_lines: usize,
     num_sai: usize,
-    len_1d_analysis: usize
+    len_1d_analysis: usize,
 }
 
 impl Default for GameConfig {
@@ -136,7 +152,7 @@ impl Default for GameConfig {
             num_textbox: 10,
             num_sai: 20,
             num_lines: 5,
-            len_1d_analysis: 50
+            len_1d_analysis: 50,
         }
     }
 }
@@ -155,7 +171,7 @@ pub struct SaiMaterial {
     #[uniform(2)]
     pub category_id_freq1_freq2: Vec4,
     #[uniform(3)]
-    pub color: Vec4
+    pub color: Vec4,
 }
 
 const SHADER_ASSET_PATH_VOICESPHERE: &str = "shaders/sai.wgsl";
@@ -215,15 +231,20 @@ fn main() {
     app.run();
 }
 
-fn init_game(mut com: Commands, asset_server: Res<AssetServer>, mut gd: ResMut<GameData>, 
+fn init_game(
+    mut com: Commands,
+    asset_server: Res<AssetServer>,
+    mut gd: ResMut<GameData>,
     mut meshes: ResMut<Assets<Mesh>>,
     mut sai_materials: ResMut<Assets<SaiMaterial>>,
     mut color_materials: ResMut<Assets<ColorMaterial>>,
-    config: Res<GameConfig>,mut phy: ResMut<NamePhysics>
+    config: Res<GameConfig>,
+    mut phy: ResMut<NamePhysics>,
 ) {
-    phy.prev = (0..config.num_textbox).map(|_|Some(0)).collect();
-    phy.current = (0..config.num_textbox).map(|_|0).collect();
-    phy.pos = (0..config.num_textbox).map(|_|0.).collect();
+    phy.prev = (0..config.num_textbox).map(|_| Some(0)).collect();
+    phy.current = (0..config.num_textbox).map(|_| 0).collect();
+    phy.pos = (0..config.num_textbox).map(|_| 0.).collect();
+    phy.pos_limited = (0..config.num_textbox).map(|_| 0.).collect();
     phy.speed = phy.pos.clone();
     phy.force = phy.pos.clone();
 
@@ -266,67 +287,130 @@ fn init_game(mut com: Commands, asset_server: Res<AssetServer>, mut gd: ResMut<G
                 }),
         ));
     }
-        com.spawn(
-            (
-                Mesh2d(meshes.add(Rectangle::default())),
-                MeshMaterial2d(color_materials.add(ColorMaterial::from_color(Color::WHITE))),
-                Transform::from_xyz(0.0, 0.0, 19.0),
-                HideBoxUpper {}
-            )
-        );
-        com.spawn(
-            (
-                Mesh2d(meshes.add(Rectangle::default())),
-                MeshMaterial2d(color_materials.add(ColorMaterial::from_color(Color::WHITE))),
-                Transform::from_xyz(0.0, 0.0, 19.0),
-                HideBoxLower {}
-            )
-        );
+    com.spawn((
+        Mesh2d(meshes.add(Rectangle::default())),
+        MeshMaterial2d(color_materials.add(ColorMaterial::from_color(Color::WHITE))),
+        Transform::from_xyz(0.0, 0.0, 19.0),
+        HideBoxUpper {},
+    ));
+    com.spawn((
+        Mesh2d(meshes.add(Rectangle::default())),
+        MeshMaterial2d(color_materials.add(ColorMaterial::from_color(Color::WHITE))),
+        Transform::from_xyz(0.0, 0.0, 19.0),
+        HideBoxLower {},
+    ));
 }
 
-fn system_apply_physics (conf: Res<GameConfig>, mut phy: ResMut<NamePhysics>, q_textbox: Query<(&mut Transform, &TextBox)>, time: Res<Time>, wm: Res<WindowMetricsResource>) {
+fn system_apply_physics(
+    conf: Res<GameConfig>,
+    mut phy: ResMut<NamePhysics>,
+    mut q_textbox: Query<(&mut Transform, &TextBox, &MeshMaterial2d<NameMaterial>)>,
+    time: Res<Time>,
+    wm: Res<WindowMetricsResource>,
+    mut text: Query<(&mut Text, &OrigUIText)>,
+    mut name_materials: ResMut<Assets<NameMaterial>>,
+    config: Res<GameConfig>,
+    gd: Res<GameData>,
+) {
+    let mut rng = rand::rng();
+    if (!gd.init_done) {
+        return;
+    };
     let n = phy.pos.len();
     let current = phy.current.clone();
     let prev = phy.prev.clone();
     for i in 0..n {
         if let Some(prev) = prev.get(i).unwrap() {
             let diff = (*current.get(i).unwrap() as i32) - (*prev as i32);
-            *phy.force.get_mut(i).unwrap() += (diff as f32).signum() * (diff as f32).abs().pow(0.2);
+            *phy.force.get_mut(i).unwrap() += (diff as f64).signum() * (diff as f64).abs().pow(0.2);
         }
     }
     let speed = phy.speed.clone();
     let force = phy.force.clone();
+
+    let mut text = text.iter_mut().collect::<Vec<_>>();
+    text.sort_by_key(|x| (x.1.textbox_id, x.1.line_id));
+    let text_cloned = text.iter().map(|x|x.0.0.clone()).collect::<Vec<_>>();
+
+    let mut q_textbox = q_textbox.iter_mut().collect::<Vec<_>>();
+    q_textbox.sort_by_key(|(_, tb, _)| tb.id);
+
     for i in 0..n {
         *phy.pos.get_mut(i).unwrap() += speed.get(i).unwrap();
+        *phy.pos_limited.get_mut(i).unwrap() += speed.get(i).unwrap();
         *phy.speed.get_mut(i).unwrap() += force.get(i).unwrap();
         *phy.speed.get_mut(i).unwrap() *= 0.99;
         *phy.force.get_mut(i).unwrap() = 0.0;
         *phy.prev.get_mut(i).unwrap() = Some(*current.get(i).unwrap());
     }
-    for (mut tr, tb) in q_textbox {
-        let c = *phy.pos.get(tb.id).unwrap();
-        let restrict = wm.window_height / (conf.num_lines as f32);
-        tr.translation.y = (c + restrict) % (restrict * 2.0) - restrict;
+
+    for i in 0..conf.num_textbox {
+        let mat_ref = q_textbox.get(i).unwrap().2;
+        let restrict = wm.window_height as f64 / (conf.num_lines as f64);
+        let big_y = *phy.pos.get(i).unwrap();
+        // if restrict < c || c < -restrict {
+        name_materials.get_mut(mat_ref.id()).unwrap().time_x_x_x.x = time.elapsed_secs();
+        let mut text_array = text_cloned[conf.num_lines * i .. conf.num_lines * (i + 1)]
+            .iter()
+            .cloned()
+            .collect::<Vec<_>>();
+        let chosen = gd
+            .judges_shuffled
+            .as_ref()
+            .unwrap()
+            .choose_multiple(&mut rng, 2)
+            .map(|x| x.1.clone())
+            .collect::<Vec<_>>();
+        if *phy.pos_limited.get(i).unwrap() < -restrict * 2.0 {
+            let x = vec![chosen, text_array[0..(conf.num_lines - 2)].to_vec()].concat();
+            text_array = x;
+            *phy.pos_limited.get_mut(i).unwrap() += restrict * 2.0;
+        } else if *phy.pos_limited.get(i).unwrap() > restrict * 2.0 {
+            let x = vec![text_array[2..conf.num_lines].to_vec(), chosen].concat();
+            text_array = x;
+            *phy.pos_limited.get_mut(i).unwrap() -= restrict * 2.0;
+        }
+        for j in 0..conf.num_lines {
+            info!("{} {} {} {} {} {} {}", conf.num_lines, conf.num_textbox, i, j, text.len(), conf.num_lines * i + j, text_cloned.len());
+            let x = text.get_mut(conf.num_lines * i + j);
+            x.unwrap().0.0 = text_array.get(j).unwrap().clone();
+        }
+        // }
+
+        q_textbox.get_mut(i).unwrap().0.translation.y = *phy.pos_limited.get(i).unwrap() as f32;
     }
 }
 
-fn system_1d_analysis (
+fn system_1d_analysis(
     mut phy: ResMut<NamePhysics>,
     vpd: Res<VoicePacketData>,
-    config: Res<GameConfig>
+    config: Res<GameConfig>,
 ) {
-    if vpd.history.len() < config.len_1d_analysis { return; }
-    let vec_top = (0..config.num_textbox / 2).map(|i| {
-        let recent_data = vpd.history.split_at(vpd.history.len() - config.len_1d_analysis).1.iter().cloned().collect::<Vec<_>>();
-        let mut top_data = recent_data
-            .iter()
-            .map(|x| x.1.get(i).cloned())
-            .flatten()
-            .map(|x| x)
-            .collect::<Vec<_>>();
-        top_data.sort();
-        most_frequent(top_data.as_slice(), 1).get(0).cloned().map(|x|(x.0, x.1.clone()))
-    }).collect::<Vec<_>>();
+    if vpd.history.len() < config.len_1d_analysis {
+        return;
+    }
+    let vec_top = (0..config.num_textbox / 2)
+        .map(|i| {
+            let recent_data = vpd
+                .history
+                .split_at(vpd.history.len() - config.len_1d_analysis)
+                .1
+                .iter()
+                .cloned()
+                .collect::<Vec<_>>();
+            let mut top_data = recent_data
+                .iter()
+                .map(|x| x.1.get(i).cloned())
+                .flatten()
+                .map(|x| x)
+                .collect::<Vec<_>>();
+            top_data.sort();
+            most_frequent(top_data.as_slice(), 1)
+                .get(0)
+                .cloned()
+                .map(|x| (x.0, x.1.clone()))
+        })
+        .collect::<Vec<_>>();
     for (i, top) in vec_top.iter().enumerate() {
         if let Some(top) = top {
             *phy.current.get_mut(i * 2).unwrap() = top.0 as u32;
@@ -335,19 +419,17 @@ fn system_1d_analysis (
     }
 }
 
-fn system_animate_sai (
+fn system_animate_sai(
     mut commands: Commands,
     mut gd: ResMut<GameData>,
     mut sai_materials: ResMut<Assets<SaiMaterial>>,
     config: Res<GameConfig>,
     vpd: Res<VoicePacketData>,
-    mut q_sai: Query<(
-        &Sai,
-        &mut Transform,
-        &MeshMaterial2d<SaiMaterial>,
-    )>
+    mut q_sai: Query<(&Sai, &mut Transform, &MeshMaterial2d<SaiMaterial>)>,
 ) {
-    if vpd.history.len() < 100 { return; }
+    if vpd.history.len() < 100 {
+        return;
+    }
     let mean_all: f64 = vpd
         .history
         .iter()
@@ -360,13 +442,12 @@ fn system_animate_sai (
         let mr_coeff = 0.7;
         let mr_processed = (mean_ratio.min(mr_max) / mr_max * mr_coeff).max(0.0);
     }
-    q_sai.iter_mut().for_each(|(sai, mut trans, mat_ref)|{
+    q_sai.iter_mut().for_each(|(sai, mut trans, mat_ref)| {
         let id = sai.id;
         let category = sai.category;
 
         // get the recent data
         let item = vpd.history.get(vpd.history.len() - id - 1);
-
     });
 }
 
@@ -382,7 +463,7 @@ fn system_animate_name(
     mut images: ResMut<Assets<Image>>,
     config: Res<GameConfig>,
     vpd: Res<VoicePacketData>,
-    wm: Res<WindowMetricsResource>
+    wm: Res<WindowMetricsResource>,
 ) {
     let textbox_ratio = config.textbox_w / config.textbox_h;
     let shown_lines = config.num_lines - 2;
@@ -391,7 +472,7 @@ fn system_animate_name(
     // let fit_mode = AdvTransformOption::FitHeight;
     // let textbox_scale = (config.num_lines as f32) / (shown_lines as f32);
     // let actual_line_height = wm.window_height / shown_lines as f32;
-    
+
     // when FitWidth:
     let fit_mode = AdvTransformOption::FitWidth;
     let textbox_scale = 1.0;
@@ -410,12 +491,11 @@ fn system_animate_name(
             hide_box_upper.single_mut().unwrap().translation.y = (top_y1 + top_y2) / 2.0;
             hide_box_lower.single_mut().unwrap().translation.y = (bottom_y1 + bottom_y2) / 2.0;
         } else {
-
             hide_box_upper.single_mut().unwrap().scale = Vec3::splat(0.0);
             hide_box_lower.single_mut().unwrap().scale = Vec3::splat(0.0);
         }
     }
-    
+
     if let Some(h) = &gd.judges_database {
         if let Some(court_database) = court_database_asset.get(h) {
             if gd.judges_shuffled.is_none() {
@@ -434,9 +514,7 @@ fn system_animate_name(
         }
     }
 
-    if gd.init_done {
-        
-    }
+    if gd.init_done {}
 
     if let Some(shuffled) = &gd.judges_shuffled
         && !gd.init_done
@@ -494,38 +572,45 @@ fn system_animate_name(
                     UiTargetCamera(texture_camera),
                 ))
                 .with_children(|com| {
-                    for i in arr {
+                    for (j, place_and_name) in arr.iter().enumerate() {
                         com.spawn((
-                            Text::new(i.1.clone()),
+                            Text::new(place_and_name.1.clone()),
                             TextFont {
                                 font: asset_server.load("fonts/ZenOldMincho-Medium.ttf").into(),
-                                font_size: FontSize::Px(config.textbox_h / (config.num_lines as f32 * 1.166666666)),
+                                font_size: FontSize::Px(
+                                    config.textbox_h / (config.num_lines as f32 * 1.166666666),
+                                ),
                                 ..default()
                             },
                             TextColor::BLACK,
+                            OrigUIText {
+                                textbox_id: i,
+                                line_id: j,
+                            },
                         ));
                     }
                 });
-
 
             commands.spawn((
                 Mesh2d(meshes.add(Rectangle::default())),
                 MeshMaterial2d(name_materials.add(NameMaterial {
                     color_texture: Some(image_handle),
+                    time_x_x_x: Vec4::splat(0.0),
                 })),
                 Transform::from_xyz(0.0, 0.0, 10.0 + rand::random_range(0.0..1.0))
                     .with_scale(Vec3::new(1., 1., 1.)),
-                TextBox {id: i},
+                TextBox { id: i },
                 AdvTransform {
-                    contents: vec![AdvTransformItem {
-                        fullscreen_ratio: Some(textbox_ratio),
-                        fullscreen_option: Some(fit_mode),
-                        ..default()
-                    },
-                    AdvTransformItem {
-                        scale_mult: Some((textbox_scale,textbox_scale)),
+                    contents: vec![
+                        AdvTransformItem {
+                            fullscreen_ratio: Some(textbox_ratio),
+                            fullscreen_option: Some(fit_mode),
                             ..default()
-                    }
+                        },
+                        AdvTransformItem {
+                            scale_mult: Some((textbox_scale, textbox_scale)),
+                            ..default()
+                        },
                     ],
                 },
             ));
