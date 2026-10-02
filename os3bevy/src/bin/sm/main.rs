@@ -3,9 +3,17 @@ use std::{cmp::Reverse, collections::BinaryHeap};
 // nanikano map
 //
 use bevy::{
-    asset::{AssetLoader, LoadContext, RenderAssetUsages, io::Reader}, camera::RenderTarget, color::palettes::css::{BLACK, WHITE}, platform::collections::HashMap, prelude::*, render::render_resource::{
+    asset::{AssetLoader, LoadContext, RenderAssetUsages, io::Reader},
+    camera::RenderTarget,
+    color::palettes::css::{BLACK, WHITE},
+    platform::collections::HashMap,
+    prelude::*,
+    render::render_resource::{
         AsBindGroup, Extent3d, TextureDimension, TextureFormat, TextureUsages,
-    }, shader::ShaderRef, sprite_render::{AlphaMode2d, Material2d, Material2dPlugin}, window::CursorOptions,
+    },
+    shader::ShaderRef,
+    sprite_render::{AlphaMode2d, Material2d, Material2dPlugin},
+    window::CursorOptions,
 };
 use bevy_mod_audio::ModAudioPlugins;
 use bevy_tweening::TweeningPlugin;
@@ -98,6 +106,7 @@ struct GameData {
     /// vector of (所属, 氏名)
     judges_shuffled: Option<Vec<(String, String)>>,
     init_done: bool,
+    actual_line_height: Option<f32>,
 }
 
 #[derive(Default, Component)]
@@ -135,6 +144,7 @@ struct GameConfig {
     num_lines: usize,
     num_sai: usize,
     len_1d_analysis: usize,
+    line_coeff: f32,
 }
 
 impl Default for GameConfig {
@@ -146,6 +156,7 @@ impl Default for GameConfig {
             num_sai: 20,
             num_lines: 5,
             len_1d_analysis: 50,
+            line_coeff: 1.171,
         }
     }
 }
@@ -227,7 +238,6 @@ fn main() {
     .add_systems(Update, system_hide_cursor)
     .add_systems(FixedUpdate, system_apply_physics)
     .add_systems(FixedUpdate, system_microphone);
-
 
     app.run();
 }
@@ -317,10 +327,11 @@ fn system_apply_physics(
     config: Res<GameConfig>,
     gd: Res<GameData>,
 ) {
-    let mut rng = rand::rng();
-    if (!gd.init_done) {
+    if (gd.actual_line_height.is_none()) {
         return;
     };
+    let mut rng = rand::rng();
+    let actual_line_height = gd.actual_line_height.unwrap();
     let n = phy.pos.len();
     let current = phy.current.clone();
     let prev = phy.prev.clone();
@@ -335,7 +346,7 @@ fn system_apply_physics(
 
     let mut text = text.iter_mut().collect::<Vec<_>>();
     text.sort_by_key(|x| (x.1.textbox_id, x.1.line_id));
-    let text_cloned = text.iter().map(|x|x.0.0.clone()).collect::<Vec<_>>();
+    let text_cloned = text.iter().map(|x| x.0.0.clone()).collect::<Vec<_>>();
 
     let mut q_textbox = q_textbox.iter_mut().collect::<Vec<_>>();
     q_textbox.sort_by_key(|(_, tb, _)| tb.id);
@@ -351,11 +362,10 @@ fn system_apply_physics(
 
     for i in 0..conf.num_textbox {
         let mat_ref = q_textbox.get(i).unwrap().2;
-        let restrict = wm.window_height as f64 / (conf.num_lines as f64);
-        let big_y = *phy.pos.get(i).unwrap();
-        // if restrict < c || c < -restrict {
+        let restrict = actual_line_height as f64;
         name_materials.get_mut(mat_ref.id()).unwrap().time_x_x_x.x = time.elapsed_secs();
-        let mut text_array = text_cloned[conf.num_lines * i .. conf.num_lines * (i + 1)]
+        let choose_amount = 1;
+        let mut text_array = text_cloned[conf.num_lines * i..conf.num_lines * (i + 1)]
             .iter()
             .cloned()
             .collect::<Vec<_>>();
@@ -363,24 +373,36 @@ fn system_apply_physics(
             .judges_shuffled
             .as_ref()
             .unwrap()
-            .choose_multiple(&mut rng, 2)
+            .choose_multiple(&mut rng, choose_amount)
             .map(|x| x.1.clone())
             .collect::<Vec<_>>();
-        if *phy.pos_limited.get(i).unwrap() < -restrict * 2.0 {
-            let x = vec![chosen, text_array[0..(conf.num_lines - 2)].to_vec()].concat();
+        if *phy.pos_limited.get(i).unwrap() < -restrict {
+            let x = vec![
+                chosen,
+                text_array[0..(conf.num_lines - choose_amount)].to_vec(),
+            ]
+            .concat();
             text_array = x;
-            *phy.pos_limited.get_mut(i).unwrap() += restrict * 2.0;
-        } else if *phy.pos_limited.get(i).unwrap() > restrict * 2.0 {
-            let x = vec![text_array[2..conf.num_lines].to_vec(), chosen].concat();
+            *phy.pos_limited.get_mut(i).unwrap() += restrict;
+        } else if *phy.pos_limited.get(i).unwrap() > restrict {
+            let x = vec![text_array[choose_amount..conf.num_lines].to_vec(), chosen].concat();
             text_array = x;
-            *phy.pos_limited.get_mut(i).unwrap() -= restrict * 2.0;
+            *phy.pos_limited.get_mut(i).unwrap() -= restrict;
         }
         for j in 0..conf.num_lines {
-            info!("{} {} {} {} {} {} {}", conf.num_lines, conf.num_textbox, i, j, text.len(), conf.num_lines * i + j, text_cloned.len());
+            info!(
+                "{} {} {} {} {} {} {}",
+                conf.num_lines,
+                conf.num_textbox,
+                i,
+                j,
+                text.len(),
+                conf.num_lines * i + j,
+                text_cloned.len()
+            );
             let x = text.get_mut(conf.num_lines * i + j);
             x.unwrap().0.0 = text_array.get(j).unwrap().clone();
         }
-        // }
 
         q_textbox.get_mut(i).unwrap().0.translation.y = *phy.pos_limited.get(i).unwrap() as f32;
     }
@@ -482,6 +504,7 @@ fn system_animate_name(
     let fit_mode = AdvTransformOption::FitWidth;
     let textbox_scale = 1.0;
     let actual_line_height = wm.window_width / textbox_ratio / config.num_lines as f32;
+    gd.actual_line_height = Some(actual_line_height);
 
     {
         let top_y1 = wm.window_height / 2.0;
@@ -583,7 +606,8 @@ fn system_animate_name(
                             TextFont {
                                 font: asset_server.load("fonts/ZenOldMincho-Medium.ttf").into(),
                                 font_size: FontSize::Px(
-                                    config.textbox_h / (config.num_lines as f32 * 1.166666666),
+                                    config.textbox_h
+                                        / (config.num_lines as f32 * config.line_coeff as f32),
                                 ),
                                 ..default()
                             },
