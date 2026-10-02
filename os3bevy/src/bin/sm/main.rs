@@ -3,17 +3,9 @@ use std::{cmp::Reverse, collections::BinaryHeap};
 // nanikano map
 //
 use bevy::{
-    asset::{AssetLoader, LoadContext, RenderAssetUsages, io::Reader},
-    camera::RenderTarget,
-    color::palettes::css::{BLACK, WHITE},
-    platform::collections::HashMap,
-    prelude::*,
-    render::render_resource::{
+    asset::{AssetLoader, LoadContext, RenderAssetUsages, io::Reader}, camera::RenderTarget, color::palettes::css::{BLACK, WHITE}, platform::collections::HashMap, prelude::*, render::render_resource::{
         AsBindGroup, Extent3d, TextureDimension, TextureFormat, TextureUsages,
-    },
-    shader::ShaderRef,
-    sprite_render::{AlphaMode2d, Material2d, Material2dPlugin},
-    window::CursorOptions,
+    }, shader::ShaderRef, sprite_render::{AlphaMode2d, Material2d, Material2dPlugin}, text::LineHeight, ui::ContentSize, window::CursorOptions,
 };
 use bevy_mod_audio::ModAudioPlugins;
 use bevy_tweening::TweeningPlugin;
@@ -140,11 +132,11 @@ struct NamePhysics {
 struct GameConfig {
     textbox_w: f32,
     textbox_h: f32,
+    fontsize_coeff: f32,
     num_textbox: usize,
     num_lines: usize,
     num_sai: usize,
     len_1d_analysis: usize,
-    line_coeff: f32,
 }
 
 impl Default for GameConfig {
@@ -152,11 +144,11 @@ impl Default for GameConfig {
         Self {
             textbox_w: 200.,
             textbox_h: 100.,
+            fontsize_coeff: 0.95,
             num_textbox: 10,
             num_sai: 20,
             num_lines: 5,
             len_1d_analysis: 50,
-            line_coeff: 1.171,
         }
     }
 }
@@ -322,7 +314,7 @@ fn system_apply_physics(
     mut q_textbox: Query<(&mut Transform, &TextBox, &MeshMaterial2d<NameMaterial>)>,
     time: Res<Time>,
     wm: Res<WindowMetricsResource>,
-    mut text: Query<(&mut Text, &OrigUIText)>,
+    mut text: Query<(&mut Text, &OrigUIText, &ContentSize)>,
     mut name_materials: ResMut<Assets<NameMaterial>>,
     config: Res<GameConfig>,
     gd: Res<GameData>,
@@ -390,16 +382,6 @@ fn system_apply_physics(
             *phy.pos_limited.get_mut(i).unwrap() -= restrict;
         }
         for j in 0..conf.num_lines {
-            info!(
-                "{} {} {} {} {} {} {}",
-                conf.num_lines,
-                conf.num_textbox,
-                i,
-                j,
-                text.len(),
-                conf.num_lines * i + j,
-                text_cloned.len()
-            );
             let x = text.get_mut(conf.num_lines * i + j);
             x.unwrap().0.0 = text_array.get(j).unwrap().clone();
         }
@@ -606,11 +588,11 @@ fn system_animate_name(
                             TextFont {
                                 font: asset_server.load("fonts/ZenOldMincho-Medium.ttf").into(),
                                 font_size: FontSize::Px(
-                                    config.textbox_h
-                                        / (config.num_lines as f32 * config.line_coeff as f32),
+                                    config.textbox_h / config.num_lines as f32 * config.fontsize_coeff,
                                 ),
                                 ..default()
                             },
+                            LineHeight::Px(config.textbox_h / config.num_lines as f32),
                             TextColor::BLACK,
                             OrigUIText {
                                 textbox_id: i,
