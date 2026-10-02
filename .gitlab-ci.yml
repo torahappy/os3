@@ -10,6 +10,8 @@ default:
       - .cargo/
       - .emsdk/
       - os3bevy/target/
+      - os3yew/target/
+      - external-apps/
 
 build:
   pages:
@@ -18,7 +20,7 @@ build:
   rules:
     # This ensures that only pushes to the default branch will trigger
     # a pages deploy
-    - if: $CI_COMMIT_REF_NAME == "develop-rpg-archive"
+    - if: $CI_COMMIT_REF_NAME == "main"
   # Functions that should be executed before the build script is run
   before_script: []
   script:
@@ -26,7 +28,8 @@ build:
     - apt install -y cmake make autoconf automake g++ gcc m4 dc git-lfs meson 
     - if [ ! -d .emsdk ]; then git clone https://github.com/emscripten-core/emsdk .emsdk; fi
     - cd .emsdk && git pull && ./emsdk install 5.0.3 && ./emsdk activate 5.0.3 && cd ..
-    - . .emsdk/emsdk_env.sh;  BUILD_NATIVE=0 ./external-sources/setup-tts.sh; ./external-sources/setup-wasm.sh
+    - ./external-sources/setup-wasm.sh
+    - . .emsdk/emsdk_env.sh;  BUILD_NATIVE=0 ./external-sources/setup-tts.sh
     - mkdir public
     - cp -r ocr_web public/ocr_web
     - curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
@@ -45,18 +48,12 @@ build:
     - sed -i.bak s/PUT_COMMIT_ID_HERE/"${CI_COMMIT_SHA}"/ ./os3yew/wasm/shimbun/index.html
     - cd ./os3yew/wasm/shimbun; NODE_ENV=production yarn; cd ../../../
     - cp ./os3yew/wasm/shimbun/shimbun_bg.wasm public/shimbun_web
-    - cp ./os3yew/wasm/shimbun/espeak-ng-slim.wasm public/shimbun_web
-    - cp ./os3yew/wasm/shimbun/openjtalk-slim.wasm public/shimbun_web
     - cp ./os3yew/wasm/shimbun/*.html public/shimbun_web
     - cp ./os3yew/wasm/shimbun/*.json public/shimbun_web
-    - cp ./os3yew/wasm/shimbun/*.onnx public/shimbun_web
     - cp ./os3yew/wasm/shimbun/*.lock public/shimbun_web
     - cp ./os3yew/wasm/shimbun/*.js public/shimbun_web
     - cp -r ./os3yew/wasm/shimbun/snippets public/shimbun_web
     - cp -r ./os3yew/assets/shimbun public/shimbun_web/assets
-    - mkdir -p ./public/shimbun_web/node_modules/onnxruntime-web/dist
-    - cp ./os3yew/wasm/shimbun/node_modules/onnxruntime-web/dist/*.jsep.* ./public/shimbun_web/node_modules/onnxruntime-web/dist
-    - cp ./os3yew/wasm/shimbun/node_modules/onnxruntime-web/dist/ort.min.mjs ./public/shimbun_web/node_modules/onnxruntime-web/dist
     - . "${CI_PROJECT_DIR}/.cargo/env"; ./build_scripts/wasm-once.sh os3yew doomscroll
     - mkdir ./public/doomscroll_web
     - sed -i.bak s/PUT_COMMIT_ID_HERE/"${CI_COMMIT_SHA}"/ ./os3yew/wasm/doomscroll/index.html
