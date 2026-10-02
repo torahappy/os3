@@ -12,13 +12,10 @@ use bevy_tweening::TweeningPlugin;
 use num_traits::Pow;
 use os3bevy::{
     bevy_connect::{
-        transform::{AdvTransform, AdvTransformItem, AdvTransformOption, system_adv_transform},
-        voice_analysis::{
+        transform::{AdvTransform, AdvTransformItem, AdvTransformOption::{self, FitHeight, FitWidth}, system_adv_transform}, voice_analysis::{
             VoiceAnalysisConfig, VoicePacketData, system_microphone, system_voice_history,
-        },
-        window::{WindowMetricsResource, system_window_resize},
-    },
-    math::misc::most_frequent,
+        }, window::{WindowMetricsResource, system_window_resize},
+    }, math::misc::most_frequent,
 };
 use rand::{
     Rng,
@@ -137,6 +134,7 @@ struct GameConfig {
     num_lines: usize,
     num_sai: usize,
     len_1d_analysis: usize,
+    fit_mode: AdvTransformOption
 }
 
 impl Default for GameConfig {
@@ -149,6 +147,7 @@ impl Default for GameConfig {
             num_sai: 20,
             num_lines: 5,
             len_1d_analysis: 50,
+            fit_mode: FitHeight
         }
     }
 }
@@ -476,16 +475,20 @@ fn system_animate_name(
 ) {
     let textbox_ratio = config.textbox_w / config.textbox_h;
     let shown_lines = config.num_lines - 2;
+    let fit_mode = config.fit_mode;
 
-    // when FitHeight:
-    // let fit_mode = AdvTransformOption::FitHeight;
-    // let textbox_scale = (config.num_lines as f32) / (shown_lines as f32);
-    // let actual_line_height = wm.window_height / shown_lines as f32;
+    let textbox_scale;
+    let actual_line_height;
+    if fit_mode == FitHeight {
+        textbox_scale = (config.num_lines as f32) / (shown_lines as f32);
+        actual_line_height = wm.window_height / shown_lines as f32;
+    } else if fit_mode == FitWidth {
+        textbox_scale = 1.0;
+        actual_line_height = wm.window_width / textbox_ratio / config.num_lines as f32;
+    } else {
+        panic!("not yet implemented");
+    }
 
-    // when FitWidth:
-    let fit_mode = AdvTransformOption::FitWidth;
-    let textbox_scale = 1.0;
-    let actual_line_height = wm.window_width / textbox_ratio / config.num_lines as f32;
     gd.actual_line_height = Some(actual_line_height);
 
     {
