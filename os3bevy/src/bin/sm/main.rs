@@ -3,16 +3,9 @@ use std::{cmp::Reverse, collections::BinaryHeap};
 // nanikano map
 //
 use bevy::{
-    asset::{AssetLoader, LoadContext, RenderAssetUsages, io::Reader},
-    camera::RenderTarget,
-    color::palettes::css::{BLACK, WHITE},
-    platform::collections::HashMap,
-    prelude::*,
-    render::render_resource::{
+    asset::{AssetLoader, LoadContext, RenderAssetUsages, io::Reader}, camera::RenderTarget, color::palettes::css::{BLACK, WHITE}, platform::collections::HashMap, prelude::*, render::render_resource::{
         AsBindGroup, Extent3d, TextureDimension, TextureFormat, TextureUsages,
-    },
-    shader::ShaderRef,
-    sprite_render::{AlphaMode2d, Material2d, Material2dPlugin},
+    }, shader::ShaderRef, sprite_render::{AlphaMode2d, Material2d, Material2dPlugin}, window::CursorOptions,
 };
 use bevy_mod_audio::ModAudioPlugins;
 use bevy_tweening::TweeningPlugin;
@@ -188,7 +181,13 @@ impl Material2d for SaiMaterial {
 fn main() {
     let mut app = App::new();
 
+    #[cfg(target_arch = "wasm32")]
     let win: Window = Default::default();
+    #[cfg(not(target_arch = "wasm32"))]
+    let win: Window = Window {
+        mode: bevy::window::WindowMode::BorderlessFullscreen(MonitorSelection::Current),
+        ..Default::default()
+    };
 
     // #[cfg(target_arch = "wasm32")]
     // let win: Window = Default::default();
@@ -225,10 +224,16 @@ fn main() {
     .add_systems(Update, system_voice_history)
     .add_systems(Update, system_adv_transform)
     .add_systems(Update, system_1d_analysis)
+    .add_systems(Update, system_hide_cursor)
     .add_systems(FixedUpdate, system_apply_physics)
     .add_systems(FixedUpdate, system_microphone);
 
+
     app.run();
+}
+
+fn system_hide_cursor(mut cursor_options: Single<&mut CursorOptions>) {
+    cursor_options.visible = false;
 }
 
 fn init_game(
@@ -262,7 +267,7 @@ fn init_game(
             })),
             Sai { id: i, category: 2 },
             Transform::default()
-                .with_scale(Vec3::splat(20.0))
+                .with_scale(Vec3::splat(35.0))
                 .with_translation(Vec3 {
                     x: 0.,
                     y: 0.,
@@ -279,7 +284,7 @@ fn init_game(
             })),
             Sai { id: i, category: 1 },
             Transform::default()
-                .with_scale(Vec3::splat(20.0))
+                .with_scale(Vec3::splat(35.0))
                 .with_translation(Vec3 {
                     x: 0.,
                     y: 0.,
