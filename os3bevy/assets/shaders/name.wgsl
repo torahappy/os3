@@ -11,14 +11,19 @@ fn fragment(mesh: VertexOutput) -> @location(0) vec4<f32> {
     var num_textbox = time_id_numtxtbox_loss.z;
     var my_id = time_id_numtxtbox_loss.y;
 
-    var color_a = vec4(col.r, col.g, col.b, (1.0 - col.r) * (1.0 - time_id_numtxtbox_loss.w));
 
-    var slot_pos = mesh.uv.x * num_textbox - my_id;
+    var ab_ratio = time_id_numtxtbox_loss.w;
+
+    var color_a = vec4(col.r, col.g, col.b, (1.0 - col.r) * (1.0 - ab_ratio));
+
+    var density = 3.0;
+
+    var slot_pos = (mesh.uv.x * num_textbox * density % num_textbox) - my_id;
     var color_b = vec4(0.0, 0.0, 0.0, 0.0);
 
     if 0.0 < slot_pos && slot_pos < 1.0 {
 
-      color_b = vec4(col.r, col.g, col.b, (1.0 - col.r) * time_id_numtxtbox_loss.w);
+      color_b = vec4(col.r, col.g, col.b, (1.0 - col.r) * ab_ratio);
 
     }
     return color_a + color_b;
