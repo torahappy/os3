@@ -465,7 +465,7 @@ fn system_animate_sai(
     vpd: Res<VoicePacketData>,
     mut q_sai: Query<(&Sai, &mut Transform, &MeshMaterial2d<SaiMaterial>)>,
 ) {
-    if vpd.history.len() < 100 {
+    if vpd.history.len() < 10 {
         return;
     }
     let mean_all: f64 = vpd
@@ -483,7 +483,7 @@ fn system_animate_sai(
             .collect::<Vec<_>>();
         gd.mean_ratio_history = s;
     }
-    let n = 20;
+    let n = 10;
     if gd.mean_ratio_history.len() >= n {
         gd.mean_ratio = gd.mean_ratio_history[gd.mean_ratio_history.len() - n..]
             .iter()

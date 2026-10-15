@@ -7,7 +7,7 @@
 @fragment
 fn fragment(mesh: VertexOutput) -> @location(0) vec4<f32> {
     var col = textureSample(base_color_texture, base_color_sampler, mesh.uv);
-    var alpha = max(0.0, min(1.0, time_id_numtxtbox_loss.w));
+    var alpha = max(0.0, min(1.0, time_id_numtxtbox_loss.w + 0.3));
     var num_textbox = time_id_numtxtbox_loss.z;
     var my_id = time_id_numtxtbox_loss.y;
 
