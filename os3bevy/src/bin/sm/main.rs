@@ -159,8 +159,8 @@ struct GameConfig {
 impl Default for GameConfig {
     fn default() -> Self {
         Self {
-            textbox_w: 200.,
-            textbox_h: 100.,
+            textbox_w: 300.,
+            textbox_h: 150.,
             fontsize_coeff: 0.95,
             num_textbox: 10,
             num_sai: 1,
