@@ -45,7 +45,7 @@ pub struct NameMaterial {
     #[sampler(1)]
     pub color_texture: Option<Handle<Image>>,
     #[uniform(2)]
-    pub time_x_x_x: Vec4,
+    pub time_id_numtxtbox_loss: Vec4,
 }
 
 const SHADER_ASSET_PATH: &str = "shaders/name.wgsl";
@@ -113,6 +113,8 @@ struct GameData {
     judges_shuffled: Option<Vec<(String, String)>>,
     init_done: bool,
     actual_line_height: Option<f32>,
+    mean_ratio: f32,
+    mean_ratio_history: Vec<f32>,
 }
 
 #[derive(Default, Component)]
@@ -161,7 +163,7 @@ impl Default for GameConfig {
             textbox_h: 100.,
             fontsize_coeff: 0.95,
             num_textbox: 10,
-            num_sai: 20,
+            num_sai: 1,
             num_lines: 5,
             len_1d_analysis: 50,
             fit_mode: FitHeight,
@@ -372,7 +374,16 @@ fn system_apply_physics(
         if q_textbox.get(i).is_some() {
             let mat_ref = q_textbox.get(i).unwrap().2;
             let restrict = actual_line_height as f64;
-            name_materials.get_mut(mat_ref.id()).unwrap().time_x_x_x.x = time.elapsed_secs();
+            name_materials
+                .get_mut(mat_ref.id())
+                .unwrap()
+                .time_id_numtxtbox_loss
+                .x = time.elapsed_secs();
+            name_materials
+                .get_mut(mat_ref.id())
+                .unwrap()
+                .time_id_numtxtbox_loss
+                .w = gd.mean_ratio;
             let choose_amount = 1;
             let mut text_array = text_cloned[conf.num_lines * i..conf.num_lines * (i + 1)]
                 .iter()
@@ -463,11 +474,22 @@ fn system_animate_sai(
         .map(|x| if x.0.is_nan() { 0.0 } else { x.0 })
         .sum::<f64>()
         / vpd.history.len() as f64;
-    if let Some(last) = vpd.history.last() {
-        let mean_ratio = (mean_all as f32 / last.0 as f32).log10();
-        let mr_max = 7.0;
-        let mr_coeff = 0.7;
-        let mr_processed = (mean_ratio.min(mr_max) / mr_max * mr_coeff).max(0.0);
+    let mean_ratio_pre = (mean_all as f32 / vpd.history.last().unwrap().0 as f32).log10();
+    gd.mean_ratio_history.push(mean_ratio_pre);
+    if gd.mean_ratio_history.len() > 1000 {
+        let s = gd.mean_ratio_history[500..]
+            .iter()
+            .cloned()
+            .collect::<Vec<_>>();
+        gd.mean_ratio_history = s;
+    }
+    let n = 20;
+    if gd.mean_ratio_history.len() >= n {
+        gd.mean_ratio = gd.mean_ratio_history[gd.mean_ratio_history.len() - n..]
+            .iter()
+            .cloned()
+            .sum::<f32>()
+            / n as f32;
     }
     q_sai.iter_mut().for_each(|(sai, mut trans, mat_ref)| {
         let id = sai.id;
@@ -489,7 +511,6 @@ fn system_animate_name(
     mut hide_box_lower: Query<&mut Transform, (With<HideBoxLower>, Without<HideBoxUpper>)>,
     mut images: ResMut<Assets<Image>>,
     config: Res<GameConfig>,
-    vpd: Res<VoicePacketData>,
     wm: Res<WindowMetricsResource>,
 ) {
     let textbox_ratio = config.textbox_w / config.textbox_h;
@@ -629,7 +650,12 @@ fn system_animate_name(
                 Mesh2d(meshes.add(Rectangle::default())),
                 MeshMaterial2d(name_materials.add(NameMaterial {
                     color_texture: Some(image_handle),
-                    time_x_x_x: Vec4::splat(0.0),
+                    time_id_numtxtbox_loss: Vec4::new(
+                        0.0,
+                        i as f32,
+                        config.num_textbox as f32,
+                        gd.mean_ratio,
+                    ),
                 })),
                 Transform::from_xyz(0.0, 0.0, 10.0 + rand::random_range(0.0..1.0))
                     .with_scale(Vec3::new(1., 1., 1.)),
