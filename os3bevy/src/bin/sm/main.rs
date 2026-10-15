@@ -136,8 +136,8 @@ struct HideBoxLower {}
 
 #[derive(Default, Resource)]
 struct NamePhysics {
-    prev: Vec<Option<u32>>,
-    current: Vec<u32>,
+    prev: Vec<Option<f32>>,
+    current: Vec<f32>,
     pos: Vec<f64>,
     pos_limited: Vec<f64>,
     speed: Vec<f64>,
@@ -154,6 +154,8 @@ struct GameConfig {
     num_sai: usize,
     len_1d_analysis: usize,
     fit_mode: AdvTransformOption,
+    diff_coeff_0: f32,
+    diff_coeff_1: f32,
 }
 
 impl Default for GameConfig {
@@ -167,6 +169,8 @@ impl Default for GameConfig {
             num_lines: 5,
             len_1d_analysis: 50,
             fit_mode: FitHeight,
+            diff_coeff_0: 0.2,
+            diff_coeff_1: 0.6,
         }
     }
 }
@@ -266,8 +270,8 @@ fn init_game(
     config: Res<GameConfig>,
     mut phy: ResMut<NamePhysics>,
 ) {
-    phy.prev = (0..config.num_textbox).map(|_| Some(0)).collect();
-    phy.current = (0..config.num_textbox).map(|_| 0).collect();
+    phy.prev = (0..config.num_textbox).map(|_| Some(0.)).collect();
+    phy.current = (0..config.num_textbox).map(|_| 0.).collect();
     phy.pos = (0..config.num_textbox).map(|_| 0.).collect();
     phy.pos_limited = (0..config.num_textbox).map(|_| 0.).collect();
     phy.speed = phy.pos.clone();
@@ -334,7 +338,6 @@ fn system_apply_physics(
     wm: Res<WindowMetricsResource>,
     mut text: Query<(&mut Text, &OrigUIText, &ContentSize)>,
     mut name_materials: ResMut<Assets<NameMaterial>>,
-    config: Res<GameConfig>,
     gd: Res<GameData>,
 ) {
     if (gd.actual_line_height.is_none()) {
@@ -347,8 +350,14 @@ fn system_apply_physics(
     let prev = phy.prev.clone();
     for i in 0..n {
         if let Some(prev) = prev.get(i).unwrap() {
-            let diff = (*current.get(i).unwrap() as i32) - (*prev as i32);
-            *phy.force.get_mut(i).unwrap() += (diff as f64).signum() * (diff as f64).abs().pow(0.2);
+            let diff = (*current.get(i).unwrap()) - (*prev);
+            if i % 2 == 0 {
+                *phy.force.get_mut(i).unwrap() +=
+                    (diff as f64).signum() * (diff as f64).abs().pow(conf.diff_coeff_0);
+            } else {
+                *phy.force.get_mut(i).unwrap() +=
+                    (diff as f64).signum() * (diff as f64).abs().pow(conf.diff_coeff_1);
+            }
         }
     }
     let speed = phy.speed.clone();
@@ -451,8 +460,8 @@ fn system_1d_analysis(
         .collect::<Vec<_>>();
     for (i, top) in vec_top.iter().enumerate() {
         if let Some(top) = top {
-            *phy.current.get_mut(i * 2).unwrap() = top.0 as u32;
-            *phy.current.get_mut(i * 2 + 1).unwrap() = top.1 as u32;
+            *phy.current.get_mut(i * 2).unwrap() = top.0 as f32;
+            *phy.current.get_mut(i * 2 + 1).unwrap() = top.1 as f32;
         }
     }
 }
