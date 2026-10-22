@@ -3,19 +3,36 @@ use std::{cmp::Reverse, collections::BinaryHeap};
 // nanikano map
 //
 use bevy::{
-    asset::{AssetLoader, LoadContext, RenderAssetUsages, io::Reader}, camera::RenderTarget, color::palettes::css::{BLACK, WHITE}, platform::collections::HashMap, prelude::*, render::render_resource::{
+    asset::{AssetLoader, LoadContext, RenderAssetUsages, io::Reader},
+    camera::RenderTarget,
+    color::palettes::css::{BLACK, WHITE},
+    platform::collections::HashMap,
+    prelude::*,
+    render::render_resource::{
         AsBindGroup, Extent3d, TextureDimension, TextureFormat, TextureUsages,
-    }, shader::ShaderRef, sprite_render::{AlphaMode2d, Material2d, Material2dPlugin}, text::LineHeight, ui::ContentSize, window::CursorOptions,
+    },
+    shader::ShaderRef,
+    sprite_render::{AlphaMode2d, Material2d, Material2dPlugin},
+    text::LineHeight,
+    ui::ContentSize,
+    window::CursorOptions,
 };
 use bevy_mod_audio::ModAudioPlugins;
 use bevy_tweening::TweeningPlugin;
 use num_traits::Pow;
 use os3bevy::{
     bevy_connect::{
-        transform::{AdvTransform, AdvTransformItem, AdvTransformOption::{self, FitHeight, FitWidth}, system_adv_transform}, voice_analysis::{
+        transform::{
+            AdvTransform, AdvTransformItem,
+            AdvTransformOption::{self, FitHeight, FitWidth},
+            system_adv_transform,
+        },
+        voice_analysis::{
             VoiceAnalysisConfig, VoicePacketData, system_microphone, system_voice_history,
-        }, window::{WindowMetricsResource, system_window_resize},
-    }, math::misc::most_frequent,
+        },
+        window::{WindowMetricsResource, system_window_resize},
+    },
+    math::misc::most_frequent,
 };
 use rand::{
     Rng,
@@ -134,7 +151,7 @@ struct GameConfig {
     num_lines: usize,
     num_sai: usize,
     len_1d_analysis: usize,
-    fit_mode: AdvTransformOption
+    fit_mode: AdvTransformOption,
 }
 
 impl Default for GameConfig {
@@ -147,7 +164,7 @@ impl Default for GameConfig {
             num_sai: 20,
             num_lines: 5,
             len_1d_analysis: 50,
-            fit_mode: FitHeight
+            fit_mode: FitHeight,
         }
     }
 }
@@ -352,40 +369,42 @@ fn system_apply_physics(
     }
 
     for i in 0..conf.num_textbox {
-        let mat_ref = q_textbox.get(i).unwrap().2;
-        let restrict = actual_line_height as f64;
-        name_materials.get_mut(mat_ref.id()).unwrap().time_x_x_x.x = time.elapsed_secs();
-        let choose_amount = 1;
-        let mut text_array = text_cloned[conf.num_lines * i..conf.num_lines * (i + 1)]
-            .iter()
-            .cloned()
-            .collect::<Vec<_>>();
-        let chosen = gd
-            .judges_shuffled
-            .as_ref()
-            .unwrap()
-            .choose_multiple(&mut rng, choose_amount)
-            .map(|x| x.1.clone())
-            .collect::<Vec<_>>();
-        if *phy.pos_limited.get(i).unwrap() < -restrict {
-            let x = vec![
-                chosen,
-                text_array[0..(conf.num_lines - choose_amount)].to_vec(),
-            ]
-            .concat();
-            text_array = x;
-            *phy.pos_limited.get_mut(i).unwrap() += restrict;
-        } else if *phy.pos_limited.get(i).unwrap() > restrict {
-            let x = vec![text_array[choose_amount..conf.num_lines].to_vec(), chosen].concat();
-            text_array = x;
-            *phy.pos_limited.get_mut(i).unwrap() -= restrict;
-        }
-        for j in 0..conf.num_lines {
-            let x = text.get_mut(conf.num_lines * i + j);
-            x.unwrap().0.0 = text_array.get(j).unwrap().clone();
-        }
+        if q_textbox.get(i).is_some() {
+            let mat_ref = q_textbox.get(i).unwrap().2;
+            let restrict = actual_line_height as f64;
+            name_materials.get_mut(mat_ref.id()).unwrap().time_x_x_x.x = time.elapsed_secs();
+            let choose_amount = 1;
+            let mut text_array = text_cloned[conf.num_lines * i..conf.num_lines * (i + 1)]
+                .iter()
+                .cloned()
+                .collect::<Vec<_>>();
+            let chosen = gd
+                .judges_shuffled
+                .as_ref()
+                .unwrap()
+                .choose_multiple(&mut rng, choose_amount)
+                .map(|x| x.1.clone())
+                .collect::<Vec<_>>();
+            if *phy.pos_limited.get(i).unwrap() < -restrict {
+                let x = vec![
+                    chosen,
+                    text_array[0..(conf.num_lines - choose_amount)].to_vec(),
+                ]
+                .concat();
+                text_array = x;
+                *phy.pos_limited.get_mut(i).unwrap() += restrict;
+            } else if *phy.pos_limited.get(i).unwrap() > restrict {
+                let x = vec![text_array[choose_amount..conf.num_lines].to_vec(), chosen].concat();
+                text_array = x;
+                *phy.pos_limited.get_mut(i).unwrap() -= restrict;
+            }
+            for j in 0..conf.num_lines {
+                let x = text.get_mut(conf.num_lines * i + j);
+                x.unwrap().0.0 = text_array.get(j).unwrap().clone();
+            }
 
-        q_textbox.get_mut(i).unwrap().0.translation.y = *phy.pos_limited.get(i).unwrap() as f32;
+            q_textbox.get_mut(i).unwrap().0.translation.y = *phy.pos_limited.get(i).unwrap() as f32;
+        }
     }
 }
 
@@ -591,7 +610,8 @@ fn system_animate_name(
                             TextFont {
                                 font: asset_server.load("fonts/ZenOldMincho-Medium.ttf").into(),
                                 font_size: FontSize::Px(
-                                    config.textbox_h / config.num_lines as f32 * config.fontsize_coeff,
+                                    config.textbox_h / config.num_lines as f32
+                                        * config.fontsize_coeff,
                                 ),
                                 ..default()
                             },
