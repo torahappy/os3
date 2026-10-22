@@ -18,7 +18,7 @@ build:
   pages:
     publish: public
   rules:
-    - if: $CI_COMMIT_REF_NAME == "main"
+    - if: $CI_COMMIT_REF_NAME == "wasm-sm3-publish"
   before_script: []
   script:
     # [all] init
@@ -43,6 +43,12 @@ build:
     - cp ./os3bevy/wasm/rireki/*.html public/rireki_web
     - cp ./os3bevy/wasm/rireki/rireki.js public/rireki_web
     - cp -r ./os3bevy/assets public/rireki_web
+    # [sm] build
+    - . "${CI_PROJECT_DIR}/.cargo/env"; ./build_scripts/wasm-once.sh os3bevy sm
+    - mkdir public/sm_web
+    - cp ./os3bevy/wasm/sm/sm_bg.wasm public/sm_web
+    - cp ./os3bevy/wasm/sm/*.html public/sm_web
+    - cp -r ./os3bevy/assets public/sm_web
     # [shimbun] build, only rust binaries (no TTS binaries)
     - . "${CI_PROJECT_DIR}/.cargo/env"; ./build_scripts/wasm-once.sh os3yew shimbun
     - mkdir public/shimbun_web
