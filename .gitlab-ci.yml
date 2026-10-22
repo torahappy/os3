@@ -5,7 +5,8 @@ variables:
 
 default:
   cache:
-    key: ${CI_COMMIT_REF_SLUG}
+    # Remember to update binary version number after changing C/C++ library versions or their build scripts (setup_*.sh)
+    key: ${CI_COMMIT_REF_SLUG}@1
     paths:
       - .cargo/
       - .emsdk/
@@ -15,33 +16,34 @@ default:
 
 build:
   pages:
-    # The folder that contains the files to be exposed at the Page URL
     publish: public
   rules:
-    # This ensures that only pushes to the default branch will trigger
-    # a pages deploy
     - if: $CI_COMMIT_REF_NAME == "main"
-  # Functions that should be executed before the build script is run
   before_script: []
   script:
+    # [all] init
     - apt update
     - apt install -y cmake make autoconf automake g++ gcc m4 dc git-lfs meson 
+    # [all] install emsdk & binaryen
     - if [ ! -d .emsdk ]; then git clone https://github.com/emscripten-core/emsdk .emsdk; fi
-    - cd .emsdk && git pull && ./emsdk install 5.0.3 && ./emsdk activate 5.0.3 && cd ..
     - ./external-sources/setup-wasm.sh
-    - . .emsdk/emsdk_env.sh;  BUILD_NATIVE=0 ./external-sources/setup-tts.sh
+    # [all] init public dir
     - mkdir public
+    # [all] OCR: just copy the repo dir
     - cp -r ocr_web public/ocr_web
+    # [all] install rustup, clang, wasm-bindgen
     - curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
     - apt update
     - apt install -y clang
     - . "${CI_PROJECT_DIR}/.cargo/env"; cd os3bevy; rustup target add wasm32-unknown-unknown; cargo install -f wasm-bindgen-cli --version 0.2.129; cd ..
+    # [rireki] build
     - . "${CI_PROJECT_DIR}/.cargo/env"; ./build_scripts/wasm-once.sh os3bevy rireki
     - mkdir public/rireki_web
     - cp ./os3bevy/wasm/rireki/rireki_bg.wasm public/rireki_web
     - cp ./os3bevy/wasm/rireki/*.html public/rireki_web
     - cp ./os3bevy/wasm/rireki/rireki.js public/rireki_web
     - cp -r ./os3bevy/assets public/rireki_web
+    # [shimbun] build, only rust binaries (no TTS binaries)
     - . "${CI_PROJECT_DIR}/.cargo/env"; ./build_scripts/wasm-once.sh os3yew shimbun
     - mkdir public/shimbun_web
     - ./os3yew/install-wasm-binaries.sh
@@ -54,6 +56,7 @@ build:
     - cp ./os3yew/wasm/shimbun/*.js public/shimbun_web
     - cp -r ./os3yew/wasm/shimbun/snippets public/shimbun_web
     - cp -r ./os3yew/assets/shimbun public/shimbun_web/assets
+    # [doomscroll] build, only frontend
     - . "${CI_PROJECT_DIR}/.cargo/env"; ./build_scripts/wasm-once.sh os3yew doomscroll
     - mkdir ./public/doomscroll_web
     - sed -i.bak s/PUT_COMMIT_ID_HERE/"${CI_COMMIT_SHA}"/ ./os3yew/wasm/doomscroll/index.html
@@ -62,6 +65,7 @@ build:
     - cp ./os3yew/wasm/doomscroll/*.html public/doomscroll_web
     - cp ./os3yew/wasm/doomscroll/*.css public/doomscroll_web
     - cp ./os3yew/wasm/doomscroll/*.js public/doomscroll_web
+    # [rpg-helper] build
     - BUILD_NATIVE=0 BUILD_WASM=1 ./rpg-helper/setup-rpg.sh
     - cd rpg-helper; yarn install; yarn build; cd ..
     - mkdir -p public/0.0002-archive-rpg/
